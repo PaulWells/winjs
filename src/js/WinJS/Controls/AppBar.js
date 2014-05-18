@@ -48,10 +48,12 @@
             var appBarLayoutCustom = "custom",
                 appBarLayoutCommands = "commands";
 
-            // Constants for closedDisplayMode
-            var closedDisplayNone = "none",
-                closedDisplayMinimal = "minimal",
-                closedDisplayCompact = "compact";
+            // Enum for closedDisplayMode
+            var closedDisplay = {
+                none: "none",
+                minimal: "minimal",
+                compact: "compact",
+            }
 
             // Constants for AppBarCommands
             var typeSeparator = "separator",
@@ -669,18 +671,27 @@
                 /// </field>
                 closedDisplayMode: {
                     set function(value) {
-                        if (value === closedDisplayNone) {
-                            this._closedDisplayMode = closedDisplayNone;
-                        } else if (value === closedDisplayMinimal) {
-                            this._closedDisplayMode = closedDisplayMinimal;
+
+                        var oldValue = this._closedDisplayMode;
+
+                        if (value === closedDisplay.none) {
+                            this._closedDisplayMode = closedDisplay.none;
+                        } else if (value === closedDisplay.minimal) {
+                            this._closedDisplayMode = closedDisplay.minimal;
                         } else { // Compact is default
                             if (this.placement === appBarPlacementTop || this.layout === appBarLayoutCustom) {
                                 // Compact not available in custom or top appbars.
-                                this._closedDisplayMode = closedDisplayMinimal;
+                                this._closedDisplayMode = closedDisplay.minimal;
                             } else {
-                                this._closedDisplayMode = closedDisplayCompact;
+                                this._closedDisplayMode = closedDisplay.compact;
                             }
                         }
+
+                        if (oldValue !== this._closedDisplayMode && this.hidden) {
+                            // If the value changed while we were closed, update our position.
+                            this.hide();
+                        }
+
                     }, get function() {
                         return this._closedDisplayMode;
                     },
@@ -693,17 +704,25 @@
                         return Object.getOwnPropertyDescriptor(WinJS.UI._Overlay.prototype, "disabled").get.call(this);
                     },
                     set: function (disable) {
-                        var disable = !!disable;                        
-                        if (!disable && this.disabled !== disable) {
-                            // AppBar is being disabled, needs to animate into the correct closed position.
-                            this.close();
-                        } else {
-                            // defer to _Ovarlay property setter to make sure AppBar is completely hidden.
-                            Object.getOwnPropertyDescriptor(WinJS.UI._Overlay.protoype, "disabled").set(this, disable);
+                        var disable = !!disable;
+                        if (this.disabled !== disable) {
+                            if (!disable && this.closedDisplayMode !== closedDisplay.none) {
+                                // Closed AppBar should be visible after enabling, needs to animate into the correct closed position.
+                                this._close();
+                            } else {
+                                // defer to _Ovarlay disabled property setter to make sure AppBar is completely hidden.
+                                Object.getOwnPropertyDescriptor(WinJS.UI._Overlay.protoype, "disabled").set(this, disable);
+                            }
                         }
                     },
                 },
 
+                /// <field type="Boolean" hidden="true" locid="WinJS.UI._AppBar.hidden" helpKeyword="WinJS.UI._AppBar.hidden">Read only, true if an AppBar is currently closed.</field>
+                hidden: {
+                    get: function () {
+                        return (this._closed || Object.getOwnPropertyDescriptor(WinJS.UI._Overlay.prototype, "hidden").get.call(this));
+                    },
+                },
 
                 getCommandById: function (id) {
                     /// <signature helpKeyword="WinJS.UI.AppBar.getCommandById">
@@ -859,14 +878,24 @@
                     this._hide();
                 },
 
-                _hide: function AppBar_hide() {
+                _hide: function AppBar_hide() {                    
+                    var hideCompletely = (this.disabled || this._closedDisplayMode === closedDisplay.none);
+
                     // If we're covered by a keyboard we already look hidden
                     if (this._keyboardObscured && !this._animating) {
                         this._keyboardObscured = false;
-                        this._baseEndHide();
+                        if (hideCompletely) {
+                            this._baseEndHide();
+                        } else {
+                            this._endClose();
+                        }
                     } else {
-                        // We call our base "_baseHide" because AppBar may need to override hide
-                        this._baseHide();
+                        if (hideCompletely) {
+                            // We call our base "_baseHide" because AppBar may need to override hide
+                            this._baseHide();
+                        } else {
+                            this._close();
+                        }
                     }
 
                     // Determine if there are any AppBars that are visible.
@@ -968,6 +997,54 @@
                             WinJS.Utilities.disposeSubTree(element);
                         }
                     }
+                },
+
+                _close: function AppBar_close() {
+                    // If we are already animating, just remember this for later
+                    if (this._animating || this._keyboardShowing) {
+                        this._doNext = "hide";
+                        return false;
+                    }
+
+                    // In the unlikely event we're between the hiding keyboard and the resize events, just snap it away:
+                    if (this._keyboardHiding) {
+                        /***
+                        TODO what does AppBar need to do here when closing? just jump to closed position?
+                        WE can't rely on the old behavior of just going invisible I  don't think.
+                        ****/
+                        //// use the "uninitialized" flag
+                        //this._element.style.visibility = "";
+                    }
+                  
+                        this._element.winAnimating = "hiding";
+
+                        // Send our "beforeHide" event
+                        this._sendEvent(_Overlay.beforeHide);
+
+                        // If our visibility is empty, then this is the first time, just hide it
+                        if (this._element.style.visibility === "") {
+                            // Initial hiding, just hide it
+                            this._element.style.opacity = 0;
+                            this._baseEndHide();
+                        } else {
+                            // Make sure it's hidden, and fully transparent.
+                            var that = this;
+                            this._animationPromise = this._currentAnimateOut().
+                            then(function () {
+                                that._baseEndHide();
+                            }, function (err) {
+                                that._baseEndHide();
+                            });
+                        }
+                        return true;
+                    }
+                    this._fakeHide = false;
+
+                    return false;
+                },
+
+                _endClose: function AppBar_endClose() {
+
                 },
 
                 _handleKeyDown: function AppBar_handleKeyDown(event) {
