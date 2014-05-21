@@ -273,7 +273,7 @@
 
                 _baseShow: function _Overlay_baseShow() {
                     // If we are already animating, just remember this for later
-                    if (this._animating || this._keyboardShowing || this._keyboardHiding) {
+                    if (this._animating || this._needToHandleShowingKeyboard || this._needToHandleHidingKeyboard) {
                         this._doNext = "show";
                         return false;
                     }
@@ -358,13 +358,13 @@
 
                 _baseHide: function _Overlay_baseHide() {
                     // If we are already animating, just remember this for later
-                    if (this._animating || this._keyboardShowing) {
+                    if (this._animating || this._needToHandleShowingKeyboard) {
                         this._doNext = "hide";
                         return false;
                     }
 
                     // In the unlikely event we're between the hiding keyboard and the resize events, just snap it away:
-                    if (this._keyboardHiding) {
+                    if (this._needToHandleHidingKeyboard) {
                         // use the "uninitialized" flag
                         this._element.style.visibility = "";
                     }
@@ -436,7 +436,7 @@
 
                 _checkDoNext: function _Overlay_checkDoNext() {
                     // Do nothing if we're still animating
-                    if (this._animating || this._keyboardShowing || this._keyboardHiding || this._disposed) {
+                    if (this._animating || this._needToHandleShowingKeyboard || this._needToHandleHidingKeyboard || this._disposed) {
                         return;
                     }
 
@@ -1039,7 +1039,7 @@
                 _handleEventsForFlyoutOrSettingsFlyout: function _Overlay_handleEventsForFlyoutOrSettingsFlyout() {
                     var that = this;
                     // Need to hide ourselves if we lose focus
-                    WinJS.Utilities._addEventListener(this._element, "focusout", function (e) { _Overlay._hideIfLostFocus(that, e); }, false);
+                    WinJS.Utilities._addEventListener(this._element, "focusout", function (e) { _Overlay._flyoutOrSettingsFlyoutHideIfLostFocus(that, e); }, false);
 
                     // Attempt to flag right clicks that may turn into edgy
                     WinJS.Utilities._addEventListener(this._element, "pointerdown", _Overlay._checkRightClickDown, true);
@@ -1231,7 +1231,7 @@
                 return (_Overlay._clickEatingFlyoutDiv.style.display === "block");
             };
 
-            _Overlay._hideIfLostFocus = function (overlay, focusEvent) {
+            _Overlay._flyoutOrSettingsFlyoutHideIfLostFocus = function (overlay, focusEvent) {
                 // If we're still showing we haven't really lost focus
                 if (overlay.hidden || overlay.element.winAnimating === "showing" || overlay._sticky) {
                     return;
@@ -1248,7 +1248,7 @@
                     if (flyoutControl && flyoutControl._previousFocus && settingsFlyout.element.contains(flyoutControl._previousFocus)) {
                         WinJS.Utilities._addEventListener(flyoutControl.element, 'focusout', function focusOut(event) {
                             // When the Flyout closes, hide the SetingsFlyout if it didn't regain focus.
-                            _Overlay._hideIfLostFocus(settingsFlyout, event);
+                            _Overlay._flyoutOrSettingsFlyoutHideIfLostFocus(settingsFlyout, event);
                             WinJS.Utilities._removeEventListener(flyoutControl.element, 'focusout', focusOut, false);
                         }, false);
                         return;

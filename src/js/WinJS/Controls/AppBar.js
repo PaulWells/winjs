@@ -48,11 +48,19 @@
             var appBarLayoutCustom = "custom",
                 appBarLayoutCommands = "commands";
 
-            // Enum for closedDisplayMode
-            var closedDisplay = {
-                none: "none",
+            // Enum for _visibleHeight constants
+            var knownVisibleHeights = {
+                disabled: 0,
+                none: 0,
+                minimal: 30,
+            }
+
+            var visiblePositions = {
+                disabled: "hidden",
+                none: "hidden",
+                hidden: "hidden",
                 minimal: "minimal",
-                compact: "compact",
+                open: "open",
             }
 
             // Constants for AppBarCommands
@@ -674,20 +682,20 @@
 
                         var oldValue = this._closedDisplayMode;
 
-                        if (value === closedDisplay.none) {
-                            this._closedDisplayMode = closedDisplay.none;
-                        } else if (value === closedDisplay.minimal) {
-                            this._closedDisplayMode = closedDisplay.minimal;
+                        if (value === visiblePositions.none) {
+                            this._closedDisplayMode = visiblePositions.none;
+                        } else if (value === visiblePositions.minimal) {
+                            this._closedDisplayMode = visiblePositions.minimal;
                         } else { // Compact is default
                             if (this.placement === appBarPlacementTop || this.layout === appBarLayoutCustom) {
                                 // Compact not available in custom or top appbars.
-                                this._closedDisplayMode = closedDisplay.minimal;
+                                this._closedDisplayMode = visiblePositions.minimal;
                             } else {
-                                this._closedDisplayMode = closedDisplay.compact;
+                                this._closedDisplayMode = visiblePositions.compact;
                             }
                         }
 
-                        if (oldValue !== this._closedDisplayMode && this.hidden) {
+                        if (oldValue !== this._closedDisplayMode && this._closed) {
                             // If the value changed while we were closed, update our position.
                             this.hide();
                         }
@@ -706,7 +714,7 @@
                     set: function (disable) {
                         var disable = !!disable;
                         if (this.disabled !== disable) {
-                            if (!disable && this.closedDisplayMode !== closedDisplay.none) {
+                            if (!disable && this.closedDisplayMode !== visiblePositions.none) {
                                 // Closed AppBar should be visible after enabling, needs to animate into the correct closed position.
                                 this._close();
                             } else {
@@ -874,28 +882,23 @@
                     /// </summary>
                     /// </signature>
                     // Just wrap the private one
-                    this._writeProfilerMark("hide,StartTM"); // The corresponding "stop" profiler mark is handled in _Overlay._baseEndHide().
-                    this._hide();
+                    if (!this._closed) {
+                        this._writeProfilerMark("hide,StartTM"); // The corresponding "stop" profiler mark is handled in _Overlay._baseEndHide().
+                        this._close(visiblePositions.open, this._closedDisplayMode);
+                    } else {
+
+                    }
+
                 },
 
-                _hide: function AppBar_hide() {                    
-                    var hideCompletely = (this.disabled || this._closedDisplayMode === closedDisplay.none);
-
+                _close: function AppBar_close(fromPosition, toPosition) {
                     // If we're covered by a keyboard we already look hidden
                     if (this._keyboardObscured && !this._animating) {
                         this._keyboardObscured = false;
-                        if (hideCompletely) {
-                            this._baseEndHide();
-                        } else {
-                            this._endClose();
-                        }
+                        this._baseEndHide();
                     } else {
-                        if (hideCompletely) {
-                            // We call our base "_baseHide" because AppBar may need to override hide
-                            this._baseHide();
-                        } else {
-                            this._close();
-                        }
+                        // We call our base "_baseHide" because AppBar may need to override hide
+                        this._baseHide();
                     }
 
                     // Determine if there are any AppBars that are visible.
@@ -999,53 +1002,59 @@
                     }
                 },
 
-                _close: function AppBar_close() {
-                    // If we are already animating, just remember this for later
-                    if (this._animating || this._keyboardShowing) {
-                        this._doNext = "hide";
-                        return false;
-                    }
+                //_animateToHidden: function () {
+                //    // If we're covered by the soft keyboard we already look hidden
+                //    if (this._keyboardObscured && !this._animating) {
+                //        this._keyboardObscured = false;
+                //        this._endHide(fromPosition, toPosition);
+                //    } else {
+                //        // If we are already animating, just remember this for later
+                //        if (this._animating || this._needToHandleShowingKeyboard) {
+                //            this._doNext = { value: "hide", fromPosition: fromPosition, toPosition: toPosition }
+                //            return false;
+                //        }
 
-                    // In the unlikely event we're between the hiding keyboard and the resize events, just snap it away:
-                    if (this._keyboardHiding) {
-                        /***
-                        TODO what does AppBar need to do here when closing? just jump to closed position?
-                        WE can't rely on the old behavior of just going invisible I  don't think.
-                        ****/
-                        //// use the "uninitialized" flag
-                        //this._element.style.visibility = "";
-                    }
-                  
-                        this._element.winAnimating = "hiding";
+                //        // In the unlikely event we're between the hiding keyboard and the resize events, just snap it away:
+                //        if (this._needToHandleHidingKeyboard) {
+                //            // use the "uninitialized" flag
+                //            this._element.style.visibility = "";
+                //        }
 
-                        // Send our "beforeHide" event
-                        this._sendEvent(_Overlay.beforeHide);
+                //        // "showing" would need to queue up.
+                //        if (this._element.style.visibility !== "hidden") {
+                //            // Let us know we're hiding, accessibility as well.
+                //            this._element.winAnimating = "hiding";
+                //            this._element.setAttribute("aria-hidden", "true");
 
-                        // If our visibility is empty, then this is the first time, just hide it
-                        if (this._element.style.visibility === "") {
-                            // Initial hiding, just hide it
-                            this._element.style.opacity = 0;
-                            this._baseEndHide();
-                        } else {
-                            // Make sure it's hidden, and fully transparent.
-                            var that = this;
-                            this._animationPromise = this._currentAnimateOut().
-                            then(function () {
-                                that._baseEndHide();
-                            }, function (err) {
-                                that._baseEndHide();
-                            });
-                        }
-                        return true;
-                    }
-                    this._fakeHide = false;
+                //            // Send our "beforeHide" event
+                //            this._sendEvent(_Overlay.beforeHide);
 
-                    return false;
-                },
+                //            // If our visibility is empty, then this is the first time, just hide it
+                //            if (this._element.style.visibility === "") {
+                //                // Initial hiding, just hide it
+                //                this._element.style.opacity = 0;
+                //                this._baseEndHide();
+                //            } else {
+                //                // Make sure it's hidden, and fully transparent.
+                //                var that = this;
+                //                this._animationPromise = this._currentAnimateOut().
+                //                then(function () {
+                //                    that._baseEndHide();
+                //                }, function (err) {
+                //                    that._baseEndHide();
+                //                });
+                //            }
+                //            return true;
+                //        }
+                //        this._fakeHide = false;
 
-                _endClose: function AppBar_endClose() {
+                //        return false;
+                //    }
+                //},
 
-                },
+                //_animateToShown: function () {
+
+                //},
 
                 _handleKeyDown: function AppBar_handleKeyDown(event) {
                     // On Left/Right arrow keys, moves focus to previous/next AppbarCommand element.
@@ -1164,8 +1173,8 @@
                     // Make sure the animations are correct for our current placement
                     if (this._placement === appBarPlacementTop || this._placement === appBarPlacementBottom) {
                         // Top or Bottom
-                        this._currentAnimateIn = this._animateSlideIn;
-                        this._currentAnimateOut = this._animateSlideOut;
+                        this._currentAnimateIn = this._animateAppBar;
+                        this._currentAnimateOut = this._animateAppBar;
                     } else {
                         // Default for in the middle of nowhere
                         this._currentAnimateIn = this._baseAnimateIn;
@@ -1173,44 +1182,183 @@
                     }
                 },
 
+                //_closed: {
+                //    get: function () {
+                //        if (this._animating) {
+                //            if (this._element.winAnimating === "showing") {
+                //                return false;
+                //            } else if (this._element.winAnimating === "hiding") {
+                //                return true
+                //            }
+                //        } else if (this._doNext === "show") {
+                //            return false;
+                //        } else if (this._doNext === "hide") {
+                //            return true
+                //        } else {
+                //            return !!isClosed;
+                //        }
+                //    }
+
+                //},
+
+                _visiblePixels: {
+                    // Object contains pixel height of each visible position
+                    hidden: knownVisibleHeights.disabled,
+                    minimal: knownVisibleHeights.minimal,
+                    open: {
+                        // Element can change size as content gets added or removed or if it 
+                        // experinces style changes, so we have to look this up at run time.                          
+                        get: function () {
+                            return this._element.offsetHeight;
+                        }
+                    }
+                },
+
+                _visiblePosition: {
+                    // Returns string value of current visible position
+                    get: function () {;
+                        if (this._closed) {
+                            if (this.disabled) {
+                                return visiblePosition.disabled;
+                            } else if (this._closedDisplayMode === visiblePosition.none) {
+                                return visiblePosition.none;
+                            } else if (this._closedDisplayMode === visiblePosition.minimal) {
+                                return visiblePosition.none;
+                            }
+                        } else { // Display full height when open.
+                            return visiblePosition.open;
+                        }
+                    }
+                },
+
+
+                // Maybe call this changeAppearance, or changeVisibleState instead?
+                _changeVisiblePosition: function (fromPosition, toPosition, changingState) {
+
+                    // VISIBLEPOSITION NEEDS TO RETURN THE LAST ACTION, OR IF _ANIMATING, 
+                    // THEN THE VALUE OF WINANIMATING                    
+                    if (this._visiblePosition === toPosition) {
+                        // If  we want to go where we already are, just return.
+                        return false;
+                    } else if (this._animating || this._needToHandleShowingKeyboard || this._needToHandleHidingKeyboard) {
+                        // Only do one thing at a time. If we are already animating, 
+                        // or the IHM is animating, schedule this for later.
+                        this.doNext = {}; // Whats the doNext syntax?
+                        return false;
+                    } else {
+
+                        // ONCE WE ARE HERE WE CAN DETERMINE OUR STATE (open close) and if we are becoming visible for the first time by looking at our last position and our current destination.
+
+                        // Are we hiding completely? 
+                        var hidingCompletely = (toPosition === visiblePositions.hidden);
+                        this._element.winAnimating = hidingCompletely ? "hide" : "show";
+                        var performAnimation = true;
+
+                        if (this._keyboardObscured) {
+                            // If we're covered by the IHM we look hidden. 
+                            if (hidingCompletely) {                                
+                                // We can skip our animation and just become hidden
+                                performAnimation = false;
+                            } else {
+                                //this._fakeHide = true;
+                                // need to reshow current position from hidden state
+                                // reshow to current from position from hidden position.
+                            }
+                        }
+
+                        // Fire "before" events if we are changing state
+                        if (changingState) {
+                            if (changingState === "opening") {
+                                this._sendEvent(WinJS.UI._Overlay.beforeHide);
+                            } else {
+                                this._sendEvent(WinJS.UI._Overlay.beforeShow);
+                            }
+                        }
+
+                        if (performAnimation) {
+                            var that = this;
+                            this._animationPromise = this._animateAppBar(fromPosition, toPosition).
+                            then(function () {
+                                that._baseEndHide();
+                            }, function (err) {
+                                that._baseEndHide();
+                            });
+                        }
+                    }
+                },
+
                 // AppBar animations
-                _animateSlideIn: function AppBar_animateSlideIn() {
-                    var where,
-                        height = this._element.offsetHeight;
-                    // Get top/bottoms
+                _animateAppBar: function (fromPosition, toPosition) {
+
+                    // Get values in terms of pixels to perform animation.
+                    var offset,
+                        from = this._visiblePixels[fromPosition],
+                        to = this._visblePixels[toPosition],
+                        distanceToMove = Math.abs(to - from);
+
+                    // Position our element into the correct place to account for any scrolling or soft keyboard positioning.                
                     this._checkPosition();
                     // Get animation direction and clear other value
                     if (this._placement === appBarPlacementTop) {
                         // Top Bar
-                        where = { top: "-" + height + "px", left: "0px" };
+                        offset = { top: "-" + distanceToMove + "px", left: "0px" };
                         this._element.style.bottom = "auto";
                     } else {
                         // Bottom Bar
-                        where = { top: height + "px", left: "0px" };
+                        offset = { top: distanceToMove + "px", left: "0px" };
+                        this._element.style.top = "auto";
+                    }
+
+                    if (to > from) { // Slide forward, taking up more space.
+                        var endingOffset = offset;
+                        return WinJS.UI.Animation.hideEdgeUI(this._element, endingOffset, { mechanism: "transition" });
+                    } else if (from > to) { // Slide backward, taking up less space.
+                        this._element.style.opacity = 1;
+                        this._element.style.visibility = "visible";
+
+                        var beginningOffset = offset;
+                        return WinJS.UI.Animation.showEdgeUI(this._element, beginningOffset, { mechanism: "transition" });
+                    }
+
+
+                },
+
+                // AppBar animations
+                _animateSlideIn: function AppBar_animateSlideIn() {
+                    var begin,
+                        distance = this._element.offsetHeight;
+                    // Position our element into the correct ending place to account for scrolling or soft keyboard positioning                    
+                    this._checkPosition();
+                    // Get animation direction and clear other value
+                    if (this._placement === appBarPlacementTop) {
+                        // Top Bar
+                        begin = { top: "-" + distance + "px", left: "0px" };
+                        this._element.style.bottom = "auto";
+                    } else {
+                        // Bottom Bar
+                        begin = { top: distance + "px", left: "0px" };
                         this._element.style.top = "auto";
                     }
 
                     this._element.style.opacity = 1;
                     this._element.style.visibility = "visible";
-                    return WinJS.UI.Animation.showEdgeUI(this._element, where, { mechanism: "transition" });
+                    return WinJS.UI.Animation.showEdgeUI(this._element, begin, { mechanism: "transition" });
                 },
 
                 _animateSlideOut: function AppBar_animateSlideOut() {
-                    var where,
-                        height = this._element.offsetHeight;
+                    var end,
+                        distance = this._element.offsetHeight;
+                    // Position our element into the correct starting place to account for scrolling or soft keyboard positioning                    
+                    this._checkPosition();
                     if (this._placement === appBarPlacementTop) {
                         // Top Bar
-                        where = { top: "-" + height + "px", left: "0px" };
-                        // Adjust for scrolling or soft keyboard positioning
-                        this._element.style.top = (this._getTopOfVisualViewport()) + "px";
+                        end = { top: "-" + distance + "px", left: "0px" };
                     } else {
                         // Bottom Bar
-                        where = { top: height + "px", left: "0px" };
-                        // Adjust for scrolling or soft keyboard positioning
-                        this._element.style.bottom = (this._getAdjustedBottom()) + "px";
+                        end = { top: distance + "px", left: "0px" };
                     }
 
-                    return WinJS.UI.Animation.hideEdgeUI(this._element, where, { mechanism: "transition" });
+                    return WinJS.UI.Animation.hideEdgeUI(this._element, end, { mechanism: "transition" });
                 },
 
                 _isABottomAppBarInTheProcessOfShowing: function AppBar_isABottomAppBarInTheProcessOfShowing() {
@@ -1465,14 +1613,14 @@
                 _showingKeyboard: function AppBar_showingKeyboard(event) {
                     // Remember keyboard showing state.
                     this._keyboardObscured = false;
-                    this._keyboardHiding = false;
+                    this._needToHandleHidingKeyboard = false;
 
                     // If we're already moved, then ignore the whole thing
                     if (thisWinUI._Overlay._keyboardInfo._visible && this._alreadyInPlace()) {
                         return;
                     }
 
-                    this._keyboardShowing = true;
+                    this._needToHandleShowingKeyboard = true;
                     // If focus is in the appbar, don't cause scrolling.
                     if (!this.hidden && this._element.contains(document.activeElement)) {
                         event.ensuredFocusedElementInView = true;
@@ -1495,8 +1643,8 @@
                 _hidingKeyboard: function AppBar_hidingKeyboard(event) {
                     // We won't be obscured
                     this._keyboardObscured = false;
-                    this._keyboardShowing = false;
-                    this._keyboardHiding = true;
+                    this._needToHandleShowingKeyboard = false;
+                    this._needToHandleHidingKeyboard = true;
 
                     // We'll either just reveal the current space or resize the window
                     if (!thisWinUI._Overlay._keyboardInfo._isResized) {
@@ -1508,14 +1656,14 @@
                             this._element.style.display = "";
                             this._fakeHide = false;
                         }
-                        this._keyboardHiding = false;
+                        this._needToHandleHidingKeyboard = false;
                     }
                     // Else resize should clear keyboardHiding.
                 },
 
                 _resize: function AppBar_resize(event) {
                     // If we're hidden by the keyboard, then hide bottom appbar so it doesn't pop up twice when it scrolls
-                    if (this._keyboardShowing) {
+                    if (this._needToHandleShowingKeyboard) {
                         // Top is allowed to scroll off the top, but we don't want bottom to peek up when
                         // scrolled into view since we'll show it ourselves and don't want a stutter effect.
                         if (!this.hidden) {
@@ -1526,8 +1674,8 @@
                             }
                         }
                         // else if we're top we stay, and if there's a flyout, stay obscured by the keyboard.
-                    } else if (this._keyboardHiding) {
-                        this._keyboardHiding = false;
+                    } else if (this._needToHandleHidingKeyboard) {
+                        this._needToHandleHidingKeyboard = false;
                         if (!this.hidden || this._animating) {
                             // Snap to final position
                             this._checkScrollPosition();
@@ -1559,9 +1707,9 @@
 
                 _mayEdgeBackIn: function AppBar_mayEdgeBackIn(event) {
                     // May need to react to IHM being resized event
-                    if (this._keyboardShowing) {
+                    if (this._needToHandleShowingKeyboard) {
                         // If not top appbar or viewport isn't still at top, then need to show again
-                        this._keyboardShowing = false;
+                        this._needToHandleShowingKeyboard = false;
                         // If obscured (flyout showing), don't change.
                         // If hidden, may be because _fakeHide was set in _resize.
                         // If bottom we have to move, or if top scrolled off screen.
@@ -1580,18 +1728,19 @@
 
                 // _checkPosition repositions the AppBar when the soft keyboard shows up
                 _checkPosition: function AppBar_checkPosition() {
-                    // Bottom's the only one needing movement
+                    var hiddenOffset = (this._element.offsetHeight - this._visibleHeight);
+                    // Bottom's the only one that might need to move for system UI (IHM)
                     if (this._placement === appBarPlacementBottom) {
-                        this._element.style.bottom = this._getAdjustedBottom() + "px";
+                        this._element.style.bottom = (this._getAdjustedBottom() + hiddenOffSet) + "px";
                     } else if (this._placement === appBarPlacementTop) {
-                        this._element.style.top = this._getTopOfVisualViewport() + "px";
+                        this._element.style.top = this._getTopOfVisualViewport() - hiddenOffset + "px";
                     }
                     // else we don't touch custom positions
                 },
 
                 _checkScrollPosition: function AppBar_checkScrollPosition(event) {
                     // If keyboard's animating, then remember we may come in
-                    if (this._keyboardShowing) {
+                    if (this._needToHandleShowingKeyboard) {
                         // Tag that it's OK to edge back in.
                         this._scrollHappened = true;
                         return;
