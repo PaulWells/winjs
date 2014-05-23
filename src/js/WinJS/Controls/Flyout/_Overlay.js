@@ -844,7 +844,7 @@
                 _baseResize: function _Overlay_baseResize(event) {
                     // Avoid the cost of a resize if the Overlay is hidden.
                     if (this._currentDocumentWidth !== undefined) {
-                        if (this._element.style.visibility === "hidden") {
+                        if (this.hidden && !this._fakeHide) {
                             this._currentDocumentWidth = undefined;
                         } else {
                             // Overlays can light dismiss on horizontal resize.
