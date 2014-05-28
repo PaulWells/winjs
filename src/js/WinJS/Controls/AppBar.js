@@ -48,7 +48,7 @@
             var appBarLayoutCustom = "custom",
                 appBarLayoutCommands = "commands";
 
-            // Enum for _visibleHeight constants
+            // Enum of known constant pixel values for display modes. 
             var knownVisibleHeights = {
                 disabled: 0,
                 none: 0,
@@ -56,13 +56,19 @@
                 minimal: 30,
             }
 
-            // Enun of visible positionss
-            var visiblePositions = {
+            // Maps each notion of a display modes to its corresponding visible position
+            var displayModeVisiblePositions = {
                 disabled: "hidden",
                 none: "hidden",
                 hidden: "hidden",
                 minimal: "minimal",
                 open: "open",
+            }
+
+            // Enum of closedDisplayMode constants 
+            var closedDisplayModes = {
+                none: "none",
+                minimal: "minimal",
             }
 
             // Constants open/closed states
@@ -187,7 +193,7 @@
                 for (var i = 0; i < len; i++) {
                     bars[i]._keyboardInvoked = keyboardInvoked;
                     bars[i]._doNotFocus = false;
-                    bars[i]._show();
+                    bars[i]._open();
                     allBarsAnimationPromises[i] = bars[i]._animationPromise;
                 }
                 return WinJS.Promise.join(allBarsAnimationPromises);
@@ -443,6 +449,8 @@
                     options.commands = this._verifyCommandsOnly(this._element, "WinJS.UI.AppBarCommand");
                 }
 
+                this.closedDisplayMode = options.closedDisplayMode || closedDisplayModes.none;
+
                 // Call the base overlay constructor helper
                 this._baseOverlayConstructor(this._element, options);
 
@@ -510,6 +518,8 @@
                     this._element.style.display = "none";
                 }
 
+                this._lastPositionVisited = displayModeVisiblePositions.none;
+
                 this._writeProfilerMark("constructor,StopTM");
 
                 return this;
@@ -525,7 +535,7 @@
                         // In designer we may have to move it
                         var wasShown = false;
                         if (window.Windows && Windows.ApplicationModel && Windows.ApplicationModel.DesignMode && Windows.ApplicationModel.DesignMode.designModeEnabled && !this.hidden) {
-                            this._hide();
+                            this._close();
                             wasShown = true;
                         }
 
@@ -553,7 +563,7 @@
 
                         // Show again if we hid ourselves for the designer
                         if (wasShown) {
-                            this._show();
+                            this._open();
                         }
                     }
                 },
@@ -574,7 +584,7 @@
                         // In designer we may have to redraw it
                         var wasShown = false;
                         if (window.Windows && Windows.ApplicationModel && Windows.ApplicationModel.DesignMode && Windows.ApplicationModel.DesignMode.designModeEnabled && !this.hidden) {
-                            this._hide();
+                            this._close();
                             wasShown = true;
                         }
 
@@ -596,7 +606,7 @@
 
                         // Show again if we hid ourselves for the designer
                         if (wasShown) {
-                            this._show();
+                            this._open();
                         }
                     },
                     configurable: true
@@ -618,7 +628,7 @@
 
                         this._sticky = !!value;
 
-                        // Note: caller has to call .show() if they also want it visible
+                        // Note: caller still has to call .show() if also want it open.
 
                         // Show or hide the click eating div based on sticky value
                         if (!this.hidden && this._element.style.visibility === "visible") {
@@ -684,49 +694,46 @@
                 /// Sets the AppBarCommands in the AppBar. This property accepts an array of AppBarCommand objects.
                 /// </field>
                 closedDisplayMode: {
-                    set function(value) {
-
+                    get: function() {
+                        return this._closedDisplayMode;
+                    },
+                    set: function(value) {
                         var oldValue = this._closedDisplayMode;
 
-                        if (value === visiblePositions.none) {
-                            this._closedDisplayMode = visiblePositions.none;
-                        } else if (value === visiblePositions.minimal) {
-                            this._closedDisplayMode = visiblePositions.minimal;
-                        } else { // Compact is default
-                            if (this.placement === appBarPlacementTop || this.layout === appBarLayoutCustom) {
-                                // Compact not available in custom or top appbars.
-                                this._closedDisplayMode = visiblePositions.minimal;
-                            } else {
-                                this._closedDisplayMode = visiblePositions.compact;
-                            }
+                        if (value === closedDisplayModes.none) {
+                            this._closedDisplayMode = value;
+                        } else {
+                            // Minimal is default.
+                            this._closedDisplayMode = closedDisplayModes.minimal;
                         }
 
                         if (oldValue !== this._closedDisplayMode && this._closed) {
                             // If the value changed while we were closed, update our position.
-                            this.hide();
+                            this._changeVisiblePosition(displayModeVisiblePositions[this._closedDisplayMode]);
                         }
 
-                    }, get function() {
-                        return this._closedDisplayMode;
-                    },
+                    }, 
                 },
 
                 /// <field type="Boolean" locid="WinJS.UI.AppBar.disabled" helpKeyword="WinJS.UI.AppBar.disabled">Disable an AppBar, setting or getting the HTML disabled attribute. When disabled the AppBar will no longer display with show(), and will hide completely if currently visible.</field>
                 disabled: {
                     get: function () {
-                        // Just refer to base class disabled property
-                        return Object.getOwnPropertyDescriptor(WinJS.UI._Overlay.prototype, "disabled").get.call(this);
+                        // Ensure it's a boolean because we're using the DOM element to keep in-sync
+                        return !!this._element.disabled;
                     },
                     set: function (disable) {
                         var disable = !!disable;
                         if (this.disabled !== disable) {
-                            if (!disable && this.closedDisplayMode !== visiblePositions.none) {
-                                // Closed AppBar should be visible after enabling, needs to animate into the correct closed position.
-                                this._close();
+                            this._element.disabled = disable;
+                            var toPosition;
+                            if (disable) {
+                                // Disabling. Move to the position mapped to the disabled state.                                                           
+                                toPosition = displayModeVisiblePositions.disabled;
                             } else {
-                                // defer to _Ovarlay disabled property setter to make sure AppBar is completely hidden.
-                                Object.getOwnPropertyDescriptor(WinJS.UI._Overlay.protoype, "disabled").set(this, disable);
+                                // Enabling. Move to the position mapped to our closedDisplayMode.
+                                toPosition = displayModeVisiblePositions[this.closedDisplayMode];
                             }
+                            this._close(toPosition);
                         }
                     },
                 },
@@ -736,7 +743,7 @@
                     get: function () {
                         // Returns true if AppBar is 'closed'. Before the addition of closed display modes, it used to be that hidden was synonymous with closed.
                         // This API is keeping the "hidden" moniker for now to avoid a breaking migration change.
-                        return this._openState === appbarClosedState || this._doNext !== visiblePositions.open;
+                        return this._closed || this._doNext === displayModeVisiblePositions.minimal || this._doNext === displayModeVisiblePositions.none;
                     },
                 },
 
@@ -832,16 +839,16 @@
                 },
 
                 _open: function AppBar_open() {
-                    var openPosition = visiblePosition.open;
+                    var openPosition = displayModeVisiblePositions.open;
 
-                    if (this._openState === appbarOpenedState) {
-                        // If we're already opened, just change our visible position.
-                        this.changeVisiblePosition(openPosition, null);
-                    } else if (this._openState !== appbarOpenedState) {
+                    if (!this._closed) {
+                        // We're already opened, just change our visible position, don't worry about changing state.
+                        this._changeVisiblePosition(openPosition, null);
+                    } else {
                         // Try to open us.
-                        if (changeVisiblePosition(openPosition, appbarOpenedState)) {
+                        if (this._changeVisiblePosition(openPosition, appbarOpenedState)) {
+                            // Configure open state for lightdismiss & sticky appbars.
 
-                            // Regardless we're going to be in a CED state
                             if (!this.sticky) {
                                 // Need click-eating div to be visible ASAP.
                                 thisWinUI._Overlay._showClickEatingDivAppBar();
@@ -879,14 +886,14 @@
                 },
 
                 _close: function AppBar_close(toPosition) {
-                    var toPosition = toPosition || visiblePositions[this._closedDisplayMode];
+                    var toPosition = toPosition || displayModeVisiblePositions[this.closedDisplayMode];
 
-                    if (this._openState === appbarClosedState) {
-                        // If we're already closed, just change our visible position.
-                        this.changeVisiblePosition(toPosition, null);
-                    } else if (this._openState !== appbarClosedState) {
+                    if (this._closed) {
+                        // We're already closed, just change our visible position.
+                        this._changeVisiblePosition(toPosition, null);
+                    } else {
                         // Try to close us.
-                        if (this.changeVisiblePosition(toPosition, appbarClosedState)) {
+                        if (this._changeVisiblePosition(toPosition, appbarClosedState)) {
                             // Determine if there are any AppBars that are visible.
                             // Set the focus to the next visible AppBar.
                             // If there are none, set the focus to the control stored in the cache, which
@@ -966,7 +973,7 @@
 
                 _dispose: function AppBar_dispose() {
                     WinJS.Utilities.disposeSubTree(this.element);
-                    this._hide();
+                    this.disabled = true;
                 },
 
                 _disposeChildren: function AppBar_disposeChildren() {
@@ -988,61 +995,7 @@
                             WinJS.Utilities.disposeSubTree(element);
                         }
                     }
-                },
-
-                //_animateToHidden: function () {
-                //    // If we're covered by the soft keyboard we already look hidden
-                //    if (this._keyboardObscured && !this._animating) {
-                //        this._keyboardObscured = false;
-                //        this._endHide(fromPosition, toPosition);
-                //    } else {
-                //        // If we are already animating, just remember this for later
-                //        if (this._animating || this._needToHandleShowingKeyboard) {
-                //            this._doNext = { value: "hide", fromPosition: fromPosition, toPosition: toPosition }
-                //            return false;
-                //        }
-
-                //        // In the unlikely event we're between the hiding keyboard and the resize events, just snap it away:
-                //        if (this._needToHandleHidingKeyboard) {
-                //            // use the "uninitialized" flag
-                //            this._element.style.visibility = "";
-                //        }
-
-                //        // "showing" would need to queue up.
-                //        if (this._element.style.visibility !== "hidden") {
-                //            // Let us know we're hiding, accessibility as well.
-                //            this._element.winAnimating = "hiding";
-                //            this._element.setAttribute("aria-hidden", "true");
-
-                //            // Send our "beforeHide" event
-                //            this._sendEvent(_Overlay.beforeHide);
-
-                //            // If our visibility is empty, then this is the first time, just hide it
-                //            if (this._element.style.visibility === "") {
-                //                // Initial hiding, just hide it
-                //                this._element.style.opacity = 0;
-                //                this._baseEndHide();
-                //            } else {
-                //                // Make sure it's hidden, and fully transparent.
-                //                var that = this;
-                //                this._animationPromise = this._currentAnimateOut().
-                //                then(function () {
-                //                    that._baseEndHide();
-                //                }, function (err) {
-                //                    that._baseEndHide();
-                //                });
-                //            }
-                //            return true;
-                //        }
-                //        this._fakeHide = false;
-
-                //        return false;
-                //    }
-                //},
-
-                //_animateToShown: function () {
-
-                //},
+                },               
 
                 _handleKeyDown: function AppBar_handleKeyDown(event) {
                     // On Left/Right arrow keys, moves focus to previous/next AppbarCommand element.
@@ -1161,8 +1114,8 @@
                     // Make sure the animations are correct for our current placement
                     if (this._placement === appBarPlacementTop || this._placement === appBarPlacementBottom) {
                         // Top or Bottom
-                        this._currentAnimateIn = this._animateAppBar;
-                        this._currentAnimateOut = this._animateAppBar;
+                        this._currentAnimateIn = this._animatePositionChange;
+                        this._currentAnimateOut = this._animatePositionChange;
                     } else {
                         // Default for in the middle of nowhere
                         this._currentAnimateIn = this._baseAnimateIn;
@@ -1171,22 +1124,23 @@
                 },
 
                 _visiblePixels: {
-                    // Object contains pixel height of each visible position
-                    hidden: knownVisibleHeights.disabled,
-                    minimal: knownVisibleHeights.minimal,
-                    open: {
-                        // Element can change size as content gets added or removed or if it 
-                        // experinces style changes, so we have to look this up at run time.                          
-                        get: function () {
-                            return this._element.offsetHeight;
+                    get: function () {
+                        // Returns object containing pixel height of each visible position
+                        return {
+                            hidden: knownVisibleHeights.hidden,
+                            minimal: knownVisibleHeights.minimal,
+                            // Element can change size as content gets added or removed or if it 
+                            // experinces style changes. We have to look this up at run time.      
+                            open: this._element.offsetHeight,
                         }
                     }
                 },
 
                 _visiblePosition: {
-                    // Returns string value of our visible position.
+                    // Returns string value of our nearest, stationary, visible position.
                     get: function () {
-                        if (this._animating && visiblePositions[this._element.winAnimating]) {
+                        // If we're we're performing an animation that is a position change,  return that position.  
+                        if (this._animating && displayModeVisiblePositions[this._element.winAnimating]) {
                             return this._element.winAnimating;
                         } else {
                             return this._lastPositionVisited;
@@ -1194,12 +1148,12 @@
                     }
                 },
 
-                _openState: {
+                _closed: {
                     get: function () {
-                        if (this._visiblePosition === visiblePositions.open) {
-                            return appbarOpenedState;
+                        if (this._visiblePosition === displayModeVisiblePositions.open) {
+                            return false;
                         } else {
-                            return appbarClosedState;
+                            return true;
                         }
                     }
                 },
@@ -1208,19 +1162,19 @@
                     // Change the visible position of our AppBar.
                     // FIRST PARAMETER: 'toPosition' is the string value of the visible position we want to move to.
                     // SECOND PARAMETER: 'newState' is a string value of the new state we are entering (opened/closed). 
-                    // If the value is falsey, then we are not changing states, only moving between position within the same state.
+                    //   If the value is falsey, then we are not changing states, only changing positions within the same state.
                     // RETURN VALUE: This function returns true if the requested position change was successful, else returns false.
 
-                    if (this._visiblePosition === toPosition || this.disabled) {
+                    if (this._visiblePosition === toPosition || (this.disabled && toPosition !== displayModeVisiblePositions.disabled) ) {
                         // If we want to go where we already are, or we're disabled return false.                    
                         return false;
                     } else if (this._animating || this._needToHandleShowingKeyboard || this._needToHandleHidingKeyboard) {
                         // Only do one thing at a time. If we are already animating, 
                         // or the IHM is animating, schedule this for later.
-                        this.doNext = toPosition;
+                        this._doNext = toPosition;
                         return false;
                     } else {
-                        // Begin position changing sequence. 
+                        // Begin position changing sequence.
 
                         //Set the animating flag to block any queued position changes until we're done.
                         this._element.winAnimating = toPosition;
@@ -1234,8 +1188,8 @@
                         this._element.style.display = "";
 
                         // Are we hiding completely, or about to become visible?
-                        var hidingCompletely = (toPosition === visiblePositions.hidden);
-                        var becomingVisible = (fromPosition === visiblePositions.none && !hidingCompletely);
+                        var hidingCompletely = (toPosition === displayModeVisiblePositions.hidden);
+                        var becomingVisible = (fromPosition === displayModeVisiblePositions.hidden && !hidingCompletely);
 
                         if (this._keyboardObscured) {
                             // We're changing position while covered by the IHM.                        
@@ -1243,10 +1197,12 @@
                                 // If we're covered by the IHM we already look hidden. 
                                 // We can skip our animation and just hide.
                                 performAnimation = false;
-                            } else { // We could be opening, or we could be moving into a visible closed display mode.
+                            } else {
+                                // Some portion of the AppBar should be visible to users after its position change.
+
                                 // Un-obscure ourselves and become visible to the user again. 
                                 // Need to animate to our desired position as if we were coming up from behind the keyboard.
-                                fromPosition = visiblePositions.hidden;
+                                fromPosition = displayModeVisiblePositions.hidden;
                                 this._keyboardObscured = false;
                             }
                         }
@@ -1258,7 +1214,8 @@
                             this._beforeClose();
                         }
 
-                        // Define body of work to perform after changing positions and bind it to ourself.
+                        // Define body of work to perform after changing positions. 
+                        // Bind it to ourselves.
                         var afterPositionChange = function _afterPosiitonChange(newPosition) {
                             if (this._disposed) {
                                 return;
@@ -1290,7 +1247,7 @@
                         }.bind(this);
 
                         // Change our position
-                        this._animationPromise = (performAnimation) ? this._animateAppBar(fromPosition, toPosition) : WinJS.Promise.wrap();
+                        this._animationPromise = (performAnimation) ? this._animatePositionChange(fromPosition, toPosition) : WinJS.Promise.wrap();
                         this._animationPromise.then(
                             function () { afterPositionChange(toPosition) },
                             function () { afterPositionChange(toPosition) }
@@ -1344,79 +1301,57 @@
                     this._writeProfilerMark("hide,StopTM"); // Overlay writes the stop profiler mark for all of its derived classes.
                 },
 
-                // AppBar animations
-                _animateAppBar: function (fromPositon, toPosition) {
+                
+                _animatePositionChange: function AppBar_animatePositionChange(fromPosition, toPosition) {
+                    // Determines and executes the proper transition between visible positions
 
                     // Get values in terms of pixels to perform animation.
-                    var offset,
-                        from = this._visiblePixels[fromPosition],
-                        to = this._visblePixels[toPosition],
-                        distanceToMove = Math.abs(to - from);
+                    var beginningOffset,
+                        startingHeight = this._visiblePixels[fromPosition],
+                        endingHeight = this._visiblePixels[toPosition],
+                        distanceToMove = endingHeight - startingHeight;
 
-                    // Position our element into the correct place to account for any scrolling or soft keyboard positioning.                
-                    this._checkPosition();
+                    // Position our element into the correct "end of animation" position, 
+                    // also accounting for any viewport scrolling or soft keyboard positioning.                
+                    this. _ensurePosition();
                     // Get animation direction and clear other value
                     if (this._placement === appBarPlacementTop) {
                         // Top Bar
-                        offset = { top: "-" + distanceToMove + "px", left: "0px" };
+                        beginningOffset = { top: -distanceToMove + "px", left: "0px" };
                         this._element.style.bottom = "auto";
                     } else {
                         // Bottom Bar
-                        offset = { top: distanceToMove + "px", left: "0px" };
+                        beginningOffset = { top: distanceToMove + "px", left: "0px" };
                         this._element.style.top = "auto";
                     }
 
-                    if (to > from) { // Slide forward, taking up more space.
-                        var endingOffset = offset;
-                        return WinJS.UI.Animation.hideEdgeUI(this._element, endingOffset, { mechanism: "transition" });
-                    } else if (from > to) { // Slide backward, taking up less space.
-                        this._element.style.opacity = 1;
-                        this._element.style.visibility = "visible";
-
-                        var beginningOffset = offset;
-                        return WinJS.UI.Animation.showEdgeUI(this._element, beginningOffset, { mechanism: "transition" });
-                    }
-
-
-                },
-
-                // AppBar animations
-                _animateSlideIn: function AppBar_animateSlideIn() {
-                    var begin,
-                        distance = this._element.offsetHeight;
-                    // Position our element into the correct ending place to account for scrolling or soft keyboard positioning                    
-                    this._checkPosition();
-                    // Get animation direction and clear other value
-                    if (this._placement === appBarPlacementTop) {
-                        // Top Bar
-                        begin = { top: "-" + distance + "px", left: "0px" };
-                        this._element.style.bottom = "auto";
-                    } else {
-                        // Bottom Bar
-                        begin = { top: distance + "px", left: "0px" };
-                        this._element.style.top = "auto";
-                    }
-
+                    // Animate
                     this._element.style.opacity = 1;
                     this._element.style.visibility = "visible";
-                    return WinJS.UI.Animation.showEdgeUI(this._element, begin, { mechanism: "transition" });
+                    return WinJS.UI.Animation.showEdgeUI(this._element, beginningOffset, { mechanism: "transition" });
                 },
 
-                _animateSlideOut: function AppBar_animateSlideOut() {
-                    var end,
-                        distance = this._element.offsetHeight;
-                    // Position our element into the correct starting place to account for scrolling or soft keyboard positioning                    
-                    this._checkPosition();
-                    if (this._placement === appBarPlacementTop) {
-                        // Top Bar
-                        end = { top: "-" + distance + "px", left: "0px" };
-                    } else {
-                        // Bottom Bar
-                        end = { top: distance + "px", left: "0px" };
+                _checkDoNext: function AppBar_checkDoNext() {
+                    // Do nothing if we're still animating
+                    if (this._animating || this._needToHandleShowingKeyboard || this._needToHandleHidingKeyboard || this._disposed) {
+                        return;
                     }
 
-                    return WinJS.UI.Animation.hideEdgeUI(this._element, end, { mechanism: "transition" });
-                },
+                    if (this._doNext === displayModeVisiblePositions.disabled ||
+                        this._doNext === displayModeVisiblePositions.hidden ||
+                        this._doNext === displayModeVisiblePositions.minimal) {
+                        // Do close first because animating commands would be easier
+                        this._close(this._doNext);
+                        this._doNext = "";
+                    } else if (this._queuedCommandAnimation) {
+                        // Do queued commands before showing if possible
+                        this._showAndHideQueue();
+                    } else if (this._doNext === displayModeVisiblePositions.open) {
+                        // Show last so that we don't unnecessarily animate commands
+                        this._open();
+                        this._doNext = "";
+                    }
+                },                
 
                 _isABottomAppBarInTheProcessOfShowing: function AppBar_isABottomAppBarInTheProcessOfShowing() {
                     var appbars = document.querySelectorAll("." + appBarClass + "." + bottomClass);
@@ -1683,12 +1618,12 @@
                         event.ensuredFocusedElementInView = true;
                     }
 
-                    // Check if appbar moves or is obscured
+                    // Check if appbar moves or if we're ok leaving it obscured
                     if (!this.hidden && this._placement !== appBarPlacementTop && thisWinUI._Overlay._isFlyoutVisible()) {
                         // Remember that we're obscured
                         this._keyboardObscured = true;
                     } else {
-                        // If not obscured, tag as showing and set timeout to restore us.
+                        // Don't be obscured, clear _scrollHappened flag to give us inference later on when to show ourselves.
                         this._scrollHappened = false;
                     }
 
@@ -1774,7 +1709,7 @@
                             (this._placement !== appBarPlacementTop || thisWinUI._Overlay._keyboardInfo._visibleDocTop !== 0)) {
                             this._doNotFocus = true;
                             this._fakeHide = true;
-                            this._show();
+                            this._open();
                         } else {
                             // Ensure any animation dropped during the showing keyboard are caught up.
                             this._checkDoNext();
@@ -1783,20 +1718,26 @@
                     this._scrollHappened = false;
                 },
 
-                // _checkPosition repositions the AppBar when the soft keyboard shows up
-                _checkPosition: function AppBar_checkPosition() {
-                    var hiddenOffset = (this._element.offsetHeight - this._visibleHeight);
-                    // Bottom's the only one that might need to move for system UI (IHM)
+                _ensurePosition: function AppBar_ensurePosition() {
+                    // Position the AppBar element relative to the top or bottom edge of the visible
+                    // document, based on the the visible position we think we need to be in.
+                    //
+
+                    // How many pixels offscreen will does visible position require the outer edge of the AppBar to be?
+                    var offScreenHeight = (this._element.offsetHeight - this._visiblePixels[this._visiblePosition]);
+                    
                     if (this._placement === appBarPlacementBottom) {
-                        this._element.style.bottom = (this._getAdjustedBottom() + hiddenOffSet) + "px";
+                        // If the IHM is open, the bottom of the visual viewport may or may not be obscured 
+                        // Use _getAdjustedBottom to account for the IHM if it is covering the bottom edge.
+                        this._element.style.bottom = (this._getAdjustedBottom() - offScreenHeight) + "px";
                     } else if (this._placement === appBarPlacementTop) {
-                        this._element.style.top = this._getTopOfVisualViewport() - hiddenOffset + "px";
+                        this._element.style.top = this._getTopOfVisualViewport() - offScreenHeight + "px";
                     }
                     // else we don't touch custom positions
                 },
 
                 _checkScrollPosition: function AppBar_checkScrollPosition(event) {
-                    // If keyboard's animating, then remember we may come in
+                    // If IHM has appeared, then remember we may come in
                     if (this._needToHandleShowingKeyboard) {
                         // Tag that it's OK to edge back in.
                         this._scrollHappened = true;
@@ -1805,7 +1746,7 @@
 
                     // We only need to update if we're visible
                     if (!this.hidden || this._animating) {
-                        this._checkPosition();
+                        this. _ensurePosition();
                         // Ensure any animation dropped during the showing keyboard are caught up.
                         this._checkDoNext();
                     }
