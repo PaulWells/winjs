@@ -532,8 +532,8 @@
                             throw new WinJS.ErrorFromName("WinJS.UI.AppBar.CannotChangePlacementWhenVisible", strings.cannotChangePlacementWhenVisible);
                         }
 
-                        // Set placement
-                        this._placement = value;
+                        // Set placement, coerce invalid values to 'bottom'
+                        this._placement = (value === appBarPlacementTop) ? appBarPlacementTop : appBarPlacementBottom;
 
                         // Clean up win-top, win-bottom styles
                         if (this._placement === appBarPlacementTop) {
@@ -546,9 +546,6 @@
                             WinJS.Utilities.removeClass(this._element, topClass);
                             WinJS.Utilities.removeClass(this._element, bottomClass);
                         }
-
-                        // Make sure our animations are correct
-                        this._assignAnimations();
 
                         // Show again if we hid ourselves for the designer
                         if (wasShown) {
@@ -1096,19 +1093,6 @@
                         var focusableCommands = selectionCommands.concat(globalCommands);
                         focusableCommands.focusedIndex = globalCommandHasFocus ? focusedIndex + selectionCommands.length : focusedIndex;
                         return focusableCommands;
-                    }
-                },
-
-                _assignAnimations: function AppBar_assignAnimations() {
-                    // Make sure the animations are correct for our current placement
-                    if (this._placement === appBarPlacementTop || this._placement === appBarPlacementBottom) {
-                        // Top or Bottom
-                        this._currentAnimateIn = this._animatePositionChange;
-                        this._currentAnimateOut = this._animatePositionChange;
-                    } else {
-                        // Default for in the middle of nowhere
-                        this._currentAnimateIn = this._baseAnimateIn;
-                        this._currentAnimateOut = this._baseAnimateOut;
                     }
                 },
 
