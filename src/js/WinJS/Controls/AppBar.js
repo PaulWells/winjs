@@ -36,9 +36,9 @@
                 topClass = "win-top",
                 bottomClass = "win-bottom";
 
-            var primaryCommandsClass = "win-primarygroup",
-                secondaryCommandsClass = "win-secondarygroup",
-                appBarCommandClass = "win-command";
+            //var primaryCommandsClass = "win-primarygroup",
+            //    secondaryCommandsClass = "win-secondarygroup",
+            //    appBarCommandClass = "win-command";
 
             var firstDivClass = "win-firstdiv",
                 finalDivClass = "win-finaldiv";

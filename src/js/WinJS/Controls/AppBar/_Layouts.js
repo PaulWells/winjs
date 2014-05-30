@@ -3,6 +3,11 @@
 (function overlayInit(WinJS) {
     "use strict";
 
+    // Common Class Names
+    var primaryCommandsClass = "win-primarygroup",
+        secondaryCommandsClass = "win-secondarygroup",
+        appBarCommandClass = "win-command";
+
     WinJS.Namespace.define("WinJS.UI", {
         _AppBarCommandsLayout: WinJS.Namespace._lazy(function () {
 
@@ -25,7 +30,7 @@
 
         _AppBarCommandMenuLayout: WinJS.Namespace._lazy(function () {
 
-            var _AppBarCommandMenuLayout = WinJS.Class.define(function _AppBarCommandMenuLayout(appbarEl) {
+            var _AppBarCommandMenuLayout = WinJS.Class.define(function _AppBarCommandMenuLayout_ctor(appbarEl) {
                 /// <signature helpKeyword="WinJS.UI._AppBarCommandMenuLayout">       
                 /// TODO coment
                 /// </signature>
@@ -59,7 +64,7 @@
         },
         connect: function _AppBarLayouts_connect(appbarEl) {
             WinJS.Utilities.addClass(appbarEl, this.className)
-            this.appbarEl = appbbarEl;
+            this.appbarEl = appbarEl;
         },
         layout: function _AppBarLayouts_layout(commands) {
 
@@ -67,7 +72,7 @@
             WinJS.Utilities.empty(this._secondaryCommands);
 
             for (var i = 0, len = commands.length; i < len; i++) {
-                var command = _sanitizeCommand(commands[i]);
+                var command = this.appbarEl.winControl._sanitizeCommand(commands[i]);
                 if ("global" === command.section) {
                     this._primaryCommands.appendChild(command._element);
                 } else {
@@ -186,7 +191,7 @@
             var globalCommandHasFocus = this._primaryCommands.contains(document.activeElement);
             var firstCommand = this._getFocusableCommandsInLogicalOrder(globalCommandHasFocus)[0].winControl.firstElementFocus;
             if (firstCommand) {
-                firstCommand.focus();                
+                firstCommand.focus();
             }
         }
     }
