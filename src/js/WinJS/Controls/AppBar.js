@@ -1135,7 +1135,7 @@
                     // Change the visible position of our AppBar.
                     // FIRST PARAMETER: 'toPosition' is the string value of the visible position we want to move to.
                     // SECOND PARAMETER: 'newState' is a string value of the new state we are entering (opened/closed). 
-                    //   If the value is falsey, then we are not changing states, only changing positions within the same state.
+                    //   If the value is null, then we are not changing states, only changing visible positions.
                     // RETURN VALUE: This function returns true if the requested position change was successful, else returns false.
 
                     if (this._visiblePosition === toPosition || (this.disabled && toPosition !== displayModeVisiblePositions.disabled)) {
@@ -1696,7 +1696,7 @@
                     // document, based on the the visible position we think we need to be in.
                     //
 
-                    // How many pixels offscreen will does visible position require the outer edge of the AppBar to be?
+                    // How many pixels offscreen will our visible position require the outer edge of the AppBar to be?
                     var offScreenHeight = (this._element.offsetHeight - this._visiblePixels[this._visiblePosition]);
 
                     if (this._placement === appBarPlacementBottom) {
