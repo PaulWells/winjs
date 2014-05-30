@@ -29,16 +29,20 @@
             var Key = WinJS.Utilities.Key;
 
             // Class Names
-            var commandClass = "win-commandlayout",
+            var commandLayoutClass = "win-commandlayout",
                 appBarClass = "win-appbar",
                 reducedClass = "win-reduced",
                 settingsFlyoutClass = "win-settingsflyout",
                 topClass = "win-top",
-                bottomClass = "win-bottom",
+                bottomClass = "win-bottom";
+
+            var primaryCommandsClass = "win-primarygroup",
+                secondaryCommandsClass = "win-secondarygroup",
                 appBarCommandClass = "win-command";
 
             var firstDivClass = "win-firstdiv",
                 finalDivClass = "win-finaldiv";
+
 
             // Constants for placement
             var appBarPlacementTop = "top",
@@ -374,6 +378,26 @@
                 thisWinUI._Overlay._trySetActive(thisWinUI.AppBar._ElementWithFocusPreviousToAppBar);
             }
 
+            function _sanitizeCommand(command) {
+
+                if (!command) {
+                    throw new WinJS.ErrorFromName("WinJS.UI.AppBar.NullCommand", strings.nullCommand);
+                }
+
+                // See if it's a command already
+                command = command.winControl || command;
+                if (!command._element) {
+                    // Not a command, so assume it is options for the command's constructor.
+                    command = new WinJS.UI.AppBarCommand(null, command);
+                }
+                // If we were attached somewhere else, detach us
+                if (command._element.parentElement) {
+                    command._element.parentElement.removeChild(command._element);
+                }
+
+                return command;
+            }
+
             var strings = {
                 get ariaLabel() { return WinJS.Resources._getWinJSString("ui/appBarAriaLabel").value; },
                 get requiresCommands() { return WinJS.Resources._getWinJSString("ui/requiresCommands").value; },
@@ -413,10 +437,14 @@
                     this._element.tabIndex = -1;
                 }
 
+                // Set layout immediately. 
+                this.layout = options.layout || appBarLayoutCommands;
+                delete options.layout;
+
                 // validate that if they didn't set commands, but want command
                 // layout that the HTML only contains commands.  Do this first
                 // so that we don't leave partial AppBars in the DOM.
-                if (options.layout !== appBarLayoutCustom && !options.commands && this._element) {
+                if (this.layout !== appBarLayoutCustom && !options.commands && this._element) {
                     // Shallow copy object so we can modify it.
                     options = WinJS.Utilities._shallowCopy(options);
                     options.commands = this._verifyCommandsOnly(this._element, "WinJS.UI.AppBarCommand");
@@ -434,7 +462,7 @@
                 WinJS.Utilities.addClass(this._element, appBarClass);
                 // Also may need a command class if not a custom layout appbar
                 if (options.layout !== appBarLayoutCustom) {
-                    WinJS.Utilities.addClass(this._element, commandClass);
+                    WinJS.Utilities.addClass(this._element, commandLayoutClass);
                 }
 
                 if (!options.placement) {
@@ -542,8 +570,7 @@
                 /// </field>
                 layout: {
                     get: function () {
-                        // Defaults to commands if not set
-                        return this._layout ? this._layout : appBarLayoutCommands;
+                        return this._layout;
                     },
                     set: function (value) {
                         if (value !== appBarLayoutCommands && value !== appBarLayoutCustom) {
@@ -557,20 +584,24 @@
                             wasShown = true;
                         }
 
-                        if (!this.hidden) {
+                        if (!this.hidden && !this._initializing) {
                             throw new WinJS.ErrorFromName("WinJS.UI.AppBar.CannotChangeLayoutWhenVisible", strings.cannotChangeLayoutWhenVisible);
+                        }
+
+                        if (this._layoutImpl) {
+                            this._layoutImpl.disconnect();
                         }
 
                         // Set layout
                         this._layout = value;
 
-                        // Update our classes
+                        // Instantiate new layout
                         if (this._layout === appBarLayoutCommands) {
-                            // Add the appbar css class back
-                            WinJS.Utilities.addClass(this._element, commandClass);
+                            this._layoutImpl = new WinJS.UI._AppBarCommandsLayout();
+                            this._layoutImpl.connect(this._element);
                         } else {
-                            // Remove the appbar css class
-                            WinJS.Utilities.removeClass(this._element, commandClass);
+                            // Custom layout specified
+                            this._layoutImpl = null;
                         }
 
                         // Show again if we hid ourselves for the designer
@@ -624,8 +655,8 @@
                 /// <field type="Array" locid="WinJS.UI.AppBar.commands" helpKeyword="WinJS.UI.AppBar.commands" isAdvanced="true">
                 /// Sets the AppBarCommands in the AppBar. This property accepts an array of AppBarCommand objects.
                 /// </field>
-                commands: {                  
-                    set: function (value) {
+                commands: {
+                    set: function (commands) {
                         // Fail if trying to set when visible
                         if (!this.hidden) {
                             throw new WinJS.ErrorFromName("WinJS.UI.AppBar.CannotChangeCommandsWhenVisible", WinJS.Resources._formatString(thisWinUI._Overlay.commonstrings.cannotChangeCommandsWhenVisible, "AppBar"));
@@ -638,15 +669,16 @@
                         }
                         WinJS.Utilities.empty(this._element);
 
-                        // In case they had only one...
-                        if (!Array.isArray(value)) {
-                            value = [value];
+                        // In case they had only one command to set...
+                        if (!Array.isArray(commands)) {
+                            commands = [commands];
                         }
 
-                        // Add commands
-                        var len = value.length;
-                        for (var i = 0; i < len; i++) {                        
-                            this._addCommand(value[i]);
+                        // Add commands   
+                        if (this._layoutImpl) {
+                            this._layoutImpl.layout(commands);
+                        } else {
+                            this._addCommands(commands);
                         }
 
                         // Need to measure all content commands after they have been added to the AppBar to make sure we allow 
@@ -904,22 +936,25 @@
                 },
 
                 _disposeChildren: function AppBar_disposeChildren() {
-                    var appBarFirstDiv = this._element.querySelectorAll("." + firstDivClass);
-                    appBarFirstDiv = appBarFirstDiv.length >= 1 ? appBarFirstDiv[0] : null;
-                    var appBarFinalDiv = this._element.querySelectorAll("." + finalDivClass);
-                    appBarFinalDiv = appBarFinalDiv.length >= 1 ? appBarFinalDiv[0] : null;
+                    // Be purposeful about what we dispose.
 
-                    var children = this.element.children;
-                    var length = children.length;
-                    for (var i = 0; i < length; i++) {
-                        var element = children[i];
-                        if (element === appBarFirstDiv || element === appBarFinalDiv) {
-                            continue;
-                        }
-                        if (this.layout === appBarLayoutCommands) {
-                            element.winControl.dispose();
-                        } else {
-                            WinJS.Utilities.disposeSubTree(element);
+                    if (this._layoutImpl) {
+                        this._layoutImpl.disposeChildren();
+                    } else {
+                        var appBarFirstDiv = this._element.querySelectorAll("." + firstDivClass);
+                        appBarFirstDiv = appBarFirstDiv.length >= 1 ? appBarFirstDiv[0] : null;
+                        var appBarFinalDiv = this._element.querySelectorAll("." + finalDivClass);
+                        appBarFinalDiv = appBarFinalDiv.length >= 1 ? appBarFinalDiv[0] : null;
+
+                        var children = this.element.children;
+                        var length = children.length;
+                        for (var i = 0; i < length; i++) {
+                            var element = children[i];
+                            if (element === appBarFirstDiv || element === appBarFinalDiv) {
+                                continue;
+                            } else {
+                                WinJS.Utilities.disposeSubTree(element);
+                            }
                         }
                     }
                 },
@@ -939,101 +974,8 @@
                     }
 
                     // Commands layout only.
-                    if (this.layout === appBarLayoutCommands && !event.altKey) {
-                        if (WinJS.Utilities._matchesSelector(event.target, ".win-interactive, .win-interactive *")) {
-                            return; //ignore left, right, home & end keys if focused element has win-interactive class.
-                        }
-                        var rtl = getComputedStyle(this._element).direction === "rtl";
-                        var leftKey = rtl ? Key.rightArrow : Key.leftArrow;
-                        var rightKey = rtl ? Key.leftArrow : Key.rightArrow;
-
-                        if (event.keyCode === leftKey || event.keyCode == rightKey || event.keyCode === Key.home || event.keyCode === Key.end) {
-
-                            var focusableCommands = this._getFocusableCommandsInLogicalOrder();
-                            var targetCommand;
-
-                            if (focusableCommands.length) {
-                                switch (event.keyCode) {
-                                    case leftKey:
-                                        // Arrowing past the last command wraps back around to the first command.
-                                        var index = Math.max(-1, focusableCommands.focusedIndex - 1) + focusableCommands.length;
-                                        targetCommand = focusableCommands[index % focusableCommands.length].winControl.lastElementFocus;
-                                        break;
-
-                                    case rightKey:
-                                        // Arrowing previous to the first command wraps back around to the last command.
-                                        var index = focusableCommands.focusedIndex + 1 + focusableCommands.length;
-                                        targetCommand = focusableCommands[index % focusableCommands.length].winControl.firstElementFocus;
-                                        break;
-
-                                    case Key.home:
-                                        var index = 0;
-                                        targetCommand = focusableCommands[index].winControl.firstElementFocus;
-                                        break;
-
-                                    case Key.end:
-                                        var index = focusableCommands.length - 1;
-                                        targetCommand = focusableCommands[index].winControl.lastElementFocus;
-                                        break;
-                                }
-                            }
-
-                            if (targetCommand) {
-                                targetCommand.focus();
-                                // Prevent default so that Trident doesn't resolve the keydown event on the newly focused element.
-                                event.preventDefault();
-                            }
-                        }
-                    }
-                },
-
-                _getFocusableCommandsInLogicalOrder: function AppBar_getCommandsInLogicalOrder() {
-                    // Function returns an array of all the contained AppBarCommands which are reachable by left/right arrows.
-                    //
-                    if (this.layout === appBarLayoutCommands) {
-                        var selectionCommands = [],
-                            globalCommands = [],
-                            children = this._element.children,
-                            globalCommandHasFocus = false,
-                            focusedIndex = -1;
-
-                        var categorizeCommand = function (element, isGlobalCommand, containsFocus) {
-                            // Helper function to categorize the element by AppBarCommand's section property. The passed in element could be the
-                            // AppBarCommand, or the element referenced by a content AppBarCommands's firstElementFocus/lastElementFocus property.
-                            //
-                            if (isGlobalCommand) {
-                                globalCommands.push(element);
-                                if (containsFocus) {
-                                    focusedIndex = globalCommands.length - 1;
-                                    globalCommandHasFocus = true;
-                                }
-                            } else {
-                                selectionCommands.push(element);
-                                if (containsFocus) {
-                                    focusedIndex = selectionCommands.length - 1;
-                                }
-                            }
-                        }
-
-                        // Separate commands into global and selection arrays. Find the current command with focus. 
-                        // Skip the first and last indices to avoid "firstDiv" and "finalDiv".
-                        for (var i = 1, len = children.length; i < len - 1; i++) {
-                            var element = children[i];
-                            if (element && element.winControl) {
-                                var containsFocus = element.contains(document.activeElement);
-                                // With the inclusion of content type commands, it may be possible to tab to elements in AppBarCommands that are not reachable by arrow keys.
-                                // Regardless, when an AppBarCommand contains the element with focus, we just include the whole command so that we can determine which
-                                // Commands are adjacent to it when looking for the next focus destination.
-                                if (element.winControl._isFocusable() || containsFocus) {
-                                    var isGlobalCommand = (element.winControl.section === "global");
-                                    categorizeCommand(element, isGlobalCommand, containsFocus);
-                                }
-                            }
-                        }
-
-                        var focusableCommands = selectionCommands.concat(globalCommands);
-                        focusableCommands.focusedIndex = globalCommandHasFocus ? focusedIndex + selectionCommands.length : focusedIndex;
-                        return focusableCommands;
+                    if (this._layoutImpl && !event.altKey) {
+                        this._layoutImpl.handleKeyDown(event);
                     }
                 },
 
@@ -1260,11 +1202,22 @@
                     }
                 },
 
-                _addCommand: function AppBar_addCommand(command) {
+                _addCommands: function AppBar_addCommands(commands) {
+                    var len = value.length;
+                    for (var i = 0; i < len; i++) {
+                        var command = this._sanitizeCommand(commands[i]);
+                        this._element.appendChild(command._element);
+                    }
+                },
+
+                _sanitizeCommand: function AppBar_sanitizeCommand(command) {
+
                     if (!command) {
                         throw new WinJS.ErrorFromName("WinJS.UI.AppBar.NullCommand", strings.nullCommand);
                     }
+
                     // See if it's a command already
+                    command = command.winControl || command;
                     if (!command._element) {
                         // Not a command, so assume it is options for the command's constructor.
                         command = new WinJS.UI.AppBarCommand(null, command);
@@ -1273,8 +1226,8 @@
                     if (command._element.parentElement) {
                         command._element.parentElement.removeChild(command._element);
                     }
-                    // Reattach us
-                    this._element.appendChild(command._element);
+
+                    return command;
                 },
 
                 _measureContentCommands: function AppBar_measureContentCommands() {

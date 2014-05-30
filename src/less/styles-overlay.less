@@ -242,22 +242,102 @@ AppBar Edgy Container
 /*
 AppBar control.
 */
+
+/**********
+    COMMAND Layout
+ **********/
 .win-commandlayout {
-    text-align: right;
+    /*text-align: right;*/
 
     /* Hide whitespace between buttons. */
     font-size: 0;
 
     min-height: 88px;
+
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: flex-start;
+
 }
-.win-commandlayout .win-selection {
-    float: left;
+.win-commandlayout .win-primarygroup {
+    order: 2;
+    display: inline-flex;
+    flex: 1 1 auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
+.win-commandlayout .win-secondarygroup {
+    order: 1;
+    display: inline-flex;
+    flex: 1 1 auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;    
+}
+.win-commandlayout .win-command {
+    flex: 0 0 auto; 
+}
+
+/* CommandsLayout RTL */
 .win-commandlayout:-ms-lang(@{rtl}) {
-    text-align: left;
+    flex-direction: row-reverse;
 }
-.win-commandlayout .win-selection:-ms-lang(@{rtl}) {
-    float: right;
+.win-commandlayout:-ms-lang(@{rtl}) .win-primarygroup {
+    flex-direction: row-reverse;
+}
+.win-commandlayout:-ms-lang(@{rtl}) .win-secondarygroup {        
+    flex-direction: row-reverse;
+}
+
+/********** 
+    DRAWER Layout 
+**********/
+
+.win-commandlayout.win-drawer {
+    flex-wrap: wrap;
+    max-height: 50%;
+}
+.win-commandlayout.win-drawer .win-primarygroup {    
+    flex: 1 1 100%;
+    justify-content: center;
+}
+
+.win-commandlayout.win-drawer .win-secondarygroup{
+    flex: 1 1 100%;    
+    box-sizing: border-box;
+    max-height: 353.45px;
+    overflow-y:scroll;
+}
+
+/* Bottom Drawer */
+.win-commandlayout.win-drawer.win-bottom .win-primarygroup {
+    order: 1;
+}
+.win-commandlayout.win-drawer.win-bottom .win-secondarygroup {
+    order: 2;
+    flex-direction: column;
+}
+
+/* Top Drawer */
+.win-commandlayout.win-drawer.win-top .win-primarygroup {
+    order: 2;
+}
+.win-commandlayout.win-drawer.win-top .win-secondarygroup {
+    order: 1;
+    flex-direction: column-reverse;
+}
+
+/* Secondary Commands in Drawer */
+.win-commandlayout.win-drawer .win-secondarygroup .win-command .win-label {
+    padding: 0 0 20px 25px;
+    font-size: 20pt;
+    font-weight:normal;
+}
+.win-commandlayout.win-drawer .win-secondarygroup .win-command .win-commandring {
+    display: none;
 }
 
 /* Narrow buttons and no labels */
