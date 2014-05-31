@@ -37,12 +37,11 @@
                 bottomClass = "win-bottom";
 
             //var primaryCommandsClass = "win-primarygroup",
-            //    secondaryCommandsClass = "win-secondarygroup",
-            //    appBarCommandClass = "win-command";
+            //    secondaryCommandsClass = "win-secondarygroup";
+            var appBarCommandClass = "win-command";
 
             var firstDivClass = "win-firstdiv",
                 finalDivClass = "win-finaldiv";
-
 
             // Constants for placement
             var appBarPlacementTop = "top",
@@ -577,6 +576,8 @@
                             throw new WinJS.ErrorFromName("WinJS.UI.AppBar.BadLayout", strings.badLayout);
                         }
 
+                        this._changingLayout = true;
+
                         // In designer we may have to redraw it
                         var wasShown = false;
                         if (window.Windows && Windows.ApplicationModel && Windows.ApplicationModel.DesignMode && Windows.ApplicationModel.DesignMode.designModeEnabled && !this.hidden) {
@@ -588,8 +589,16 @@
                             throw new WinJS.ErrorFromName("WinJS.UI.AppBar.CannotChangeLayoutWhenVisible", strings.cannotChangeLayoutWhenVisible);
                         }
 
+                        var commands;
                         if (this._layoutImpl) {
+                            // get the commands back from the layout, in the order they were set in, 
+                            // instead of whatever DOM order the layout might have them in currently.
+                            commands = _layoutImpl.commands;
                             this._layoutImpl.disconnect();
+                        } else {
+                            // If layout was custom, get commands from the AppBar in DOM order, 
+                            // since they may not have used the commands setter to get them there.
+                            commands = this._element.querySelectorAll("." + appBarCommandClass);
                         }
 
                         // Set layout
@@ -599,15 +608,23 @@
                         if (this._layout === appBarLayoutCommands) {
                             this._layoutImpl = new WinJS.UI._AppBarCommandsLayout();
                             this._layoutImpl.connect(this._element);
+
                         } else {
                             // Custom layout specified
                             this._layoutImpl = null;
+                        }
+
+                        if (commands.length && !this._initializing) {
+                            // Reset commands since layout changed.
+                            this.commands = commands;
                         }
 
                         // Show again if we hid ourselves for the designer
                         if (wasShown) {
                             this._show();
                         }
+
+                        this._changingLayout = false;
                     },
                     configurable: true
                 },
@@ -663,7 +680,7 @@
                         }
 
                         // Start from scratch
-                        if (!this._initializing) {
+                        if (!this._initializing && !this._changingLayout) {
                             // AppBarCommands defined in markup don't want to be disposed during initialization.
                             this._disposeChildren();
                         }
@@ -1098,17 +1115,19 @@
                 },
 
                 _contentChanged: function AppBar_contentChanged() {
-                    this._updateCommandsWidth();
-                    this._scaleAppBar();
+                    if (this._layoutImpl) {
+                        this._layoutImpl.updateCommandsWidth();
+                        this._scaleAppBar();
+                    }
                 },
 
                 _scaleAppBar: function AppBar_scaleAppBar() {
-                    // For commands layout AppBars only. If the total width of all AppBarCommands is greater than the
+                    // For commands layout AppBars only. If the total width of all AppBarCommands in the primary row is greater than the
                     // width of the AppBar, add the win-reduced class to the AppBar element.
 
-                    if (this.layout === appBarLayoutCommands) {
-                        //  Measure AppBar's contents width, AppBar offsetWidth and AppBar padding:   
-                        var widthOfVisibleContent = this._getCommandsWidth();
+                    if (this._layoutImpl) {
+                        //  Measure the width all visible commands in  AppBar's primary row, the AppBar's offsetWidth and the AppBar horizontal padding:   
+                        var widthOfVisibleContent = this._layoutImpl.getWidthOfPrimaryRow();
                         if (this._appBarTotalKnownWidth !== +this._appBarTotalKnownWidth) {
                             this._appBarTotalKnownWidth = this._scaleAppBarHelper();
                         }
@@ -1122,6 +1141,7 @@
                             WinJS.Utilities.addClass(this._element, reducedClass);
                         }
                     }
+
                 },
 
                 _scaleAppBarHelper: function AppBar_scaleAppBarHelper() {
@@ -1130,60 +1150,20 @@
                     return document.documentElement.clientWidth;
                 },
 
-                _updateCommandsWidth: function AppBar_updateCommandsWidth(commandSubSet) {
-                    // Whenever Commands are hidden/shown in the Commands layout AppBar, this function is called 
-                    // to update the cached width measurement of all visible AppBarCommands in the AppBar.
-                    if (this.layout === appBarLayoutCommands) {
-                        var buttonsCount = 0;
-                        var separatorsCount = 0;
-                        var command;
-                        var commands = commandSubSet;
-
-                        this._widthOfAllCommands = 0;
-                        if (!commands) {
-                            // Crawl the AppBar's inner HTML for the commands.
-                            commands = this._getVisibleCommands();
-                        }
-                        this._widthOfAllCommands = this._getCommandsWidth(commands);
-                    }
-                },
-
-                _getCommandsWidth: function AppBar_getCommandsWidth(commandSubSet) {
-                    if (!commandSubSet) {
-                        // Return the cached width of all previously visible commands in the AppBar.
-                        return this._widthOfAllCommands;
-                    } else {
-                        // Return the width of the specified subset.
-                        var separatorsCount = 0;
-                        var buttonsCount = 0;
-                        var widthOfCommandSubSet = 0;
-                        var command;
-                        for (var i = 0, len = commandSubSet.length; i < len; i++) {
-                            command = commandSubSet[i].winControl || commandSubSet[i];
-                            if (command._type === typeSeparator) {
-                                separatorsCount++
-                            } else if (command._type !== typeContent) {
-                                // button, toggle, and flyout types all have the same width.
-                                buttonsCount++;
-                            } else {
-                                widthOfCommandSubSet += command._fullSizeWidth;
-                            }
-                        }
-                    }
-                    return widthOfCommandSubSet += (separatorsCount * separatorWidth) + (buttonsCount * buttonWidth);
-                },
-
                 _beginAnimateCommands: function AppBar_beginAnimateCommands(showCommands, hideCommands, otherVisibleCommands) {
                     // The parameters are 3 mutually exclusive arrays of win-command elements contained in this Overlay.
                     // 1) showCommands[]: All of the HIDDEN win-command elements that ARE scheduled to show. 
                     // 2) hideCommands[]: All of the VISIBLE win-command elements that ARE scheduled to hide.
                     // 3) otherVisibleCommands[]: All VISIBLE win-command elements that ARE NOT scheduled to hide.                               
-                    if (this.layout === appBarLayoutCommands) {
+                    if (this._layoutImpl) {
                         this._scaleCommandsAfterAnimations = false;
+
                         // Update our command counts now, to what they will be after we complete the animations.
                         var visibleCommandsAfterAnimations = otherVisibleCommands.concat(showCommands);
-                        this._updateCommandsWidth(visibleCommandsAfterAnimations)
-                        var changeInWidth = this._getCommandsWidth(showCommands) - this._getCommandsWidth(hideCommands);
+                        this._layoutImpl.updateCommandsWidth(visibleCommandsAfterAnimations)
+
+                        // Determine if the overall width of visible commands in the primary row will be increasing OR decreasing.                        
+                        var changeInWidth = this._layoutImpl.getWidthOfPrimaryRow(showCommands) - this._layoutImpl.getWidthOfPrimaryRow(hideCommands);
                         if (changeInWidth > 0) {
                             // Width of contents is going to increase. If there won't be enough room to fit them all on a single row,
                             // reduce size of commands before the new content appears.
@@ -1203,7 +1183,7 @@
                 },
 
                 _addCommands: function AppBar_addCommands(commands) {
-                    var len = value.length;
+                    var len = commands.length;
                     for (var i = 0; i < len; i++) {
                         var command = this._sanitizeCommand(commands[i]);
                         this._element.appendChild(command._element);
@@ -1247,10 +1227,10 @@
                         var prevCommandDisplay;
                         this.element.style.display = "";
 
-                        var commandElements = this._element.children;
+                        var contentElements = this._element.querySelectorAll("div." + appBarCommandClass);
                         var element;
-                        for (var i = 0, len = commandElements.length; i < len; i++) {
-                            element = commandElements[i];
+                        for (var i = 0, len = contentElements.length; i < len; i++) {
+                            element = contentElements[i];
                             if (element.winControl && element.winControl._type === typeContent) {
                                 // Make sure command has width dimensions before we measure.
                                 prevCommandDisplay = element.style.display;

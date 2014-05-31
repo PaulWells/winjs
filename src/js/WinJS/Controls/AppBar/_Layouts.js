@@ -8,6 +8,12 @@
         secondaryCommandsClass = "win-secondarygroup",
         appBarCommandClass = "win-command";
 
+    // Constants for AppBarCommands
+    var typeSeparator = "separator",
+        typeContent = "content",
+        separatorWidth = 60,
+        buttonWidth = 100;
+
     WinJS.Namespace.define("WinJS.UI", {
         _AppBarCommandsLayout: WinJS.Namespace._lazy(function () {
 
@@ -22,6 +28,44 @@
                     get: function _AppBarCommandsLayout_getClassName() {
                         return "win-commandlayout";
                     }
+                },
+
+                updateCommandsWidth: function _AppBarCommandsLayout_updateCommandsWidth(commandSubSet) {
+                    // Whenever Commands are hidden/shown in the Commands layout AppBar, this function is called 
+                    // to update the cached width measurement of all visible AppBarCommands in the AppBar.
+                    var commands = commandSubSet;
+
+                    this._widthOfAllCommands = 0;
+                    if (!commands) {
+                        // Crawl the AppBar's inner HTML for the commands.
+                        commands = this.appbarEl.winControl._getVisibleCommands();
+                    }
+                    this._widthOfAllCommands = this.getWidthOfPrimaryRow(commands);
+                },
+
+                getWidthOfPrimaryRow: function _AppBarCommandsLayout_getWidthOfPrimaryRow(commandSubSet) {
+                    if (!commandSubSet) {
+                        // Return the cached width of all previously visible commands in the AppBar.
+                        return this._widthOfAllCommands;
+                    } else {
+                        // Return the width of the specified subset.
+                        var separatorsCount = 0;
+                        var buttonsCount = 0;
+                        var widthOfCommandSubSet = 0;
+                        var command;
+                        for (var i = 0, len = commandSubSet.length; i < len; i++) {
+                            command = commandSubSet[i].winControl || commandSubSet[i];
+                            if (command._type === typeSeparator) {
+                                separatorsCount++
+                            } else if (command._type !== typeContent) {
+                                // button, toggle, and flyout types all have the same width.
+                                buttonsCount++;
+                            } else {
+                                widthOfCommandSubSet += command._fullSizeWidth;
+                            }
+                        }
+                    }
+                    return widthOfCommandSubSet += (separatorsCount * separatorWidth) + (buttonsCount * buttonWidth);
                 },
             });
             WinJS.Class.mix(_AppBarCommandsLayout, _AppBarLayoutsMixin);
@@ -68,11 +112,19 @@
         },
         layout: function _AppBarLayouts_layout(commands) {
 
+            // Empty our tree.
             WinJS.Utilities.empty(this._primaryCommands);
             WinJS.Utilities.empty(this._secondaryCommands);
 
+            // Keep track of the order we receive the commands in.
+            this._commandsInOriginalOrder = [];
+
+            // Layout commands
             for (var i = 0, len = commands.length; i < len; i++) {
                 var command = this.appbarEl.winControl._sanitizeCommand(commands[i]);
+
+                this._commandsInOriginalOrder.push(command.element);
+
                 if ("global" === command.section) {
                     this._primaryCommands.appendChild(command._element);
                 } else {
@@ -80,9 +132,18 @@
                 }
             }
 
-            // Append layout to appbar element
+            // Append layout to AppBar element
             this.appbarEl.appendChild(this._primaryCommands);
             this.appbarEl.appendChild(this._secondaryCommands);
+        },
+        // Returns an Array of the AppBarCommand Elements the layout is using, in the same order that the layout recieved them in.
+        commands: {
+            get: function () {
+                return this._commandsInOriginalOrder.map(function (command) {
+                    // Make sure the element is still in the AppBar.
+                    return this.appbarEl.contains(command);
+                }, this);
+            }
         },
         disposeChildren: function _AppBarLayouts_disposeChildren() {
             WinJS.Utilities.disposeSubTree(this._primaryCommands);
