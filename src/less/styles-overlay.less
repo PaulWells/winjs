@@ -249,42 +249,41 @@ AppBar commands layout
     font-size: 0;
     min-height: 88px;
 
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: center;
-    align-items: flex-start;
-
+    #flex > .display-flex();
+    #flex > .flex-direction(row);
+    #flex > .flex-wrap(nowrap);
+    #flex > .justify-content(center);
+    #flex > .align-items(flex-start);
 }
 .win-commandlayout .win-primarygroup {
-    order: 2;
-    display: inline-flex;
-    flex: 1 1 auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    #flex > .order(2);
+    #flex > .display-inline-flex();
+    #flex > .flex(1; 1; auto);
+    #flex > .flex-direction(row);
+    #flex > .flex-wrap(wrap);
+    #flex > .justify-content(flex-end);
 }
 .win-commandlayout .win-secondarygroup {
-    order: 1;
-    display: inline-flex;
-    flex: 1 1 auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;    
+    #flex > .order(1);
+    #flex > .display-inline-flex();
+    #flex > .flex(1; 1; auto);
+    #flex > .flex-direction(row);
+    #flex > .flex-wrap(wrap);
+    #flex > .justify-content(flex-start);
 }
 .win-commandlayout .win-command {
-    flex: 0 0 auto; 
+    #flex > .flex(0; 0; auto);
 }
 
 /* CommandsLayout RTL */
 .win-commandlayout:-ms-lang(@{rtl}) {
-    flex-direction: row-reverse;
+    #flex > .flex-direction(row-reverse);
 }
 .win-commandlayout:-ms-lang(@{rtl}) .win-primarygroup {
-    flex-direction: row-reverse;
+    #flex > .flex-direction(row-reverse);
 }
 .win-commandlayout:-ms-lang(@{rtl}) .win-secondarygroup {        
-    flex-direction: row-reverse;
+    #flex > .flex-direction(row-reverse);
 }
 
 /* Narrow buttons and no labels */
