@@ -110,7 +110,7 @@
     });
 
 
-    // These are functions and properties that a new layout would shaare with the existing commands layout.
+    // These are functions and properties that a new layout would share with the existing commands layout.
     var _AppBarLayoutsMixin = {
         _initLayout: function _AppBarLayouts_init(appbarEl) {
             // Create layout infrastructure
@@ -127,6 +127,7 @@
             this.appbarEl = appbarEl;
         },
         layout: function _AppBarLayouts_layout(commands) {
+            // Insert commands and other layout specific DOM into the AppBar element.
 
             // Empty our tree.
             WinJS.Utilities.empty(this._primaryCommands);
@@ -152,7 +153,8 @@
             this.appbarEl.appendChild(this._primaryCommands);
             this.appbarEl.appendChild(this._secondaryCommands);
         },
-        // Gets an Array of the AppBarCommand Elements the layout is using, in the same order that the layout recieved them in.
+        // Gets an Array of the AppBarCommand Elements that the layout is using.
+        // Commands in the Array are in the same order that the layout first recieved them in.
         commands: {
             get: function () {
                 return this._commandsInOriginalOrder.filter(function (command) {
@@ -219,7 +221,7 @@
             }
         },        
         takeFocus: function _AppBarLayouts_takeFocus() {
-            // layout should take focus and put it on its first command.
+            // Tells layout layout to put focus on its first command.
             var globalCommandHasFocus = this._primaryCommands.contains(document.activeElement);
             var firstCommand = this._getFocusableCommandsInLogicalOrder(globalCommandHasFocus)[0].winControl.firstElementFocus;
             if (firstCommand) {

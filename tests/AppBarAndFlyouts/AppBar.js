@@ -171,6 +171,7 @@ CorsicaTests.AppBarTests = function () {
 
         LiveUnit.Assert.areEqual(that._element, AppBar.element, "Verifying that element is what we set it with");
         LiveUnit.Assert.areEqual("bottom", AppBar.placement, "Verifying that position is 'bottom'");
+        LiveUnit.Assert.areEqual("commands", AppBar.layout, "Verifying that layout is 'commands'");
         LiveUnit.Assert.isFalse(AppBar.sticky, "Verifying that sticky is false");
         LiveUnit.Assert.isFalse(AppBar.disabled, "Verifying that disabled is false");
         LiveUnit.Assert.isTrue(AppBar.hidden, "Verifying that hidden is true");
@@ -580,7 +581,7 @@ CorsicaTests.AppBarTests = function () {
         appBar.show();
 
         // ClickEater add/remove are high priority scheduler jobs, so we schedule an idle priority asserts
-        appBar.addEventListener("aftershow", function() {
+        appBar.addEventListener("aftershow", function () {
             var clickEater = document.querySelector("." + WinJS.UI._Overlay._clickEatingAppBarClass);
             LiveUnit.Assert.isTrue(clickEater);
             LiveUnit.Assert.areNotEqual("none", clickEater.style.display);
@@ -607,7 +608,7 @@ CorsicaTests.AppBarTests = function () {
         var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"));
 
         OverlayHelpers.Assert.dismissesWhenLosingFocus({
-            overlay:appBar,
+            overlay: appBar,
             focusTo: outsideAppBar
         }).then(complete);
     };
@@ -661,13 +662,13 @@ CorsicaTests.AppBarTests = function () {
                     LiveUnit.Assert.isFalse(appBar.hidden, "AppBar should initially be visible");
 
                     return Helper.waitForFocus(menu.element, function () { menuButton.click() })
-                }).then(function() {
+                }).then(function () {
                     LiveUnit.Assert.isTrue(menu.element.contains(document.activeElement), "After opening the menu, focus should be within it");
                     LiveUnit.Assert.isFalse(menu.hidden, "Menu should be visible");
                     LiveUnit.Assert.isFalse(appBar.hidden, "AppBar should have remained visible when opening a menu within it");
 
                     return Helper.focus(menuItemB);
-                }).then(function() {
+                }).then(function () {
                     LiveUnit.Assert.areEqual(menuItemB, document.activeElement, "MenuB should have focus");
                     LiveUnit.Assert.isFalse(menu.hidden, "Menu should have remained visible");
                     LiveUnit.Assert.isFalse(appBar.hidden, "AppBar should have remained visible when moving focus within the menu");
@@ -711,6 +712,96 @@ CorsicaTests.AppBarTests = function () {
             });
         });
     };
+
+    this.testChangingLayoutsPreservesAppBarCommands = function (complete) {
+        /* Verifies that switching from and back to custom layout will preserve the order of the AppBar commands as they were found in the DOM. */
+
+        // Create an AppBar with Custom layout. Verify that: 
+        // A) Switching from custom layout, to commands layout, and back to custom again, restores the AppBarCommands 
+        //  that were in the AppBar, back to the AppBar DOM in the same order that the custom layout AppBar DOM had 
+        //  them in originally.         
+        // B) Changing layouts does not dispose the commands. 
+
+        var root = document.getElementById("appBarDiv");
+
+        var appBarElement = document.createElement("DIV");
+
+        // Custom layout AppBar won't process commands automatically during construction
+        // Create and process AppBar child elements now.     
+        appBarElement.appendChild(new WinJS.UI.AppBarCommand(null, { id: 'Button0', label: 'Button 0', section: 'global' }).element);
+        appBarElement.appendChild(document.createElement("INPUT"));
+        appBarElement.appendChild(new WinJS.UI.AppBarCommand(null, { id: 'Button1', label: 'Button 1', section: 'selection' }).element);
+        appBarElement.appendChild(new WinJS.UI.AppBarCommand(null, { id: 'Hr0', type: 'separator', hidden: true, section: 'global' }).element);
+
+        // Create custom layout AppBar
+        var appBar = new WinJS.UI.AppBar(appBarElement, { layout: "custom" });
+        root.appendChild(appBar.element);
+
+        // Define helper functions.
+        function verifyCommandsOrderInDOM(appBarEl) {
+            var commands = appBarEl.querySelectorAll(".win-command");
+            LiveUnit.Assert.areEqual("Button0", commands[0].id);
+            LiveUnit.Assert.areEqual("Button1", commands[1].id);
+            LiveUnit.Assert.areEqual("Hr0", commands[2].id);
+        }
+        function verifyCommandsNotDisposed(appBarEl) {
+            // AppBar commands should not be disposed after construction or after changing layouts.
+            var commands = appBarEl.querySelectorAll(".win-command");
+            for (var i = 0, len = commands.length; i < len; i++) {
+                LiveUnit.Assert.isFalse(commands[i].winControl._disposed);
+            }
+        }
+        /* Setup complete */
+
+        // 1) Verify command order after construction.
+        verifyCommandsOrderInDOM(appBar.element)
+
+        // 2) Verify pre-existing commands have not been disposed by the constructor.
+        verifyCommandsNotDisposed(appBar.element)
+
+        // 3) Switch Layout to 'commands' and back again to 'custom'.
+        appBar.layout = 'commands';
+        appBar.layout = 'custom';
+
+        // 4) Verify command order was restored after switching layouts.
+        verifyCommandsOrderInDOM(appBar.element);
+
+        // 5) Verify switching layouts did not dispose commands.
+        verifyCommandsNotDisposed(appBar.element)
+        complete();
+    };
+
+    this.testCommandsSetterOrderPreserverdWhenSwitchingLayouts = function (complete) {
+        // Verify setting new commands while in commands layout, and then switching back to custom layout will leave the 
+        // new commands in the custom layout AppBar DOM in the same order they were initially passed to the commands 
+        // setter.
+        var root = document.getElementById("appBarDiv");
+        root.innerHTML =
+            "<div id='appBar'>" +
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button0\", label:\"Button 0\", type:\"button\", section:\"global\"}'></button>" +
+                "<hr data-win-control='WinJS.UI.AppBarCommand' data-win-options='{type:\"separator\", hidden: true, section:\"global\"}' />" +
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button1\", label:\"Button 1\", type:\"button\", section:\"global\"}'></button>" +
+            "</div>";
+        var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"));
+
+        var newCommands = [
+            { id: 'Button2', label: 'Button 2', section: 'global' },
+            { id: 'HR1', type: 'separator', section: 'global' },
+            { id: 'Button3', label: 'Button 3', section: 'selection' },
+        ];
+
+        appBar.commands = newCommands;
+
+        // Switch to custom layout and verify commands were placed into the AppBar DOM 
+        // in the same order the setter received them in.
+        var commands = appBar.element.querySelectorAll(".win-command");
+        LiveUnit.Assert.areEqual(newCommands[0].id, commands[0].id);
+        LiveUnit.Assert.areEqual(newCommands[1].id, commands[1].id);
+        LiveUnit.Assert.areEqual(newCommands[2].id, commands[2].id);
+
+        complete();
+    };
+
 }
 
 // register the object as a test class by passing in the name

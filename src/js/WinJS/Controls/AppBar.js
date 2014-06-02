@@ -33,10 +33,9 @@
                 reducedClass = "win-reduced",
                 settingsFlyoutClass = "win-settingsflyout",
                 topClass = "win-top",
-                bottomClass = "win-bottom";
+                bottomClass = "win-bottom",
+                customlayoutClass = "win-commandlayout";
 
-            //var primaryCommandsClass = "win-primarygroup",
-            //    secondaryCommandsClass = "win-secondarygroup";
             var appBarCommandClass = "win-command";
 
             var firstDivClass = "win-firstdiv",
@@ -583,15 +582,20 @@
                         }
 
                         var commands;
-                        if (this._layoutImpl) {
-                            // get the commands back from the layout, in the order they were set in, 
-                            // instead of whatever DOM order the layout might have them in currently.
-                            commands = this._layoutImpl.commands;
-                            this._layoutImpl.disconnect();
-                        } else {
-                            // If layout was custom, get commands from the AppBar in DOM order, 
-                            // since they may not have used the commands setter to get them there.
-                            commands = this._element.querySelectorAll("." + appBarCommandClass);
+                        if (!this._initializing) {
+                            // Gather commands in preperation of hand off to new layout.
+                            if (this._layoutImpl) {
+                                // get the commands back from the layout, in the order they were set in, 
+                                // instead of whatever DOM order the layout might have them in currently.
+                                commands = this._layoutImpl.commands;
+                                this._layoutImpl.disconnect();
+                            } else {
+                                // If layout was custom, get commands from the AppBar in DOM order, 
+                                // since they may not have used the commands setter to get them there.
+                                commands = this._element.querySelectorAll("." + appBarCommandClass);
+                                // Needs to be an array before we pass it to the AppBar.commands setter.
+                                commands = Array.prototype.slice.call(commands);
+                            }
                         }
 
                         // Set layout
@@ -607,7 +611,7 @@
                             this._layoutImpl = null;
                         }
 
-                        if (commands.length && !this._initializing) {
+                        if (commands && commands.length) {
                             // Reset commands since layout changed.
                             this.commands = commands;
                         }
@@ -698,8 +702,8 @@
                         // In case this is called from the constructor before the AppBar element has been appended to the DOM, 
                         // we schedule the initial scaling of commands, with the expectation that the element will be added 
                         // synchronously, in the same block of code that called the constructor.
-                        WinJS.Utilities.Scheduler.schedule(function () { 
-                            if(this.__needToMeasureNewCommands){
+                        WinJS.Utilities.Scheduler.schedule(function () {
+                            if (this.__needToMeasureNewCommands) {
                                 this._scaleAppBar();
                             }
                         }.bind(this), WinJS.Utilities.Scheduler.Priority.idle, this, "WinJS.AppBar._scaleNewCommands");
