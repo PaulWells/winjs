@@ -227,7 +227,7 @@ div.win-command:focus {
 }
 
 /*
-AppBar Edgy Container
+AppBar
 */
 .win-appbar {
     z-index: 1002;
@@ -239,19 +239,14 @@ AppBar Edgy Container
     position: -ms-device-fixed;
 }
 
-/*
-AppBar control.
-*/
 
-/**********
-    COMMAND Layout
- **********/
+/*
+AppBar commands layout
+*/
 .win-commandlayout {
-    /*text-align: right;*/
 
     /* Hide whitespace between buttons. */
     font-size: 0;
-
     min-height: 88px;
 
     display: flex;
@@ -290,54 +285,6 @@ AppBar control.
 }
 .win-commandlayout:-ms-lang(@{rtl}) .win-secondarygroup {        
     flex-direction: row-reverse;
-}
-
-/********** 
-    DRAWER Layout 
-**********/
-
-.win-commandlayout.win-drawer {
-    flex-wrap: wrap;
-    max-height: 50%;
-}
-.win-commandlayout.win-drawer .win-primarygroup {    
-    flex: 1 1 100%;
-    justify-content: center;
-}
-
-.win-commandlayout.win-drawer .win-secondarygroup{
-    flex: 1 1 100%;    
-    box-sizing: border-box;
-    max-height: 353.45px;
-    overflow-y:scroll;
-}
-
-/* Bottom Drawer */
-.win-commandlayout.win-drawer.win-bottom .win-primarygroup {
-    order: 1;
-}
-.win-commandlayout.win-drawer.win-bottom .win-secondarygroup {
-    order: 2;
-    flex-direction: column;
-}
-
-/* Top Drawer */
-.win-commandlayout.win-drawer.win-top .win-primarygroup {
-    order: 2;
-}
-.win-commandlayout.win-drawer.win-top .win-secondarygroup {
-    order: 1;
-    flex-direction: column-reverse;
-}
-
-/* Secondary Commands in Drawer */
-.win-commandlayout.win-drawer .win-secondarygroup .win-command .win-label {
-    padding: 0 0 20px 25px;
-    font-size: 20pt;
-    font-weight:normal;
-}
-.win-commandlayout.win-drawer .win-secondarygroup .win-command .win-commandring {
-    display: none;
 }
 
 /* Narrow buttons and no labels */
