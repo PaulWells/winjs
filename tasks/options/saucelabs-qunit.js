@@ -128,12 +128,13 @@
                     "http://127.0.0.1:9999/bin/tests/UI/test.html?fastanimations=true&autostart=true",
                     "http://127.0.0.1:9999/bin/tests/ViewBox/test.html?fastanimations=true&autostart=true",
                     "http://127.0.0.1:9999/bin/tests/WWA-Application/test.html?fastanimations=true&autostart=true", 
+                    "http://127.0.0.1:9999/bin/tests/Pivot/test.html?fastanimations=false&autostart=true&testtimeout=10000"
                 ],
                 build: process.env.TRAVIS_JOB_ID,
                 testInterval: 1000,
                 browsers: browsers,
                 throttled:4,
-                maxDuration: 2000,
+                maxDuration: 180,
                 testname: "winjs qunit tests",
                 tags: ["winjs"],
                 onTestComplete: onTestComplete
@@ -144,13 +145,12 @@
                 urls: [
                       "http://127.0.0.1:9999/bin/tests/ListView/test.html?fastanimations=true&autostart=true&testtimeout=10000",
                       "http://127.0.0.1:9999/bin/tests/ListViewIntegration/test.html?fastanimations=true&autostart=true&testtimeout=10000",
-                      "http://127.0.0.1:9999/bin/tests/Pivot/test.html?fastanimations=false&autostart=true&testtimeout=10000",
                       "http://127.0.0.1:9999/bin/tests/Tooltip/test.html?fastanimations=true&autostart=true&testtimeout=10000",
                       "http://127.0.0.1:9999/bin/tests/Rating/test.html?fastanimations=true&autostart=true&testtimeout=3000"
                 ],
                 build: process.env.TRAVIS_JOB_ID,
                 testInterval: 1000,
-                maxDuration: 2000,
+                maxDuration: 500,
                 throttled:10,
                 browsers: [{
                     browserName: "internet explorer",
@@ -163,4 +163,4 @@
             }
         }
     };
-})();
+})(); 
