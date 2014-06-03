@@ -2,6 +2,7 @@
 // AppBar
 /// <dictionary>appbar,appBars,Flyout,Flyouts,iframe,Statics,unfocus,WinJS</dictionary>
 define([
+    './AppBar/_Layouts', 
     './AppBar/_Command', 
     './AppBar/_Icon'
     ], function() {
@@ -37,7 +38,7 @@ define([
                 reducedClass = "win-reduced",
                 settingsFlyoutClass = "win-settingsflyout",
                 topClass = "win-top",
-                bottomClass = "win-bottom",
+                bottomClass = "win-bottom";
 
             var appBarCommandClass = "win-command";
 
