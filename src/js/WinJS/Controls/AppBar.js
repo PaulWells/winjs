@@ -436,7 +436,7 @@ define([
                 }
 
                 // Set layout immediately. We need to know our layout in order to correctly 
-                // position any commands are also be getting set through the constructor. 
+                // position any commands that may be getting set through the constructor. 
                 this.layout = options.layout || appBarLayoutCommands;
                 delete options.layout;
 
