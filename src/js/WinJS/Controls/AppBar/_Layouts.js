@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 /// <dictionary>animatable,appbar,appbars,divs,Flyout,Flyouts,iframe,Statics,unfocus,unselectable</dictionary>
-(function overlayInit(WinJS) {
+(function appBarLayoutsInit(WinJS) {
     "use strict";
 
     // Common Class Names
@@ -24,11 +24,11 @@
                 /// <summary locid="WinJS.UI._AppBarCommandsLayout">
                 /// Constructor for private AppBar 'commands' layout implementation.
                 /// </summary>
-                /// <param name="appbaelementrEl" type="HTMLElement" domElement="true" locid="WinJS.UI._AppBarCommandsLayout_p:element">
+                /// <param name="element" type="HTMLElement" domElement="true" locid="WinJS.UI._AppBarCommandsLayout_p:element">
                 /// The DOM element belonging to the AppBar control.
                 /// </param>                
                 /// <returns type="WinJS.UI._AppBarCommandsLayout" locid="WinJS.UI._AppBarCommandsLayout_returnValue"
-                /// >A fully constructed Overlay control.
+                /// >A fully constructed AppBar Layout object.
                 /// </returns>
                 /// </signature>
                 this._initLayout(element);
@@ -40,7 +40,7 @@
                     }
                 },
                 getWidthOfPrimaryRow: function _AppBarCommandsLayout_getWidthOfPrimaryRow(newSetOfVisibleCommands) {
-                    // Commands layout put primary commands and seconary commands into the primary row.
+                    // Commands layout puts primary commands and secondary commands into the primary row.
                     // Return the total width of all visible primary and secondary commands.
                     //
 

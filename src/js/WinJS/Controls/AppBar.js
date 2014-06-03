@@ -34,7 +34,6 @@
                 settingsFlyoutClass = "win-settingsflyout",
                 topClass = "win-top",
                 bottomClass = "win-bottom",
-                customlayoutClass = "win-commandlayout";
 
             var appBarCommandClass = "win-command";
 
@@ -583,7 +582,7 @@
 
                         var commands;
                         if (!this._initializing) {
-                            // Gather commands in preperation of hand off to new layout.
+                            // Gather commands in preparation of hand off to new layout.
                             if (this._layoutImpl) {
                                 // get the commands back from the layout, in the order they were set in, 
                                 // instead of whatever DOM order the layout might have them in currently.
@@ -808,10 +807,6 @@
                     }
 
                     // Make sure everything fits before showing.
-                    //if (this._needToMeasure && this._layoutImpl) {
-                    //    this._measureContentCommands();
-                    //    this._contentChanged();
-                    //}
                     this._scaleAppBar();
 
                     // If we're covered by a keyboard we look hidden, so we may have to jump up
