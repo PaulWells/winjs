@@ -383,7 +383,6 @@ define([
                     throw new WinJS.ErrorFromName("WinJS.UI.AppBar.NullCommand", strings.nullCommand);
                 }
 
-                // See if it's a command already
                 command = command.winControl || command;
                 if (!command._element) {
                     // Not a command, so assume it is options for the command's constructor.
@@ -436,7 +435,8 @@ define([
                     this._element.tabIndex = -1;
                 }
 
-                // Set layout immediately. 
+                // Set layout immediately. We need to know our layout in order to correctly 
+                // position any commands are also be getting set through the constructor. 
                 this.layout = options.layout || appBarLayoutCommands;
                 delete options.layout;
 
@@ -587,9 +587,9 @@ define([
 
                         var commands;
                         if (!this._initializing) {
-                            // Gather commands in preparation of hand off to new layout.
+                            // Gather commands in preparation for hand off to new layout.
                             if (this._layoutImpl) {
-                                // get the commands back from the layout, in the order they were set in, 
+                                // Get the commands back from the layout, in the order they were set in, 
                                 // instead of whatever DOM order the layout might have them in currently.
                                 commands = this._layoutImpl.commands;
                                 this._layoutImpl.disconnect();
@@ -605,13 +605,12 @@ define([
                         // Set layout
                         this._layout = value;
 
-                        // Instantiate new layout
                         if (this._layout === appBarLayoutCommands) {
                             this._layoutImpl = new WinJS.UI._AppBarCommandsLayout();
                             this._layoutImpl.connect(this._element);
 
                         } else {
-                            // Custom layout specified
+                            // Custom layout specified. Don't impose our layout specific behaviors on the AppBar. 
                             this._layoutImpl = null;
                         }
 
@@ -1172,7 +1171,7 @@ define([
 
                         // Update our command counts now, to what they will be after we complete the animations.
                         var visibleCommandsAfterAnimations = otherVisibleCommands.concat(showCommands);
-                        this._layoutImpl.contentChanged(visibleCommandsAfterAnimations)
+                        this._layoutImpl.contentChanged(visibleCommandsAfterAnimations);
 
                         // Determine if the overall width of visible commands in the primary row will be increasing OR decreasing.                        
                         var changeInWidth = this._layoutImpl.getWidthOfPrimaryRow(showCommands) - this._layoutImpl.getWidthOfPrimaryRow(hideCommands);

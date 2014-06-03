@@ -19,19 +19,8 @@
 
             var layoutClass = "win-commandlayout";
 
-            var _AppBarCommandsLayout = WinJS.Class.define(function _AppBarCommandsLayout_ctor(element) {
-                /// <signature helpKeyword="WinJS.UI._AppBarCommandsLayout">
-                /// <summary locid="WinJS.UI._AppBarCommandsLayout">
-                /// Constructor for private AppBar 'commands' layout implementation.
-                /// </summary>
-                /// <param name="element" type="HTMLElement" domElement="true" locid="WinJS.UI._AppBarCommandsLayout_p:element">
-                /// The DOM element belonging to the AppBar control.
-                /// </param>                
-                /// <returns type="WinJS.UI._AppBarCommandsLayout" locid="WinJS.UI._AppBarCommandsLayout_returnValue"
-                /// >A fully constructed AppBar Layout object.
-                /// </returns>
-                /// </signature>
-                this._initLayout(element);
+            var _AppBarCommandsLayout = WinJS.Class.define(function _AppBarCommandsLayout_ctor(appBarElement) {
+                this._initLayout(appBarElement);
             }, {
                 // Members
                 className: {
@@ -69,7 +58,6 @@
                 },
                 _getFocusableCommandsInLogicalOrder: function _AppBarCommandsLayout_getCommandsInLogicalOrder(globalCommandHasFocus) {
                     // Function returns an array of all the contained AppBarCommands which are reachable by left/right arrows.
-
                     
                     var selectionCommands = this._secondaryCommands.children,
                         globalCommands = this._primaryCommands.children,
@@ -123,7 +111,7 @@
             }
         },
         connect: function _AppBarLayouts_connect(appbarEl) {
-            WinJS.Utilities.addClass(appbarEl, this.className)
+            WinJS.Utilities.addClass(appbarEl, this.className);
             this.appbarEl = appbarEl;
         },
         layout: function _AppBarLayouts_layout(commands) {
@@ -175,7 +163,7 @@
             var Key = WinJS.Utilities.Key;
 
             if (WinJS.Utilities._matchesSelector(event.target, ".win-interactive, .win-interactive *")) {
-                return; //ignore left, right, home & end keys if focused element has win-interactive class.
+                return; // Ignore left, right, home & end keys if focused element has win-interactive class.
             }
             var rtl = getComputedStyle(this.appbarEl).direction === "rtl";
             var leftKey = rtl ? Key.rightArrow : Key.leftArrow;
@@ -215,13 +203,13 @@
 
                 if (targetCommand) {
                     targetCommand.focus();
-                    // Prevent default so that Trident doesn't resolve the keydown event on the newly focused element.
+                    // Prevent default so that the browser doesn't also evaluate the keydown event on the newly focused element.
                     event.preventDefault();
                 }
             }
         },        
         takeFocus: function _AppBarLayouts_takeFocus() {
-            // Tells layout layout to put focus on its first command.
+            // Asks layout to put focus on its first command.
             var globalCommandHasFocus = this._primaryCommands.contains(document.activeElement);
             var firstCommand = this._getFocusableCommandsInLogicalOrder(globalCommandHasFocus)[0].winControl.firstElementFocus;
             if (firstCommand) {

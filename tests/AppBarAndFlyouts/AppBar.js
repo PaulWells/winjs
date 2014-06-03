@@ -714,17 +714,27 @@ CorsicaTests.AppBarTests = function () {
     };
 
     this.testChangingLayoutsPreservesAppBarCommands = function (complete) {
-        /* Verifies that switching from and back to custom layout will preserve the order of the AppBar commands as they were found in the DOM. */
-
-        // Create an AppBar with Custom layout. Verify that: 
+        // Verify that: 
         // A) Switching from custom layout, to commands layout, and back to custom again, restores the AppBarCommands 
         //  that were in the AppBar, back to the AppBar DOM in the same order that the custom layout AppBar DOM had 
         //  them in originally.         
-        // B) Changing layouts does not dispose the commands. 
+        // B) Changing layouts does not dispose the commands
 
         var root = document.getElementById("appBarDiv");
-
         var appBarElement = document.createElement("DIV");
+
+        function verifyCommandsOrderInDOM(appBarEl) {
+            var commands = appBarEl.querySelectorAll(".win-command");
+            LiveUnit.Assert.areEqual("Button0", commands[0].id);
+            LiveUnit.Assert.areEqual("Button1", commands[1].id);
+            LiveUnit.Assert.areEqual("Hr0", commands[2].id);
+        }
+        function verifyCommandsNotDisposed(appBarEl) {           
+            var commands = appBarEl.querySelectorAll(".win-command");
+            for (var i = 0, len = commands.length; i < len; i++) {
+                LiveUnit.Assert.isFalse(commands[i].winControl._disposed);
+            }
+        }
 
         // Custom layout AppBar won't process commands automatically during construction
         // Create and process AppBar child elements now.     
@@ -733,41 +743,17 @@ CorsicaTests.AppBarTests = function () {
         appBarElement.appendChild(new WinJS.UI.AppBarCommand(null, { id: 'Button1', label: 'Button 1', section: 'selection' }).element);
         appBarElement.appendChild(new WinJS.UI.AppBarCommand(null, { id: 'Hr0', type: 'separator', hidden: true, section: 'global' }).element);
 
-        // Create custom layout AppBar
         var appBar = new WinJS.UI.AppBar(appBarElement, { layout: "custom" });
         root.appendChild(appBar.element);
 
-        // Define helper functions.
-        function verifyCommandsOrderInDOM(appBarEl) {
-            var commands = appBarEl.querySelectorAll(".win-command");
-            LiveUnit.Assert.areEqual("Button0", commands[0].id);
-            LiveUnit.Assert.areEqual("Button1", commands[1].id);
-            LiveUnit.Assert.areEqual("Hr0", commands[2].id);
-        }
-        function verifyCommandsNotDisposed(appBarEl) {
-            // AppBar commands should not be disposed after construction or after changing layouts.
-            var commands = appBarEl.querySelectorAll(".win-command");
-            for (var i = 0, len = commands.length; i < len; i++) {
-                LiveUnit.Assert.isFalse(commands[i].winControl._disposed);
-            }
-        }
-        /* Setup complete */
+        // Make sure we are starting from a sane place.
+        verifyCommandsOrderInDOM(appBar.element);
+        verifyCommandsNotDisposed(appBar.element);       
 
-        // 1) Verify command order after construction.
-        verifyCommandsOrderInDOM(appBar.element)
-
-        // 2) Verify pre-existing commands have not been disposed by the constructor.
-        verifyCommandsNotDisposed(appBar.element)
-
-        // 3) Switch Layout to 'commands' and back again to 'custom'.
         appBar.layout = 'commands';
         appBar.layout = 'custom';
-
-        // 4) Verify command order was restored after switching layouts.
         verifyCommandsOrderInDOM(appBar.element);
-
-        // 5) Verify switching layouts did not dispose commands.
-        verifyCommandsNotDisposed(appBar.element)
+        verifyCommandsNotDisposed(appBar.element);
         complete();
     };
 
