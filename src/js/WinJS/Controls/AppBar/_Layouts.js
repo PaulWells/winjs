@@ -42,7 +42,7 @@
                 getWidthOfPrimaryRow: function _AppBarCommandsLayout_getWidthOfPrimaryRow(newSetOfVisibleCommands) {
                     // Commands layout puts primary commands and secondary commands into the primary row.
                     // Return the total width of all visible primary and secondary commands.
-                    //
+
 
                     if (!newSetOfVisibleCommands) {
                         // Return the cached width of last known visible commands in the AppBar.
@@ -67,15 +67,15 @@
                     }
                     return accumulatedWidth += (separatorsCount * separatorWidth) + (buttonsCount * buttonWidth);
                 },
-                _getFocusableCommandsInLogicalOrder: function _AppBarLayouts_getCommandsInLogicalOrder(globalCommandHasFocus) {
+                _getFocusableCommandsInLogicalOrder: function _AppBarCommandsLayout_getCommandsInLogicalOrder(globalCommandHasFocus) {
                     // Function returns an array of all the contained AppBarCommands which are reachable by left/right arrows.
-                    //
+
+                    
                     var selectionCommands = this._secondaryCommands.children,
                         globalCommands = this._primaryCommands.children,
                         focusedIndex = -1;
 
                     var getFocusableCommandsHelper = function (commandsInReach) {
-                        // Helper function 
                         var focusableCommands = [];
                         for (var i = 0, len = commandsInReach.length; i < len; i++) {
                             var element = commandsInReach[i];
@@ -83,7 +83,7 @@
                                 var containsFocus = element.contains(document.activeElement);
                                 // With the inclusion of content type commands, it may be possible to tab to elements in AppBarCommands that are not reachable by arrow keys.
                                 // Regardless, when an AppBarCommand contains the element with focus, we just include the whole command so that we can determine which
-                                // Commands are adjacent to it when looking for the next focus destination.
+                                // commands are adjacent to it when looking for the next focus destination.
                                 if (element.winControl._isFocusable() || containsFocus) {
                                     focusableCommands.push(element);
                                     if (containsFocus) {
@@ -95,8 +95,8 @@
                         return focusableCommands;
                     }
 
-                    // Determine which set of commands that the user could potentially reach through Home, End, and arrow keys.
-                    // All commands in the AppBar from left to right are in reach. Selection then Global.
+                    // Determines which set of commands the user could potentially reach through Home, End, and arrow keys.
+                    // All commands in the commands layout AppBar, from left to right are in reach. Selection then Global.
                     var commandsInReach = Array.prototype.slice.call(selectionCommands).concat(Array.prototype.slice.call(globalCommands));
 
                     var focusableCommands = getFocusableCommandsHelper(commandsInReach);
