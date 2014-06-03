@@ -680,11 +680,11 @@ define(['./Flyout/_Overlay'], function() {
                     // This should only happen if the IHM is dismissing,
                     // the only other way is for viewstate changes, which
                     // would dismiss any flyout.
-                    if (this._keyboardHiding) {
+                    if (this._needToHandleHidingKeyboard) {
                         // Hiding keyboard, update our position, giving the anchor a chance to update first.
                         var that = this;
                         WinJS.Utilities._setImmediate(function () { that._findPosition(); });
-                        this._keyboardHiding = false;
+                        this._needToHandleHidingKeyboard = false;
                     }
                 },
 
@@ -739,7 +739,7 @@ define(['./Flyout/_Overlay'], function() {
                     // We'll either just reveal the current space or resize the window
                     if (thisWinUI._Overlay._keyboardInfo._isResized) {
                         // Flag resize that we'll need an updated position
-                        this._keyboardHiding = true;
+                        this._needToHandleHidingKeyboard = true;
                     } else {
                         // Not resized, update our final position, giving the anchor a chance to update first.
                         var that = this;
