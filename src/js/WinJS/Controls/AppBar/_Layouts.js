@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 /// <dictionary>animatable,appbar,appbars,divs,Flyout,Flyouts,iframe,Statics,unfocus,unselectable</dictionary>
-(function appBarLayoutsInit(WinJS) {
+define([], function appBarLayoutsInit() {
     "use strict";
 
     // Common Class Names
@@ -59,6 +59,89 @@
                 _getFocusableCommandsInLogicalOrder: function _AppBarCommandsLayout_getCommandsInLogicalOrder(globalCommandHasFocus) {
                     // Function returns an array of all the contained AppBarCommands which are reachable by left/right arrows.
                     
+                    var selectionCommands = this._secondaryCommands.children,
+                        globalCommands = this._primaryCommands.children,
+                        focusedIndex = -1;
+
+                    var getFocusableCommandsHelper = function (commandsInReach) {
+                        var focusableCommands = [];
+                        for (var i = 0, len = commandsInReach.length; i < len; i++) {
+                            var element = commandsInReach[i];
+                            if (WinJS.Utilities.hasClass(element, appBarCommandClass) && element.winControl) {
+                                var containsFocus = element.contains(document.activeElement);
+                                // With the inclusion of content type commands, it may be possible to tab to elements in AppBarCommands that are not reachable by arrow keys.
+                                // Regardless, when an AppBarCommand contains the element with focus, we just include the whole command so that we can determine which
+                                // commands are adjacent to it when looking for the next focus destination.
+                                if (element.winControl._isFocusable() || containsFocus) {
+                                    focusableCommands.push(element);
+                                    if (containsFocus) {
+                                        focusedIndex = focusableCommands.length - 1;
+                                    }
+                                }
+                            }
+                        }
+                        return focusableCommands;
+                    }
+
+                    // Determines which set of commands the user could potentially reach through Home, End, and arrow keys.
+                    // All commands in the commands layout AppBar, from left to right are in reach. Selection then Global.
+                    var commandsInReach = Array.prototype.slice.call(selectionCommands).concat(Array.prototype.slice.call(globalCommands));
+
+                    var focusableCommands = getFocusableCommandsHelper(commandsInReach);
+                    focusableCommands.focusedIndex = focusedIndex;
+                    return focusableCommands;
+                },
+            });
+            WinJS.Class.mix(_AppBarCommandsLayout, _AppBarLayoutsMixin);
+            return _AppBarCommandsLayout;
+        }),
+    });
+
+    WinJS.Namespace.define("WinJS.UI", {
+        _AppBarCustomLayout: WinJS.Namespace._lazy(function () {
+
+            var layoutClass = "win-commandlayout";
+
+            var _AppBarCommandsLayout = WinJS.Class.define(function _AppBarCommandsLayout_ctor(appBarElement) {
+                this._initLayout(appBarElement);
+            }, {
+                // Members
+                className: {
+                    get: function _AppBarCommandsLayout_getClassName() {
+                        return layoutClass;
+                    }
+                },
+                getWidthOfPrimaryRow: function _AppBarCommandsLayout_getWidthOfPrimaryRow(newSetOfVisibleCommands) {
+                    // Commands layout puts primary commands and secondary commands into the primary row.
+                    // Return the total width of all visible primary and secondary commands.
+
+
+                    if (!newSetOfVisibleCommands) {
+                        // Return the cached width of last known visible commands in the AppBar.
+                        return this._widthOfRelevantCommands;
+                    } else {
+                        // Return the width of the specified commands.
+                        var separatorsCount = 0;
+                        var buttonsCount = 0;
+                        var accumulatedWidth = 0;
+                        var command;
+                        for (var i = 0, len = newSetOfVisibleCommands.length; i < len; i++) {
+                            command = newSetOfVisibleCommands[i].winControl || newSetOfVisibleCommands[i];
+                            if (command._type === typeSeparator) {
+                                separatorsCount++
+                            } else if (command._type !== typeContent) {
+                                // button, toggle, and flyout types all have the same width.
+                                buttonsCount++;
+                            } else {
+                                accumulatedWidth += command._fullSizeWidth;
+                            }
+                        }
+                    }
+                    return accumulatedWidth += (separatorsCount * separatorWidth) + (buttonsCount * buttonWidth);
+                },
+                _getFocusableCommandsInLogicalOrder: function _AppBarCommandsLayout_getCommandsInLogicalOrder(globalCommandHasFocus) {
+                    // Function returns an array of all the contained AppBarCommands which are reachable by left/right arrows.
+
                     var selectionCommands = this._secondaryCommands.children,
                         globalCommands = this._primaryCommands.children,
                         focusedIndex = -1;
@@ -227,7 +310,9 @@
             });
             this._widthOfRelevantCommands = this.getWidthOfPrimaryRow(visibleCommands);
         },
+        beforeOpen: function () { },
+        afterClose: function () { },
     }
 
-})(WinJS);
+})();
 

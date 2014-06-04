@@ -875,8 +875,9 @@ define([
 
                         var toPosition = displayModeVisiblePositions.open;
                         var opening = this._closed && appbarOpenedState;
-                        this._changeVisiblePosition(toPosition, opening);
 
+                        // If we're already opened, we just want to animate our position, not fire events or manage focus again.
+                        this._changeVisiblePosition(toPosition, opening);
                         if (opening) {
                             // Configure open state for lightdismiss & sticky appbars.
                             if (!this.sticky) {
@@ -918,8 +919,9 @@ define([
 
                         var toPosition = toPosition || displayModeVisiblePositions[this.closedDisplayMode];
                         var closing = !this._closed && appbarClosedState;
-                        this._changeVisiblePosition(toPosition, closing);
 
+                        // If were already closed, we just want to aniamte our position, not fire events or manage focus again.
+                        this._changeVisiblePosition(toPosition, closing);
                         if (closing) {
                             // Determine if there are any AppBars that are visible.
                             // Set the focus to the next visible AppBar.
@@ -1194,6 +1196,10 @@ define([
                             this._queuedToHide = [];
                         }
 
+                        if (this._layoutImpl) {
+                            this._layoutImpl.beforeOpen();
+                        }
+
                         // Make sure everything fits before showing
                         this._scaleAppBar();                       
 
@@ -1213,6 +1219,12 @@ define([
                     },
 
                     _afterClose: function AppBar_afterClose() {
+
+                        if (this._layoutImpl) {
+                            this_layoutImpl.afterClose();
+                        } else {
+
+                        }
 
                         // In case their 'afterhide' event handler is going to manipulate commands, 
                         // first see if there are any queued command animations we can handle now we're hidden.
