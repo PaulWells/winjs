@@ -872,14 +872,34 @@ define([
                     },
 
                     _open: function AppBar_open() {
-                        var openPosition = displayModeVisiblePositions.open;
 
-                        if (!this._closed) {
-                            // We're already opened, just change our visible position, don't worry about changing state.
-                            this._changeVisiblePosition(openPosition, null);
-                        } else {
-                            // Try to open us.
-                            this._changeVisiblePosition(openPosition, appbarOpenedState);
+                        var toPosition = displayModeVisiblePositions.open;
+                        var opening = this._closed && appbarOpenedState;
+                        this._changeVisiblePosition(toPosition, opening);
+
+                        if (opening) {
+                            // Configure open state for lightdismiss & sticky appbars.
+                            if (!this.sticky) {
+                                // Need click-eating div to be visible ASAP.
+                                thisWinUI._Overlay._showClickEatingDivAppBar();
+                            }
+
+                            // Clean up tabbing behavior by making sure first and final divs are correct after showing.
+                            if (!this.sticky && _isThereVisibleNonStickyBar()) {
+                                _updateAllAppBarsFirstAndFinalDiv();
+                            } else {
+                                this._updateFirstAndFinalDiv();
+                            }
+
+                            // Check if we should steal focus
+                            if (!this._doNotFocus && this._shouldStealFocus()) {
+                                // Store what had focus if nothing currently is stored
+                                if (!thisWinUI.AppBar._ElementWithFocusPreviousToAppBar) {
+                                    _storePreviousFocus(document.activeElement);
+                                }
+
+                                this._setFocusToAppBar();
+                            }
                         }
                     },
 
@@ -894,16 +914,86 @@ define([
                         this._close();
                     },
 
-                    _close: function AppBar_close(toPosition) {
+                    _close: function AppBar_close(toPosition) {                       
+
                         var toPosition = toPosition || displayModeVisiblePositions[this.closedDisplayMode];
+                        var closing = !this._closed && appbarClosedState;
+                        this._changeVisiblePosition(toPosition, closing);
 
-                        if (this._closed) {
-                            // We're already closed, just change our visible position.
-                            this._changeVisiblePosition(toPosition, null);
-                        } else {
-                            // Try to close us.
-                            this._changeVisiblePosition(toPosition, appbarClosedState);
+                        if (closing) {
+                            // Determine if there are any AppBars that are visible.
+                            // Set the focus to the next visible AppBar.
+                            // If there are none, set the focus to the control stored in the cache, which
+                            //   is what had focus before the AppBars were given focus.
+                            var appBars = document.querySelectorAll("." + appBarClass);
+                            var areOtherAppBars = false;
+                            var areOtherNonStickyAppBars = false;
+                            var i;
+                            for (i = 0; i < appBars.length; i++) {
+                                var appBarControl = appBars[i].winControl;
+                                if (appBarControl && !appBarControl.hidden && (appBarControl !== this)) {
+                                    areOtherAppBars = true;
 
+                                    if (!appBarControl.sticky) {
+                                        areOtherNonStickyAppBars = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            var settingsFlyouts = document.querySelectorAll("." + settingsFlyoutClass);
+                            var areVisibleSettingsFlyouts = false;
+                            for (i = 0; i < settingsFlyouts.length; i++) {
+                                var settingsFlyoutControl = settingsFlyouts[i].winControl;
+                                if (settingsFlyoutControl && !settingsFlyoutControl.hidden) {
+                                    areVisibleSettingsFlyouts = true;
+                                    break;
+                                }
+                            }
+
+                            if (!areOtherNonStickyAppBars && !areVisibleSettingsFlyouts) {
+                                // Hide the click eating div because there are no other AppBars showing
+                                thisWinUI._Overlay._hideClickEatingDivAppBar();
+                            }
+
+                            var that = this;
+                            if (!areOtherAppBars) {
+                                // Set focus to what had focus before showing the AppBar
+                                if (thisWinUI.AppBar._ElementWithFocusPreviousToAppBar &&
+                                    (!document.activeElement || thisWinUI.AppBar._isAppBarOrChild(document.activeElement))) {
+                                    _restorePreviousFocus();
+                                }
+                                // Always clear the previous focus (to prevent temporary leaking of element)
+                                thisWinUI.AppBar._ElementWithFocusPreviousToAppBar = null;
+                            } else if (thisWinUI.AppBar._isWithinAppBarOrChild(document.activeElement, that.element)) {
+                                // Set focus to next visible AppBar in DOM
+
+                                var foundCurrentAppBar = false;
+                                for (i = 0; i <= appBars.length; i++) {
+                                    if (i === appBars.length) {
+                                        i = 0;
+                                    }
+
+                                    var appBar = appBars[i];
+                                    if (appBar === this.element) {
+                                        foundCurrentAppBar = true;
+                                    } else if (foundCurrentAppBar && !appBar.winControl.hidden) {
+                                        appBar.winControl._keyboardInvoked = !!this._keyboardInvoked;
+                                        appBar.winControl._setFocusToAppBar();
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // If we are hiding the last lightDismiss AppBar, 
+                            //   then we need to update the tabStops of the other AppBars
+                            if (!this.sticky && !_isThereVisibleNonStickyBar()) {
+                                _updateAllAppBarsFirstAndFinalDiv();
+                            }
+
+                            // Reset these values
+                            this._keyboardInvoked = false;
+                            this._doNotFocus = false;
                         }
                     },
 
@@ -1105,30 +1195,7 @@ define([
                         }
 
                         // Make sure everything fits before showing
-                        this._scaleAppBar();
-
-                        // Configure open state for lightdismiss & sticky appbars.
-                        if (!this.sticky) {
-                            // Need click-eating div to be visible ASAP.
-                            thisWinUI._Overlay._showClickEatingDivAppBar();
-                        }
-
-                        // Clean up tabbing behavior by making sure first and final divs are correct after showing.
-                        if (!this.sticky && _isThereVisibleNonStickyBar()) {
-                            _updateAllAppBarsFirstAndFinalDiv();
-                        } else {
-                            this._updateFirstAndFinalDiv();
-                        }
-
-                        // Check if we should steal focus
-                        if (!this._doNotFocus && this._shouldStealFocus()) {
-                            // Store what had focus if nothing currently is stored
-                            if (!thisWinUI.AppBar._ElementWithFocusPreviousToAppBar) {
-                                _storePreviousFocus(document.activeElement);
-                            }
-
-                            this._setFocusToAppBar();
-                        }
+                        this._scaleAppBar();                       
 
                         // Send our "beforeShow" event
                         this._sendEvent(WinJS.UI._Overlay.beforeShow);
@@ -1143,80 +1210,6 @@ define([
                     _beforeClose: function AppBar_beforeClose() {
                         // Send our "beforeHide" event
                         this._sendEvent(WinJS.UI._Overlay.beforeHide);
-
-                        // Determine if there are any AppBars that are visible.
-                        // Set the focus to the next visible AppBar.
-                        // If there are none, set the focus to the control stored in the cache, which
-                        //   is what had focus before the AppBars were given focus.
-                        var appBars = document.querySelectorAll("." + appBarClass);
-                        var areOtherAppBars = false;
-                        var areOtherNonStickyAppBars = false;
-                        var i;
-                        for (i = 0; i < appBars.length; i++) {
-                            var appBarControl = appBars[i].winControl;
-                            if (appBarControl && !appBarControl.hidden && (appBarControl !== this)) {
-                                areOtherAppBars = true;
-
-                                if (!appBarControl.sticky) {
-                                    areOtherNonStickyAppBars = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        var settingsFlyouts = document.querySelectorAll("." + settingsFlyoutClass);
-                        var areVisibleSettingsFlyouts = false;
-                        for (i = 0; i < settingsFlyouts.length; i++) {
-                            var settingsFlyoutControl = settingsFlyouts[i].winControl;
-                            if (settingsFlyoutControl && !settingsFlyoutControl.hidden) {
-                                areVisibleSettingsFlyouts = true;
-                                break;
-                            }
-                        }
-
-                        if (!areOtherNonStickyAppBars && !areVisibleSettingsFlyouts) {
-                            // Hide the click eating div because there are no other AppBars showing
-                            thisWinUI._Overlay._hideClickEatingDivAppBar();
-                        }
-
-                        var that = this;
-                        if (!areOtherAppBars) {
-                            // Set focus to what had focus before showing the AppBar
-                            if (thisWinUI.AppBar._ElementWithFocusPreviousToAppBar &&
-                                (!document.activeElement || thisWinUI.AppBar._isAppBarOrChild(document.activeElement))) {
-                                _restorePreviousFocus();
-                            }
-                            // Always clear the previous focus (to prevent temporary leaking of element)
-                            thisWinUI.AppBar._ElementWithFocusPreviousToAppBar = null;
-                        } else if (thisWinUI.AppBar._isWithinAppBarOrChild(document.activeElement, that.element)) {
-                            // Set focus to next visible AppBar in DOM
-
-                            var foundCurrentAppBar = false;
-                            for (i = 0; i <= appBars.length; i++) {
-                                if (i === appBars.length) {
-                                    i = 0;
-                                }
-
-                                var appBar = appBars[i];
-                                if (appBar === this.element) {
-                                    foundCurrentAppBar = true;
-                                } else if (foundCurrentAppBar && !appBar.winControl.hidden) {
-                                    appBar.winControl._keyboardInvoked = !!this._keyboardInvoked;
-                                    appBar.winControl._setFocusToAppBar();
-                                    break;
-                                }
-                            }
-                        }
-
-                        // If we are hiding the last lightDismiss AppBar, 
-                        //   then we need to update the tabStops of the other AppBars
-                        if (!this.sticky && !_isThereVisibleNonStickyBar()) {
-                            _updateAllAppBarsFirstAndFinalDiv();
-                        }
-
-                        // Reset these values
-                        this._keyboardInvoked = false;
-                        this._doNotFocus = false;
                     },
 
                     _afterClose: function AppBar_afterClose() {
