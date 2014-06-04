@@ -377,25 +377,6 @@ define([
                 thisWinUI._Overlay._trySetActive(thisWinUI.AppBar._ElementWithFocusPreviousToAppBar);
             }
 
-            function _sanitizeCommand(command) {
-
-                if (!command) {
-                    throw new WinJS.ErrorFromName("WinJS.UI.AppBar.NullCommand", strings.nullCommand);
-                }
-
-                command = command.winControl || command;
-                if (!command._element) {
-                    // Not a command, so assume it is options for the command's constructor.
-                    command = new WinJS.UI.AppBarCommand(null, command);
-                }
-                // If we were attached somewhere else, detach us
-                if (command._element.parentElement) {
-                    command._element.parentElement.removeChild(command._element);
-                }
-
-                return command;
-            }
-
             var strings = {
                 get ariaLabel() { return WinJS.Resources._getWinJSString("ui/appBarAriaLabel").value; },
                 get requiresCommands() { return WinJS.Resources._getWinJSString("ui/requiresCommands").value; },
@@ -706,7 +687,7 @@ define([
                         // we schedule the initial scaling of commands, with the expectation that the element will be added 
                         // synchronously, in the same block of code that called the constructor.
                         WinJS.Utilities.Scheduler.schedule(function () {
-                            if (this.__needToMeasureNewCommands) {
+                            if (this._needToMeasureNewCommands) {
                                 this._scaleAppBar();
                             }
                         }.bind(this), WinJS.Utilities.Scheduler.Priority.idle, this, "WinJS.AppBar._scaleNewCommands");
@@ -994,7 +975,7 @@ define([
                     }
 
                     // Commands layout only.
-                    if (this._layoutImpl && !event.altKey) {
+                    if (this._layoutImpl) {
                         this._layoutImpl.handleKeyDown(event);
                     }
                 },

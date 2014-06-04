@@ -58,7 +58,7 @@
                 },
                 _getFocusableCommandsInLogicalOrder: function _AppBarCommandsLayout_getCommandsInLogicalOrder(globalCommandHasFocus) {
                     // Function returns an array of all the contained AppBarCommands which are reachable by left/right arrows.
-                    
+
                     var selectionCommands = this._secondaryCommands.children,
                         globalCommands = this._primaryCommands.children,
                         focusedIndex = -1;
@@ -160,54 +160,57 @@
             this.appbarEl = null;
         },
         handleKeyDown: function _AppBarLayouts_handleKeyDown(event) {
-            var Key = WinJS.Utilities.Key;
+            if (!event.altKey) {
 
-            if (WinJS.Utilities._matchesSelector(event.target, ".win-interactive, .win-interactive *")) {
-                return; // Ignore left, right, home & end keys if focused element has win-interactive class.
-            }
-            var rtl = getComputedStyle(this.appbarEl).direction === "rtl";
-            var leftKey = rtl ? Key.rightArrow : Key.leftArrow;
-            var rightKey = rtl ? Key.leftArrow : Key.rightArrow;
+                var Key = WinJS.Utilities.Key;
 
-            if (event.keyCode === leftKey || event.keyCode == rightKey || event.keyCode === Key.home || event.keyCode === Key.end) {
+                if (WinJS.Utilities._matchesSelector(event.target, ".win-interactive, .win-interactive *")) {
+                    return; // Ignore left, right, home & end keys if focused element has win-interactive class.
+                }
+                var rtl = getComputedStyle(this.appbarEl).direction === "rtl";
+                var leftKey = rtl ? Key.rightArrow : Key.leftArrow;
+                var rightKey = rtl ? Key.leftArrow : Key.rightArrow;
 
-                var globalCommandHasFocus = this._primaryCommands.contains(document.activeElement);
-                var focusableCommands = this._getFocusableCommandsInLogicalOrder(globalCommandHasFocus);
-                var targetCommand;
+                if (event.keyCode === leftKey || event.keyCode == rightKey || event.keyCode === Key.home || event.keyCode === Key.end) {
 
-                if (focusableCommands.length) {
-                    switch (event.keyCode) {
-                        case leftKey:
-                            // Arrowing past the last command wraps back around to the first command.
-                            var index = Math.max(-1, focusableCommands.focusedIndex - 1) + focusableCommands.length;
-                            targetCommand = focusableCommands[index % focusableCommands.length].winControl.lastElementFocus;
-                            break;
+                    var globalCommandHasFocus = this._primaryCommands.contains(document.activeElement);
+                    var focusableCommands = this._getFocusableCommandsInLogicalOrder(globalCommandHasFocus);
+                    var targetCommand;
 
-                        case rightKey:
-                            // Arrowing previous to the first command wraps back around to the last command.
-                            var index = focusableCommands.focusedIndex + 1 + focusableCommands.length;
-                            targetCommand = focusableCommands[index % focusableCommands.length].winControl.firstElementFocus;
-                            break;
+                    if (focusableCommands.length) {
+                        switch (event.keyCode) {
+                            case leftKey:
+                                // Arrowing past the last command wraps back around to the first command.
+                                var index = Math.max(-1, focusableCommands.focusedIndex - 1) + focusableCommands.length;
+                                targetCommand = focusableCommands[index % focusableCommands.length].winControl.lastElementFocus;
+                                break;
 
-                        case Key.home:
-                            var index = 0;
-                            targetCommand = focusableCommands[index].winControl.firstElementFocus;
-                            break;
+                            case rightKey:
+                                // Arrowing previous to the first command wraps back around to the last command.
+                                var index = focusableCommands.focusedIndex + 1 + focusableCommands.length;
+                                targetCommand = focusableCommands[index % focusableCommands.length].winControl.firstElementFocus;
+                                break;
 
-                        case Key.end:
-                            var index = focusableCommands.length - 1;
-                            targetCommand = focusableCommands[index].winControl.lastElementFocus;
-                            break;
+                            case Key.home:
+                                var index = 0;
+                                targetCommand = focusableCommands[index].winControl.firstElementFocus;
+                                break;
+
+                            case Key.end:
+                                var index = focusableCommands.length - 1;
+                                targetCommand = focusableCommands[index].winControl.lastElementFocus;
+                                break;
+                        }
+                    }
+
+                    if (targetCommand) {
+                        targetCommand.focus();
+                        // Prevent default so that the browser doesn't also evaluate the keydown event on the newly focused element.
+                        event.preventDefault();
                     }
                 }
-
-                if (targetCommand) {
-                    targetCommand.focus();
-                    // Prevent default so that the browser doesn't also evaluate the keydown event on the newly focused element.
-                    event.preventDefault();
-                }
             }
-        },        
+        },
         takeFocus: function _AppBarLayouts_takeFocus() {
             // Asks layout to put focus on its first command.
             var globalCommandHasFocus = this._primaryCommands.contains(document.activeElement);
