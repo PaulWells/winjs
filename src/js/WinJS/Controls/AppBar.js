@@ -695,7 +695,6 @@ define([
                         return newCommands;
                     },
 
-
                     showCommands: function (commands) {
                         /// <signature helpKeyword="WinJS.UI.AppBar.showCommands">
                         /// <summary locid="WinJS.UI.AppBar.showCommands">
@@ -712,7 +711,6 @@ define([
                         this._showCommands(commands);
                     },
 
-
                     hideCommands: function (commands) {
                         /// <signature helpKeyword="WinJS.UI.AppBar.hideCommands">
                         /// <summary locid="WinJS.UI.AppBar.hideCommands">
@@ -726,7 +724,6 @@ define([
 
                         this._hideCommands(commands);
                     },
-
 
                     showOnlyCommands: function (commands) {
                         /// <signature helpKeyword="WinJS.UI.AppBar.showOnlyCommands">
@@ -743,7 +740,6 @@ define([
 
                         this._showOnlyCommands(commands);
                     },
-
 
                     show: function () {
                         /// <signature helpKeyword="WinJS.UI.AppBar.show">
