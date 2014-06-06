@@ -571,7 +571,7 @@ define([
                                 // Gather commands in preparation for hand off to new layout.
                                 // We expect the layout to return commands in the order they were set in, 
                                 // not necessarily the current DOM order the layout is using.
-                                commands = this._layoutImpl.commands;
+                                commands = this._layoutImpl.commandsInOrder;
                                 this._layoutImpl.disconnect();
                             }
 
@@ -581,7 +581,8 @@ define([
                             if (this._layout === appBarLayoutCommands) {
                                 this._layoutImpl = new WinJS.UI._AppBarCommandsLayout();
                             } else {
-                                this._layoutImpl = new WinJS.UI._AppBarCustomLayout();
+                                // Custom layout uses Base AppBar Layout class.
+                                this._layoutImpl = new WinJS.UI._AppBarBaseLayout();
                             }
                             this._layoutImpl.connect(this._element);
 
