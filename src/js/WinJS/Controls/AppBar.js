@@ -40,8 +40,6 @@ define([
                     topClass = "win-top",
                     bottomClass = "win-bottom";
 
-                var appBarCommandClass = "win-command";
-
                 var firstDivClass = "win-firstdiv",
                     finalDivClass = "win-finaldiv";
 
@@ -1055,8 +1053,6 @@ define([
                     },
 
                     _scaleAppBar: function AppBar_scaleAppBar() {
-                        // For commands layout AppBars only. If the total width of all AppBarCommands in the primary row is greater than the
-                        // width of the AppBar, add the win-reduced class to the AppBar element.
                         this._layoutImpl.scale();
                     },
 

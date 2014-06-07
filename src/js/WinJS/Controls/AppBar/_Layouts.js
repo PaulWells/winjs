@@ -146,7 +146,7 @@
                 this._baseLayoutConstructor(appBarEl, { className: layoutClassName });
                 this._commandLayoutsInit(appBarEl);
             }, {
-                _getWidthOfCommands: function _AppBarCommandsLayout_getWidthOfCommands(theseCommandsOnly) {
+                _getWidthOfCommands: function _AppBarCommandsLayout_getWidthOfCommands(commands) {
                     // Commands layout puts primary commands and secondary commands into the primary row.
                     // Return the total width of all visible primary and secondary commands.
 
@@ -155,8 +155,8 @@
                         this._measureContentCommands();
                     }
 
-                    if (!theseCommandsOnly) {
-                        // Return the cached width of all last known visible commands in the AppBar.
+                    if (!commands) {
+                        // Return the cached width of the last known visible commands in the AppBar.
                         return this._widthOfLastKnownVisibleCommands;
                     } else {
                         // Return the width of the specified commands.
@@ -164,8 +164,8 @@
                         var buttonsCount = 0;
                         var accumulatedWidth = 0;
                         var command;
-                        for (var i = 0, len = theseCommandsOnly.length; i < len; i++) {
-                            command = theseCommandsOnly[i].winControl || theseCommandsOnly[i];
+                        for (var i = 0, len = commands.length; i < len; i++) {
+                            command = commands[i].winControl || commands[i];
                             if (command._type === typeSeparator) {
                                 separatorsCount++
                             } else if (command._type !== typeContent) {
@@ -365,6 +365,9 @@
             }
         },
         scale: function _commandLayoutsMixin_scale() {
+            // If the total width of all AppBarCommands in the primary row is greater than the
+            // width of the AppBar, add the win-reduced class to the AppBar element and all 
+            // AppBarCommands will reduce in size.
 
             // Measure the width all visible commands in  AppBar's primary row, the AppBar's offsetWidth and the AppBar horizontal padding:
             var widthOfVisibleContent = this._getWidthOfCommands();

@@ -227,11 +227,13 @@ CorsicaTests.AppBarTests = function () {
         ab._updateFirstAndFinalDiv();
         LiveUnit.Assert.isTrue(ab.dispose);
         LiveUnit.Assert.isFalse(ab._disposed);
+        LiveUnit.Assert.isFalse(ab._layoutImpl._disposed);
 
         ab.dispose();
         LiveUnit.Assert.isTrue(ab._disposed);
         LiveUnit.Assert.isTrue(abc1._disposed);
         LiveUnit.Assert.isTrue(abc2._disposed);
+        LiveUnit.Assert.isTrue(ab._layoutImpl._disposed);
         ab.dispose();
     }
     this.testAppBarDispose["Description"] = "Unit test for dispose requirements.";
@@ -302,11 +304,10 @@ CorsicaTests.AppBarTests = function () {
             commandsInVisualOrder.push(AppBar.getCommandById("Button1").element);
             commandsInVisualOrder.push(AppBar.getCommandById("Button3").element);
 
-            // Verify initial focus is first element in DOM order.
-            var expectedIndex = 2;
-            //commandsInVisualOrder[expectedIndex].focus();
-            LiveUnit.LoggingCore.logComment("Verify that after showing an appbar, the first command in DOM order has focus");
-            LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex], document.activeElement, "The focused element should be the first AppBarCommand in DOM order");
+            // Verify initial focus is first element in Visual order.
+            var expectedIndex = 0;
+            LiveUnit.LoggingCore.logComment("Verify that after showing an appbar, the first command in VISUAL order has focus");
+            LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex], document.activeElement, "The focused element should be the first AppBarCommand in VISUAL order");
 
             // Verify 'End' & Left arrow keys
             LiveUnit.LoggingCore.logComment("Verify that 'End' key moves focus to last visible command");
@@ -409,13 +410,13 @@ CorsicaTests.AppBarTests = function () {
 
          "<div style=\"font-size: 14px;\" data-win-control=\"WinJS.UI.AppBarCommand\" data-win-options=\"{id:'progress', section:'global',type:'content'}\">Download progress...<progress></progress></div>" +
 
-         // This has tabindex -1, and both firstElementFocus and lastElementFocus are left to be default so arrow navigation will skip over it.)
-        "<div id='textBox' tabindex=\"-1\" data-win-control=\"WinJS.UI.AppBarCommand\" data-win-options=\"{id:'textBox', section:'selection',type:'content'}\">" +
-        "<input class=\"win-interactive\" placeholder=\"Commands and textboxes co-exist!\" type=\"text\"/></div>" +
-
-        // firstElementFocus is set to #orange and lastElementFocus is set to #yellow
+         // firstElementFocus is set to #orange and lastElementFocus is set to #yellow
         "<div id='buttons' data-win-control='WinJS.UI.AppBarCommand' data-win-options=\"{id:'buttons', section:'selection', type:'content', firstElementFocus:select('#orange'), lastElementFocus:select('#yellow')}\">" +
         "<div><button id='orange' style='color: orange;'>Orange</button><button id='blue' style='color: blue;'>Blue</button><button id='green' style='color: green;'>Green</button><button id='yellow' style='color: yellow;'>Yellow</button></div></div>" +
+
+         // This has tabindex -1, and both firstElementFocus and lastElementFocus are left to be default so arrow navigation will skip over it.)
+        "<div id='textBox' tabindex=\"-1\" data-win-control=\"WinJS.UI.AppBarCommand\" data-win-options=\"{id:'textBox', section:'selection',type:'content'}\">" +
+        "<input class=\"win-interactive\" placeholder=\"Commands and textboxes co-exist!\" type=\"text\"/></div>" +        
 
         // Include this command to verify that it is skipped by keyboard navigation since its hidden property is set to true.
         "<div id='ratingContainer' data-win-control=\"WinJS.UI.AppBarCommand\" data-win-options=\"{id:'ratingContainer', hidden: true, section:'selection',type:'content', firstElementFocus:select('#topBar #ratingControl')}\">" +
@@ -430,7 +431,7 @@ CorsicaTests.AppBarTests = function () {
         "<div> <span id=\"nowplaying\">Now Playing</span><span id=\"songtitle\">Rumour Has It</span><span id=\"albumtitle\">21 (Deluxe Edition) By Adele</span></div></div>";
 
         that._element.innerHTML = htmlString;
-        /* Left Right Home End key focusable commands in visual order
+        /* Left/Right/Home/End key reachable commands in visual order. 
             Selection:
                 0) "buttons" Content Command: "orange"<->"yellow" (firstElementFocus is set to #orange and lastElementFocus is set to #yellow)
 
@@ -444,68 +445,68 @@ CorsicaTests.AppBarTests = function () {
         LiveUnit.Assert.isNotNull(AppBar, "AppBar element should not be null when instantiated.");
         AppBar.show();
         that._element.addEventListener('aftershow', function () {
-            var commandsInVisualOrder = [];
-            commandsInVisualOrder.push(AppBar.getCommandById("buttons"));
-            commandsInVisualOrder.push(AppBar.getCommandById("progress")); // progress is the first command element in DOM order.
-            commandsInVisualOrder.push(AppBar.getCommandById("rangeContainer")); // Contains #range element which has the .win-interactive class.
-            commandsInVisualOrder.push(AppBar.getCommandById("x8"));
+            var reachableCommandsInVisualOrder = [];
+            reachableCommandsInVisualOrder.push(AppBar.getCommandById("buttons"));
+            reachableCommandsInVisualOrder.push(AppBar.getCommandById("progress")); // progress is the first command element in DOM order.
+            reachableCommandsInVisualOrder.push(AppBar.getCommandById("rangeContainer")); // Contains #range element which has the .win-interactive class.
+            reachableCommandsInVisualOrder.push(AppBar.getCommandById("x8"));
 
-            // Verify initial focus is first element in DOM order
-            var expectedIndex = 1;
-            LiveUnit.LoggingCore.logComment("Verify that after showing an appbar, the first command in DOM order has focus");
-            LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id, "The focused element should be the first AppBarCommand in DOM order");
+            // Verify initial focus is first element in VISUAL order
+            var expectedIndex = 0;
+            LiveUnit.LoggingCore.logComment("Verify that after showing an appbar, the first command in VISUAL order has focus");
+            LiveUnit.Assert.areEqual(reachableCommandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id, "The focused element should be the first AppBarCommand in VISUAL order");
 
             // Verify 'End' & Left arrow keys
             LiveUnit.LoggingCore.logComment("Verify that 'End' key moves focus to last visible command");
-            CommonUtilities.keydown(commandsInVisualOrder[expectedIndex].firstElementFocus, Key.end);
-            expectedIndex = commandsInVisualOrder.length - 1;
-            LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex].lastElementFocus.id, document.activeElement.id);
+            CommonUtilities.keydown(reachableCommandsInVisualOrder[expectedIndex].firstElementFocus, Key.end);
+            expectedIndex = reachableCommandsInVisualOrder.length - 1;
+            LiveUnit.Assert.areEqual(reachableCommandsInVisualOrder[expectedIndex].lastElementFocus.id, document.activeElement.id);
             LiveUnit.LoggingCore.logComment("Verify that 'Left' arrow key moves focus to correct command");
             do {
                 if (WinJS.Utilities.hasClass(document.activeElement, "win-interactive")) {
                     LiveUnit.LoggingCore.logComment("Verify that 'Left' arrow key doesn't move focus to the previous element when the active element has the win-interactive class");
-                    CommonUtilities.keydown(commandsInVisualOrder[expectedIndex].lastElementFocus, Key.leftArrow);
-                    LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex].lastElementFocus.id, document.activeElement.id);
+                    CommonUtilities.keydown(reachableCommandsInVisualOrder[expectedIndex].lastElementFocus, Key.leftArrow);
+                    LiveUnit.Assert.areEqual(reachableCommandsInVisualOrder[expectedIndex].lastElementFocus.id, document.activeElement.id);
                     // Manually move focus to continue the loop.
                     expectedIndex--;
-                    commandsInVisualOrder[expectedIndex].lastElementFocus.focus();
+                    reachableCommandsInVisualOrder[expectedIndex].lastElementFocus.focus();
                 } else {
-                    CommonUtilities.keydown(commandsInVisualOrder[expectedIndex].lastElementFocus, Key.leftArrow);
+                    CommonUtilities.keydown(reachableCommandsInVisualOrder[expectedIndex].lastElementFocus, Key.leftArrow);
                     expectedIndex--;
-                    LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex].lastElementFocus.id, document.activeElement.id);
+                    LiveUnit.Assert.areEqual(reachableCommandsInVisualOrder[expectedIndex].lastElementFocus.id, document.activeElement.id);
                 }
             } while (expectedIndex > 0);
 
             LiveUnit.LoggingCore.logComment("Verify that pressing Left arrow key on first visible command wraps focus back to the last visible command.");
-            CommonUtilities.keydown(commandsInVisualOrder[expectedIndex].lastElementFocus, Key.leftArrow);
-            expectedIndex = commandsInVisualOrder.length - 1;
-            LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex].lastElementFocus.id, document.activeElement.id);
+            CommonUtilities.keydown(reachableCommandsInVisualOrder[expectedIndex].lastElementFocus, Key.leftArrow);
+            expectedIndex = reachableCommandsInVisualOrder.length - 1;
+            LiveUnit.Assert.areEqual(reachableCommandsInVisualOrder[expectedIndex].lastElementFocus.id, document.activeElement.id);
 
             // Verify 'Home' & Right arrow keys
             LiveUnit.LoggingCore.logComment("Verify that 'Home' key moves focus to first visible command");
-            CommonUtilities.keydown(commandsInVisualOrder[expectedIndex].lastElementFocus, Key.home);
+            CommonUtilities.keydown(reachableCommandsInVisualOrder[expectedIndex].lastElementFocus, Key.home);
             expectedIndex = 0;
-            LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id);
+            LiveUnit.Assert.areEqual(reachableCommandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id);
             LiveUnit.LoggingCore.logComment("Verify that 'Right' arrow key moves focus to correct command");
             do {
                 if (WinJS.Utilities.hasClass(document.activeElement, "win-interactive")) {
                     LiveUnit.LoggingCore.logComment("Verify that 'Right' arrow key doesn't move focus to the next element when the active element has the win-interactive class");
-                    CommonUtilities.keydown(commandsInVisualOrder[expectedIndex].firstElementFocus, Key.rightArrow);
-                    LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id);
+                    CommonUtilities.keydown(reachableCommandsInVisualOrder[expectedIndex].firstElementFocus, Key.rightArrow);
+                    LiveUnit.Assert.areEqual(reachableCommandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id);
                     // Manually move focus to continue the loop.
                     expectedIndex++;
-                    commandsInVisualOrder[expectedIndex].firstElementFocus.focus();
+                    reachableCommandsInVisualOrder[expectedIndex].firstElementFocus.focus();
                 } else {
-                    CommonUtilities.keydown(commandsInVisualOrder[expectedIndex].firstElementFocus, Key.rightArrow);
+                    CommonUtilities.keydown(reachableCommandsInVisualOrder[expectedIndex].firstElementFocus, Key.rightArrow);
                     expectedIndex++;
-                    LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id);
+                    LiveUnit.Assert.areEqual(reachableCommandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id);
                 }
-            } while (expectedIndex < commandsInVisualOrder.length - 1);
+            } while (expectedIndex < reachableCommandsInVisualOrder.length - 1);
 
             LiveUnit.LoggingCore.logComment("Verify that pressing Right arrow key on last visible command, wraps focus back to first visible command.");
-            CommonUtilities.keydown(commandsInVisualOrder[expectedIndex].element, Key.rightArrow);
+            CommonUtilities.keydown(reachableCommandsInVisualOrder[expectedIndex].element, Key.rightArrow);
             expectedIndex = 0;
-            LiveUnit.Assert.areEqual(commandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id);
+            LiveUnit.Assert.areEqual(reachableCommandsInVisualOrder[expectedIndex].firstElementFocus.id, document.activeElement.id);
 
             complete();
         });
@@ -757,7 +758,7 @@ CorsicaTests.AppBarTests = function () {
         complete();
     };
 
-    this.testCommandsSetterOrderPreserverdWhenSwitchingLayouts = function (complete) {
+    this.testNewCommandsSetOrderPeserveredAfterSwitchingLayouts = function (complete) {
         // Verify setting new commands while in commands layout, and then switching back to custom layout will leave the 
         // new commands in the custom layout AppBar DOM in the same order they were initially passed to the commands 
         // setter.
@@ -780,6 +781,7 @@ CorsicaTests.AppBarTests = function () {
 
         // Switch to custom layout and verify commands were placed into the AppBar DOM 
         // in the same order the setter received them in.
+        appBar.layout = "custom";
         var commands = appBar.element.querySelectorAll(".win-command");
         LiveUnit.Assert.areEqual(newCommands[0].id, commands[0].id);
         LiveUnit.Assert.areEqual(newCommands[1].id, commands[1].id);
