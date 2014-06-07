@@ -749,7 +749,7 @@ CorsicaTests.AppBarTests = function () {
 
         // Make sure we are starting from a sane place.
         verifyCommandsOrderInDOM(appBar.element);
-        verifyCommandsNotDisposed(appBar.element);       
+        verifyCommandsNotDisposed(appBar.element);
 
         appBar.layout = 'commands';
         appBar.layout = 'custom';
@@ -766,7 +766,7 @@ CorsicaTests.AppBarTests = function () {
         root.innerHTML =
             "<div id='appBar'>" +
                 "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button0\", label:\"Button 0\", type:\"button\", section:\"global\"}'></button>" +
-                "<hr data-win-control='WinJS.UI.AppBarCommand' data-win-options='{type:\"separator\", hidden: true, section:\"global\"}' />" +
+                "<hr data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Hr0\", type:\"separator\", hidden: true, section:\"global\"}' />" +
                 "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button1\", label:\"Button 1\", type:\"button\", section:\"global\"}'></button>" +
             "</div>";
         var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"));
@@ -790,6 +790,29 @@ CorsicaTests.AppBarTests = function () {
         complete();
     };
 
+    this.testCommandsLayoutCleansUpAfterItself = function (complete) {
+        // Verify that switching off of from commands layout will remove the layout class 
+        // and any specific commands layout HTML from the AppBar element.
+        var root = document.getElementById("appBarDiv");
+        root.innerHTML =
+            "<div id='appBar'>" +
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button0\", label:\"Button 0\", type:\"button\", section:\"global\"}'></button>" +                
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button1\", label:\"Button 1\", type:\"button\", section:\"selection\"}'></button>" +
+            "</div>";
+        var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"), {layout:'commands'});
+
+        // Make sure we start from a sane place and verify commands layout init.
+        LiveUnit.Assert.isTrue(appBar.element.classList.contains("win-commandlayout"), "Commands Layout AppBar should have the win-commandlayout CSS class");
+        var layoutHTML = appBar.element.querySelectorAll(".win-primarygroup, .win-secondarygroup");
+        LiveUnit.Assert.isTrue(layoutHTML.length === 2, "commands layout appbar should have its own HTML inside of the AppBar element.");
+        
+        appBar.layout = "custom";
+        LiveUnit.Assert.isFalse(appBar.element.classList.contains("win-commandlayout"), "custom Layout AppBar should not have the commands layout CSS class");
+        var layoutHTML = appBar.element.querySelectorAll(".win-primarygroup, .win-secondarygroup");
+        LiveUnit.Assert.isTrue(layoutHTML.length === 0, "custom layout appbar should not have commands layout HTML inside of the AppBar element.");
+        
+        complete();
+    };
 }
 
 // register the object as a test class by passing in the name
