@@ -920,7 +920,7 @@ define([
                         var toPosition = toPosition || displayModeVisiblePositions[this.closedDisplayMode];
                         var closing = !this._closed && appbarClosedState;
 
-                        // If were already closed, we just want to aniamte our position, not fire events or manage focus again.
+                        // If were already closed, we just want to animate our position, not fire events or manage focus again.
                         this._changeVisiblePosition(toPosition, closing);
                         if (closing) {
                             // Determine if there are any AppBars that are visible.
@@ -1221,7 +1221,7 @@ define([
                     _afterClose: function AppBar_afterClose() {
 
                         if (this._layoutImpl) {
-                            this_layoutImpl.afterClose();
+                            this._layoutImpl.afterClose();
                         } else {
 
                         }
