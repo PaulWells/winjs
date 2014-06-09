@@ -791,8 +791,8 @@ CorsicaTests.AppBarTests = function () {
     };
 
     this.testCommandsLayoutCleansUpAfterItself = function (complete) {
-        // Verify that switching off of from commands layout will remove the layout class 
-        // and any specific commands layout HTML from the AppBar element.
+        // Verify that switching away from commands layout will remove the commandlayout class 
+        // and any commands layout specific HTML from the AppBar element.
         var root = document.getElementById("appBarDiv");
         root.innerHTML =
             "<div id='appBar'>" +
