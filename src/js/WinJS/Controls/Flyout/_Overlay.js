@@ -1171,7 +1171,7 @@
                 event.stopPropagation();
                 event.preventDefault();
 
-                thisWinUI.AppBar._hideLightDismissAppBars(null, false);
+                thisWinUI.AppBar._closeLightDismissAppBars(null, false);
                 _Overlay._hideClickEatingDivAppBar();
                 _Overlay._hideAllFlyouts();
             };
@@ -1272,7 +1272,7 @@
                 if (!document.hasFocus()) {
                     // The document doesn't have focus, so they clicked off the app, so light dismiss.
                     _Overlay._hideAllFlyouts();
-                    thisWinUI.AppBar._hideLightDismissAppBars(null, false);
+                    thisWinUI.AppBar._closeLightDismissAppBars(null, false);
                 } else {
                     if ((_Overlay._clickEatingFlyoutDiv &&
                          _Overlay._clickEatingFlyoutDiv.style.display === "block") ||
