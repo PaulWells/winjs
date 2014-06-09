@@ -23,9 +23,9 @@ CorsicaTests.AppBarScalabilityTests = function () {
             "<div id='bottomappbar' style='background-color:blue;position:absolute;'></div>";
         document.body.appendChild(host);
 
-        // Overwrite _measure so that we can mock test the scaling commands on window resize.
-        originalHelper = WinJS.UI.AppBar.prototype._scaleAppBarHelper;
-        WinJS.UI.AppBar.prototype._scaleAppBarHelper = testHelper;
+        // Overwrite _scaleHelper so that we can mock test the scaling commands on window resize.
+        originalHelper = WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper;
+        WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper = testHelper;
     };
 
     this.tearDown = function () {
@@ -38,7 +38,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         }
 
         // Restore original implementation.
-        WinJS.UI.AppBar.prototype._scaleAppBarHelper = originalHelper;
+        WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper = originalHelper;
     };
 
     var that = this,
@@ -50,7 +50,11 @@ CorsicaTests.AppBarScalabilityTests = function () {
         reducedAppBarClass = "win-reduced";
 
     function testHelper() {
-        return this.element.offsetWidth;
+        var prevDisplay = this.appBarEl.style.displaay;
+        this.appBarEl.style.display = "";
+        var returnValue = this.appBarEl.offsetWidth;
+        this.appBarEl.style.display = prevDisplay;
+        return returnValue;
     }
 
     function createAppBarCommands(cmdButtonCount, separatorCount) {
@@ -266,8 +270,8 @@ CorsicaTests.AppBarScalabilityTests = function () {
 
         // Workaround since we can't simulate a window resize event to trigger the 
         // AppBars to call _scaleAppBar(true) in their window resize handlers.
-        topAppBar._appBarTotalKnownWidth = null;
-        bottomAppBar._appBarTotalKnownWidth = null;
+        topAppBar._layoutImpl._appBarTotalKnownWidth = null;
+        bottomAppBar._layoutImpl._appBarTotalKnownWidth = null;
         bottomAppBar._scaleAppBar();
         topAppBar._scaleAppBar();
 
@@ -559,7 +563,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             appBarVisibleSeparatorCount = 2;
             verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
             LiveUnit.LoggingCore.logComment("Verify that visible AppBar waited until after the animations finished before scaling its content");
-            LiveUnit.Assert.areEqual(topAppBar._scaleCommandsAfterAnimations, true, "AppBar should scale commands after hiding animations");
+            LiveUnit.Assert.areEqual(topAppBar._layoutImpl._scaleAfterAnimations, true, "AppBar should scale commands after hiding animations");
 
             LiveUnit.LoggingCore.logComment("Verify that when a call to AppBar.showOnlyCommands() on a visible AppBar results in a net increase of content width, the command size changes do happen synchronously");
             topAppBar.showOnlyCommands([commands[0], commands[1], commands[2], commands[3], commands[4], commands[5], commands[9]]);
@@ -569,7 +573,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             appBarVisibleSeparatorCount = 0;
             verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
             LiveUnit.LoggingCore.logComment("Verify that visible AppBar did not wait until after the animations to scale its content");
-            LiveUnit.Assert.areEqual(topAppBar._scaleCommandsAfterAnimations, false, "AppBar should scale commands before staring animations");
+            LiveUnit.Assert.areEqual(topAppBar._layoutImpl._scaleAfterAnimations, false, "AppBar should scale commands before staring animations");
             complete();
         });
     };
