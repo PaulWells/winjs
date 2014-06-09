@@ -655,7 +655,7 @@ define([
                     },
 
                     _layoutCommands: function AppBar_layoutCommands(commands){
-                        // Empties AppBar HTML and rebuilds with passed in commands.
+                        // Empties AppBar HTML and repopulates with passed in commands.
                         
                         WinJS.Utilities.empty(this._element);
 
