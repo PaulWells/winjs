@@ -19,7 +19,14 @@
     WinJS.Namespace.define("WinJS.UI", {
         _AppBarBaseLayout: WinJS.Namespace._lazy(function () {
             var _AppBarBaseLayout = WinJS.Class.define(function _AppBarBaseLayout_ctor(appBarEl, options) {
-                this._baseLayoutConstructor(appBarEl, options);
+                this._disposed = false;
+
+                options = options || {};
+                WinJS.UI.setOptions(this, options);
+
+                if (appBarEl) {
+                    this.connect(appBarEl);
+                }
             }, {
                 // Members               
                 className: {
@@ -36,7 +43,7 @@
                         var commands = this.appBarEl.querySelectorAll("." + appBarCommandClass);
 
                         // Needs to be an array, in case these are getting passed to a new layout.
-                        // The new layout will invoke the AppBar.commands setter, and it expects an 
+                        // The new layout will invoke the AppBar._layoutCommands, and it expects an 
                         // Array.
                         return Array.prototype.slice.call(commands);
                     }
@@ -121,17 +128,7 @@
                 },
                 resize: function _AppBarBaseLayout_resize(event) {
                     // NOP
-                },
-                _baseLayoutConstructor: function _AppBarBaseLayout_baseLayoutConstructor(appBarEl, options) {
-                    this._disposed = false;
-
-                    options = options || {};
-                    WinJS.UI.setOptions(this, options);
-
-                    if (appBarEl) {
-                        this.connect(appBarEl);
-                    }
-                },
+                },                
             });
             return _AppBarBaseLayout;
         }),
@@ -143,7 +140,7 @@
             var layoutClassName = "win-commandlayout";
 
             var _AppBarCommandsLayout = WinJS.Class.derive(WinJS.UI._AppBarBaseLayout, function _AppBarCommandsLayout_ctor(appBarEl) {
-                this._baseLayoutConstructor(appBarEl, { className: layoutClassName });
+                WinJS.UI._AppBarBaseLayout.call(this, appBarEl, {className: layoutClassName})
                 this._commandLayoutsInit(appBarEl);
             }, {
                 _getWidthOfCommands: function _AppBarCommandsLayout_getWidthOfCommands(commands) {
@@ -219,10 +216,10 @@
             WinJS.Class.mix(_AppBarCommandsLayout, _commandLayoutsMixin);
             return _AppBarCommandsLayout;
         }),
-    });    
+    });
 
     // These are functions and properties that any new command layout would want to share with our existing "commands" layout.
-    var _commandLayoutsMixin = {      
+    var _commandLayoutsMixin = {
         layout: function _commandLayoutsMixin_layout(commands) {
             // Insert commands and other layout specific DOM into the AppBar element.
 
@@ -265,7 +262,7 @@
                 }
             }.bind(this), WinJS.Utilities.Scheduler.Priority.idle, this, "WinJS._commandLayoutsMixin._scaleNewCommands");
 
-        },       
+        },
         commandsInOrder: {
             get: function () {
                 return this._commandsInOriginalOrder.filter(function (command) {
@@ -277,7 +274,7 @@
         disposeChildren: function _commandLayoutsMixin_disposeChildren() {
             WinJS.Utilities.disposeSubTree(this._primaryCommands);
             WinJS.Utilities.disposeSubTree(this._secondaryCommands);
-        },        
+        },
         handleKeyDown: function _commandLayoutsMixin_handleKeyDown(event) {
             var Key = WinJS.Utilities.Key;
 
@@ -326,7 +323,7 @@
                     event.preventDefault();
                 }
             }
-        },        
+        },
         commandsUpdated: function _commandLayoutsMixin_commandsUpdated(newSetOfVisibleCommands) {
             // Whenever new commands are set or existing commands are hiding/showing in the AppBar, this
             // function is called to update the cached width measurement of all visible AppBarCommands.            
