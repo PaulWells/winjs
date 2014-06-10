@@ -595,7 +595,6 @@ define([
                                 this._layoutCommands(commands);
                             }
                             this._layout.connect(this._element);
-                            this._layout.type = layout;
 
                             if (commands && commands.length) {
                                 // Reset AppBar since layout changed.
@@ -671,12 +670,12 @@ define([
 
                     _layoutCommands: function AppBar_layoutCommands(commands) {
                         // Empties AppBar HTML and repopulates with passed in commands.
+                        WinJS.Utilities.empty(this._element);
 
                         // In case they had only one command to set...
                         if (!Array.isArray(commands)) {
                             commands = [commands];
                         }
-                    },
 
                         this._layout.layout(commands);
                     },
@@ -1002,6 +1001,8 @@ define([
                                 return this._element.winAnimating;
                             } else {
                                 return this._lastPositionVisited;
+                            }
+                        }
                     },
 
                     _closed: {
@@ -1019,6 +1020,7 @@ define([
                         // SECOND PARAMETER: 'newState' is a string value of the new state we are entering (opened/closed). 
                         //   If the value is null, then we are not changing states, only changing visible positions.
                         // RETURN VALUE: This function returns true if the requested position change was successful, else returns false.
+                        
                         if (this._visiblePosition === toPosition || (this.disabled && toPosition !== displayModeVisiblePositions.disabled)) {
                             // If we want to go where we already are, or we're disabled return false.                    
                             return false;
@@ -1051,12 +1053,14 @@ define([
                                     // We can skip our animation and just close.
                                     performAnimation = false;
                                 } else {
-                                    // Some portion of the AppBar should be visible to users after its position change.
+                                    // Some portion of the AppBar should be visible to users after its position changes.
 
                                     // Un-obscure ourselves and become visible to the user again. 
                                     // Need to animate to our desired position as if we were coming up from behind the keyboard.
                                     fromPosition = displayModeVisiblePositions.hidden;
                                     this._keyboardObscured = false;
+                                }
+                            }
 
                             // Fire "before" event if we are changing state.
                             if (newState === appbarOpenedState) {
@@ -1069,7 +1073,7 @@ define([
                             var afterPositionChange = function _afterPosiitonChange(newPosition) {
                                 if (this._disposed) {
                                     return;
-
+                                }
                                 // Clear animation flag and record having visited this position.
                                 this._element.winAnimating = "";
                                 this._lastPositionVisited = newPosition;
@@ -1124,7 +1128,7 @@ define([
                         this._layout.scale();
 
                         this._layout.beforeOpen();
-                        this.element.querySelector(".win-ellipsis").style.width = "";
+                        //this.element.querySelector(".win-ellipsis").style.width = "";
 
                         // Send our "beforeShow" event
                         this._sendEvent(WinJS.UI._Overlay.beforeShow);
@@ -1140,7 +1144,7 @@ define([
                         // Send our "beforeHide" event
                         this._sendEvent(WinJS.UI._Overlay.beforeHide);
 
-                        this.element.querySelector(".win-ellipsis").style.width = "100%";
+                        //this.element.querySelector(".win-ellipsis").style.width = "100%";
                     },
 
                     _afterClose: function AppBar_afterClose() {

@@ -802,7 +802,7 @@ CorsicaTests.AppBarTests = function () {
             "</div>";
         var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"), {layout:'commands'});
 
-        // Make sure we start from a sane place and verify initial commands layout HTML.
+        // Make sure we start from a sane place and verify initial commands layout HTML. 
         LiveUnit.Assert.isTrue(appBar.element.classList.contains("win-commandlayout"), "Commands Layout AppBar should have the win-commandlayout CSS class");
         var layoutHTML = appBar.element.querySelectorAll(".win-primarygroup, .win-secondarygroup");
         LiveUnit.Assert.isTrue(layoutHTML.length === 2, "commands layout appbar should have its own HTML inside of the AppBar element.");
