@@ -394,11 +394,6 @@
                 }
             }
         },
-        beforeClose: function _commandLayoutsMixin_beforeClose() {
-            //this._primaryCommands.style.visibility = "hidden";
-            //this._secondaryCommands.style.visibility = "hidden";
-            //this.appBarEl.querySelector(".ellipsis").style.width = "100%";
-        },
         afterClose: function _commandLayoutsMixin_afterClose() {
             this._primaryCommands.style.visibility = "hidden";
             this._secondaryCommands.style.visibility = "hidden";

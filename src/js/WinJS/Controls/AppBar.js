@@ -1129,7 +1129,7 @@ define([
                         this._scaleAppBar();
 
                         this._layoutImpl.beforeOpen();
-                        this.element.querySelector(".ellipsis").style.width = "";
+                        this.element.querySelector(".win-ellipsis").style.width = "";
 
                         // Send our "beforeShow" event
                         this._sendEvent(WinJS.UI._Overlay.beforeShow);
@@ -1145,7 +1145,7 @@ define([
                         // Send our "beforeHide" event
                         this._sendEvent(WinJS.UI._Overlay.beforeHide);
 
-                        this.element.querySelector(".ellipsis").style.width = "100%";
+                        this.element.querySelector(".win-ellipsis").style.width = "100%";
                     },
 
                     _afterClose: function AppBar_afterClose() {
@@ -1573,7 +1573,8 @@ define([
                     if (WinJS.Utilities.hasClass(element, thisWinUI._Overlay._clickEatingAppBarClass) ||
                         WinJS.Utilities.hasClass(element, thisWinUI._Overlay._clickEatingFlyoutClass) ||
                         WinJS.Utilities.hasClass(element, firstDivClass) ||
-                        WinJS.Utilities.hasClass(element, finalDivClass)) {
+                        WinJS.Utilities.hasClass(element, finalDivClass) || 
+                        WinJS.Utilities.hasClass(element, "win-ellipsis")) {
                         return element;
                     }
 
