@@ -56,7 +56,7 @@ define([
                     disabled: 0,
                     none: 0,
                     hidden: 0,
-                    minimal: 30,
+                    minimal: 25,
                 }
 
                 // Maps each notion of a display modes to its corresponding visible position
@@ -155,12 +155,12 @@ define([
                         if (AppBar) {
                             AppBars.push(AppBar);
                             if (AppBar._closed) {
-                                    AppBars.closed = true;
-                                } else {
-                                    AppBars._opened = true;
-                                }
+                                AppBars.closed = true;
+                            } else {
+                                AppBars._opened = true;
                             }
                         }
+                    }
 
                     return AppBars;
                 }
@@ -580,7 +580,7 @@ define([
                                 // We expect the layout to return commands in the order they were set in, 
                                 // not necessarily the current DOM order the layout is using.
                                 commands = this._layoutImpl.commandsInOrder;
-                                    this._layoutImpl.disconnect();
+                                this._layoutImpl.disconnect();
                             }
 
                             // Set layout
@@ -671,7 +671,7 @@ define([
                                 commands = [commands];
                             }
 
-                                this._layoutImpl.layout(commands);
+                            this._layoutImpl.layout(commands);
                         }
                     },
 
@@ -813,7 +813,7 @@ define([
                         /// </summary>
                         /// </signature>
                         // Just wrap the private one, turning off keyboard invoked flag
-                        this._writeProfilerMark("show,StartTM"); 
+                        this._writeProfilerMark("show,StartTM");
                         this._keyboardInvoked = false;
                         this._doNotFocus = !!this.sticky;
                         this._open();
@@ -863,7 +863,7 @@ define([
                         this._close();
                     },
 
-                    _close: function AppBar_close(toPosition) {                       
+                    _close: function AppBar_close(toPosition) {
 
                         var toPosition = toPosition || displayModeVisiblePositions[this.closedDisplayMode];
                         var closing = !this._closed && appbarClosedState;
@@ -951,7 +951,7 @@ define([
                         WinJS.Utilities.disposeSubTree(this.element);
                         this._layoutImpl.dispose();
                         this.disabled = true;
-                        
+
                     },
 
                     _disposeChildren: function AppBar_disposeChildren() {
@@ -974,7 +974,7 @@ define([
                         }
 
                         // Layout might want to handle additional keys
-                            this._layoutImpl.handleKeyDown(event);
+                        this._layoutImpl.handleKeyDown(event);
 
                     },
 
@@ -1043,7 +1043,7 @@ define([
                             this._element.style.display = "";
 
                             // Are we hiding completely, or about to become visible?
-                            var hidingCompletely = (toPosition === displayModeVisiblePositions.hidden);                            
+                            var hidingCompletely = (toPosition === displayModeVisiblePositions.hidden);
 
                             if (this._keyboardObscured) {
                                 // We're changing position while covered by the IHM.                        
@@ -1125,12 +1125,11 @@ define([
                             this._queuedToHide = [];
                         }
 
-                        if (this._layoutImpl) {
-                            this._layoutImpl.beforeOpen();
-                        }
-
                         // Make sure everything fits before opening
-                        this._scaleAppBar();                       
+                        this._scaleAppBar();
+
+                        this._layoutImpl.beforeOpen();
+                        this.element.querySelector(".ellipsis").style.width = "";
 
                         // Send our "beforeShow" event
                         this._sendEvent(WinJS.UI._Overlay.beforeShow);
@@ -1139,21 +1138,19 @@ define([
                     _afterOpen: function AppBar_afterOpen() {
                         // Send our "afterShow" event
                         this._sendEvent(WinJS.UI._Overlay.afterShow);
-                        this._writeProfilerMark("show,StopTM"); 
+                        this._writeProfilerMark("show,StopTM");
                     },
 
                     _beforeClose: function AppBar_beforeClose() {
                         // Send our "beforeHide" event
                         this._sendEvent(WinJS.UI._Overlay.beforeHide);
+
+                        this.element.querySelector(".ellipsis").style.width = "100%";
                     },
 
                     _afterClose: function AppBar_afterClose() {
 
-                        if (this._layoutImpl) {
-                            this._layoutImpl.afterClose();
-                        } else {
-
-                        }
+                        this._layoutImpl.afterClose();
 
                         // In case their 'afterhide' event handler is going to manipulate commands, 
                         // first see if there are any queued command animations we can handle now we're closed.
@@ -1165,7 +1162,7 @@ define([
 
                         // Send our "afterHide" event
                         this._sendEvent(WinJS.UI._Overlay.afterHide);
-                        this._writeProfilerMark("hide,StopTM"); 
+                        this._writeProfilerMark("hide,StopTM");
                     },
 
 
@@ -1284,7 +1281,7 @@ define([
 
                     _commandsUpdated: function AppBar_commandsUpdated() {
                         this._layoutImpl.commandsUpdated();
-                            this._scaleAppBar();
+                        this._scaleAppBar();
                     },
 
                     _scaleAppBar: function AppBar_scaleAppBar() {
@@ -1301,7 +1298,7 @@ define([
 
                     _endAnimateCommands: function AppBar_endAnimateCommands() {
                         this._layoutImpl.endAnimateCommands();
-                    },                    
+                    },
 
                     // Get the top of the top appbars, this is always 0 because appbar uses
                     // -ms-device-fixed positioning.
