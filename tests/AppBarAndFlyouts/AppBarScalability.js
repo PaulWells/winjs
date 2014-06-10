@@ -269,11 +269,11 @@ CorsicaTests.AppBarScalabilityTests = function () {
         setWidth(host, 750);
 
         // Workaround since we can't simulate a window resize event to trigger the 
-        // AppBars to call _scaleAppBar(true) in their window resize handlers.
+        // AppBars to call _layoutImpl.scale() in their window resize handlers.
         topAppBar._layoutImpl._appBarTotalKnownWidth = null;
         bottomAppBar._layoutImpl._appBarTotalKnownWidth = null;
-        bottomAppBar._scaleAppBar();
-        topAppBar._scaleAppBar();
+        bottomAppBar._layoutImpl.scale();
+        topAppBar._layoutImpl.scale();
 
         // Yield and verify sizes
         WinJS.Promise.timeout(100).

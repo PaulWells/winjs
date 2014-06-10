@@ -761,7 +761,7 @@ define([
                     }
 
                     // Make sure everything fits before showing.
-                    this._scaleAppBar();
+                    this._layoutImpl.scale();
 
                     // If we're covered by a keyboard we look hidden, so we may have to jump up
                     if (this._keyboardObscured) {
@@ -1051,10 +1051,6 @@ define([
 
                 _commandsUpdated: function AppBar_commandsUpdated() {
                     this._layoutImpl.commandsUpdated();
-                    this._scaleAppBar();
-                },
-
-                _scaleAppBar: function AppBar_scaleAppBar() {
                     this._layoutImpl.scale();
                 },
 

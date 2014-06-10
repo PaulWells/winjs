@@ -361,7 +361,7 @@
         endAnimateCommands: function _commandLayoutsMixin_endAnimateCommands() {
             if (this._scaleAfterAnimations) {
                 this.commandsUpdated();
-                this.appBarEl.winControl._scaleAppBar();
+                this.scale();
             }
         },
         scale: function _commandLayoutsMixin_scale() {
@@ -388,7 +388,7 @@
                 // Check for horizontal window resizes.
                 this._appBarTotalKnownWidth = null;
                 if (!this.appBarEl.winControl.hidden) {
-                    this.appBarEl.winControl._scaleAppBar();
+                    this.scale();
                 }
             }
         },
