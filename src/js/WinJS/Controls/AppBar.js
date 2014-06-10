@@ -544,10 +544,10 @@ define([
                     /// </field>
                     layout: {
                         get: function () {
-                            return this._layout;
+                            return this._layout.type;
                         },
-                        set: function (value) {
-                            if (value !== appBarLayoutCommands && value !== appBarLayoutCustom) {
+                        set: function (layout) {
+                            if (layout !== appBarLayoutCommands && layout !== appBarLayoutCustom) {
                                 throw new WinJS.ErrorFromName("WinJS.UI.AppBar.BadLayout", strings.badLayout);
                             }
 
@@ -565,22 +565,21 @@ define([
                             var commands;
                             if (!this._initializing) {
                                 // Gather commands in preparation for hand off to new layout.
-                                // We expect the layout to return commands in the order they were set in, 
+                                // We expect prev layout to return commands in the order they were set in, 
                                 // not necessarily the current DOM order the layout is using.
-                                commands = this._layoutImpl.commandsInOrder;
-                                this._layoutImpl.disconnect();
+                                commands = this._layout.commandsInOrder;
+                                this._layout.disconnect();
                             }
 
                             // Set layout
-                            this._layout = value;
-
-                            if (this._layout === appBarLayoutCommands) {
-                                this._layoutImpl = new WinJS.UI._AppBarCommandsLayout();
+                            if (layout === appBarLayoutCommands) {
+                                this._layout = new WinJS.UI._AppBarCommandsLayout();
                             } else {
                                 // Custom layout uses Base AppBar Layout class.
-                                this._layoutImpl = new WinJS.UI._AppBarBaseLayout();
+                                this._layout = new WinJS.UI._AppBarBaseLayout();
                             }
-                            this._layoutImpl.connect(this._element);
+                            this._layout.connect(this._element);
+                            this._layout.type = layout;
 
                             if (commands && commands.length) {
                                 // Reset AppBar since layout changed.
@@ -664,7 +663,7 @@ define([
                             commands = [commands];
                         }
 
-                        this._layoutImpl.layout(commands);
+                        this._layout.layout(commands);
                     },
 
                     getCommandById: function (id) {
@@ -761,7 +760,7 @@ define([
                     }
 
                     // Make sure everything fits before showing.
-                    this._layoutImpl.scale();
+                    this._layout.scale();
 
                     // If we're covered by a keyboard we look hidden, so we may have to jump up
                     if (this._keyboardObscured) {
@@ -902,14 +901,14 @@ define([
 
                 _dispose: function AppBar_dispose() {
                     WinJS.Utilities.disposeSubTree(this.element);
-                    this._layoutImpl.dispose();
+                    this._layout.dispose();
                     this._hide();
                         
                 },
 
                 _disposeChildren: function AppBar_disposeChildren() {
                     // Be purposeful about what we dispose.
-                    this._layoutImpl.disposeChildren();
+                    this._layout.disposeChildren();
                 },
 
                 _handleKeyDown: function AppBar_handleKeyDown(event) {
@@ -927,7 +926,7 @@ define([
                     }
 
                     // Layout might want to handle additional keys
-                    this._layoutImpl.handleKeyDown(event);
+                    this._layout.handleKeyDown(event);
 
                 },
 
@@ -1050,8 +1049,8 @@ define([
                 },
 
                 _commandsUpdated: function AppBar_commandsUpdated() {
-                    this._layoutImpl.commandsUpdated();
-                    this._layoutImpl.scale();
+                    this._layout.commandsUpdated();
+                    this._layout.scale();
                 },
 
                 _beginAnimateCommands: function AppBar_beginAnimateCommands(showCommands, hideCommands, otherVisibleCommands) {
@@ -1059,11 +1058,11 @@ define([
                     // 1) showCommands[]: All of the HIDDEN win-command elements that ARE scheduled to show. 
                     // 2) hideCommands[]: All of the VISIBLE win-command elements that ARE scheduled to hide.
                     // 3) otherVisibleCommands[]: All VISIBLE win-command elements that ARE NOT scheduled to hide. 
-                    this._layoutImpl.beginAnimateCommands(showCommands, hideCommands, otherVisibleCommands);
+                    this._layout.beginAnimateCommands(showCommands, hideCommands, otherVisibleCommands);
                 },
 
                 _endAnimateCommands: function AppBar_endAnimateCommands() {
-                    this._layoutImpl.endAnimateCommands();
+                    this._layout.endAnimateCommands();
                 },                    
 
                 // Get the top of the top appbars, this is always 0 because appbar uses
@@ -1157,7 +1156,7 @@ define([
                     }
 
                     // Make sure everything still fits.
-                    this._layoutImpl.resize(event);
+                    this._layout.resize(event);
                 },
 
                 _checkKeyboardTimer: function AppBar_checkKeyboardTimer() {
