@@ -2,6 +2,10 @@
 (function NavBarContainerInit(global, WinJS, undefined) {
     "use strict";
 
+    function nobodyHasFocus() {
+        return document.activeElement === null || document.activeElement === document.body;
+    }
+
     WinJS.Namespace.define("WinJS.UI", {
         /// <field>
         /// <summary locid="WinJS.UI.NavBarContainer">
@@ -67,7 +71,7 @@
                 /// </returns>
                 /// <compatibleWith platform="Windows" minVersion="8.1"/>
                 /// </signature>
-
+                
                 element = element || document.createElement("DIV");
                 this._id = element.id || WinJS.Utilities._uniqueID(element);
                 this._writeProfilerMark("constructor,StartTM");
@@ -83,7 +87,11 @@
                 this._element = element;
                 WinJS.Utilities.addClass(this.element, WinJS.UI.NavBarContainer._ClassName.navbarcontainer);
                 WinJS.Utilities.addClass(this.element, "win-disposable");
-
+                if (!element.getAttribute("tabIndex")) {
+                    element.tabIndex = -1;
+                }
+                
+                this._focusCurrentItemPassivelyBound = this._focusCurrentItemPassively.bind(this);
                 this._closeSplitAndResetBound = this._closeSplitAndReset.bind(this);
                 this._currentManipulationState = MS_MANIPULATION_STATE_STOPPED;
 
@@ -355,11 +363,12 @@
                 forceLayout: function NavBarContainer_forceLayout() {
                     /// <signature helpKeyword="WinJS.UI.NavBarContainer.forceLayout">
                     /// <summary locid="WinJS.UI.NavBarContainer.forceLayout">
-                    /// Forces the NavBarContainer to update scroll positions and if there are internal pending measurements, it will also re-measure. 
+                    /// Forces the NavBarContainer to update scroll positions and if the NavBar has changed size, it will also re-measure. 
                     /// Use this function when making the NavBarContainer visible again after you set its style.display property to "none".
                     /// </summary>
                     /// <compatibleWith platform="Windows" minVersion="8.1"/>
                     /// </signature>
+                    this._resizeHandler();
                     if (this._measured) {
                         this._scrollPosition = WinJS.Utilities.getScrollPosition(this._viewportEl)[(this.layout === WinJS.UI.Orientation.horizontal ? "scrollLeft" : "scrollTop")];
                     }
@@ -375,6 +384,7 @@
                         if (this._appBarEl) {
                             this._appBarEl.removeEventListener('beforeshow', this._closeSplitAndResetBound);
                             this._appBarEl.removeEventListener('beforeshow', this._resizeImplBound);
+                            this._appBarEl.removeEventListener('aftershow', this._focusCurrentItemPassivelyBound);
                         }
                     
                         var appBarEl = this.element.parentNode;
@@ -385,6 +395,7 @@
                         
                         if (this._appBarEl) {
                             this._appBarEl.addEventListener('beforeshow', this._closeSplitAndResetBound);
+                            this._appBarEl.addEventListener('aftershow', this._focusCurrentItemPassivelyBound);
                         }
                     }
                 },
@@ -427,13 +438,13 @@
                         } else if (ev.detail.index === this._keyboardBehavior.currentIndex) {
                             // This clamps if the item being removed was the last item in the list
                             this._keyboardBehavior.currentIndex = this._keyboardBehavior.currentIndex;
-                            if (document.activeElement === null && this._elementHadFocus) {
+                            if (nobodyHasFocus() && this._elementHadFocus) {
                                 this._keyboardBehavior._focus();
                             }
                         }
                     } else if (ev.type === "itemchanged") {
                         if (ev.detail.index === this._keyboardBehavior.currentIndex) {
-                            if (document.activeElement === null && this._elementHadFocus) {
+                            if (nobodyHasFocus() && this._elementHadFocus) {
                                 this._keyboardBehavior._focus();
                             }
                         }
@@ -444,13 +455,13 @@
                     } else if (ev.type === "itemmoved") {
                         if (ev.detail.oldIndex === this._keyboardBehavior.currentIndex) {
                             this._keyboardBehavior.currentIndex = ev.detail.newIndex;
-                            if (document.activeElement === null && this._elementHadFocus) {
+                            if (nobodyHasFocus() && this._elementHadFocus) {
                                 this._keyboardBehavior._focus();
                             }
                         }
                     } else if (ev.type === "reload") {
                         this._keyboardBehavior.currentIndex = 0;
-                        if (document.activeElement === null && this._elementHadFocus) {
+                        if (nobodyHasFocus() && this._elementHadFocus) {
                             this._keyboardBehavior._focus();
                         }
                     }
@@ -458,7 +469,13 @@
                     this._ensureVisible(this._keyboardBehavior.currentIndex, true);
                     this._updatePageUI();
                 },
-
+                
+                _focusCurrentItemPassively: function NavBarContainer_focusCurrentItemPassively() {
+                    if (this.element.contains(document.activeElement)) {
+                        this._keyboardBehavior._focus();
+                    }
+                },
+                
                 _reset: function NavBarContainer_reset() {
                     this._keyboardBehavior.currentIndex = 0;
                     if (this._surfaceEl.children.length > 0) {
@@ -603,7 +620,9 @@
                     this._rightArrowEl.style.visibility = 'hidden';
                     this._rightArrowFadeOut = WinJS.Promise.wrap();
 
-                    this._keyboardBehavior = new WinJS.UI._KeyboardBehavior(this._surfaceEl);
+                    this._keyboardBehavior = new WinJS.UI._KeyboardBehavior(this._surfaceEl, {
+                        scroller: this._viewportEl
+                    });
                     this._winKeyboard = new WinJS.UI._WinKeyboard(this._surfaceEl);
                 },
 
@@ -763,7 +782,7 @@
                                 this._scrollTo(scrollPositionTarget);
                             }
 
-                            WinJS.Utilities._setActive(element);
+                            WinJS.Utilities._setActive(element, this._viewportEl);
                         } else {
                             if (this.layout === WinJS.UI.Orientation.horizontal) {
                                 var indexOfLastItemOnPage = (page + 1) * sizes.columnsPerPage * sizes.rowsPerPage - 1;
@@ -816,7 +835,7 @@
                             }
 
                             try {
-                                WinJS.Utilities._setActive(element);
+                                WinJS.Utilities._setActive(element, this._viewportEl);
                             } catch (e) {
                             }
                         }
@@ -945,6 +964,8 @@
                 },
 
                 _scrollHandler: function NavBarContainer_scrollHandler() {
+                    if (this._disposed) { return; }
+                    
                     this._measured = false;
                     if (!this._checkingScroll) {
                         var that = this;

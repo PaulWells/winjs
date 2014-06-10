@@ -15,9 +15,11 @@
         separatorWidth = 60,
         buttonWidth = 100;
 
-    // AppBar will use this when its AppBar.layout property is set to "custom"
+    // AppBar will use this when AppBar.layout property is set to "custom"
     WinJS.Namespace.define("WinJS.UI", {
         _AppBarBaseLayout: WinJS.Namespace._lazy(function () {
+            var baseType = "custom";
+
             var _AppBarBaseLayout = WinJS.Class.define(function _AppBarBaseLayout_ctor(appBarEl, options) {
                 this._disposed = false;
 
@@ -33,9 +35,11 @@
                     get: function _AppBarBaseLayout_getClassName() {
                         return this._className;
                     },
-                    set: function _AppBarBaseLayout_setClassName(value) {
-                        this._className = value;
-                    }
+                },
+                type: {
+                    get: function _AppBarBaseLayout_getClassName() {
+                        return this._type || baseType;
+                    },
                 },
                 commandsInOrder: {
                     get: function _AppBarBaseLayout_getCommandsInOrder() {
@@ -128,9 +132,9 @@
                 },
                 resize: function _AppBarBaseLayout_resize(event) {
                     // NOP
-                },                
-                beforeOpen: function () { },
-                afterClose: function () { },
+                },
+                beforeOpen: function  _AppBarBaseLayout_beforeOpen() { },
+                afterClose: function  _AppBarBaseLayout_afterClose() { },                
             });
             return _AppBarBaseLayout;
         }),
@@ -140,9 +144,10 @@
     WinJS.Namespace.define("WinJS.UI", {
         _AppBarCommandsLayout: WinJS.Namespace._lazy(function () {
             var layoutClassName = "win-commandlayout";
+            var layoutType = "commands";
 
             var _AppBarCommandsLayout = WinJS.Class.derive(WinJS.UI._AppBarBaseLayout, function _AppBarCommandsLayout_ctor(appBarEl) {
-                WinJS.UI._AppBarBaseLayout.call(this, appBarEl, {className: layoutClassName})
+                WinJS.UI._AppBarBaseLayout.call(this, appBarEl, {_className: layoutClassName, _type: layoutType})
                 this._commandLayoutsInit(appBarEl);
             }, {
                 _getWidthOfCommands: function _AppBarCommandsLayout_getWidthOfCommands(commands) {
@@ -448,6 +453,11 @@
                 }
 
                 this.commandsUpdated();
+            }
+        },
+    }
+})(WinJS);
+
             }
         },
     }

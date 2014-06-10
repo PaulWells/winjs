@@ -156,11 +156,11 @@ define([
                             AppBars.push(AppBar);
                             if (AppBar._closed) {
                                 AppBars.closed = true;
-                            } else {
+                                } else {
                                 AppBars._opened = true;
+                                }
                             }
                         }
-                    }
 
                     return AppBars;
                 }
@@ -589,6 +589,12 @@ define([
                                 this._layout = new WinJS.UI._AppBarBaseLayout();
                             }
                             this._layout.connect(this._element);
+
+                            if (commands && commands.length) {
+                                // Reset AppBar since layout changed.
+                                this._layoutCommands(commands);
+                            }
+                            this._layout.connect(this._element);
                             this._layout.type = layout;
 
                             if (commands && commands.length) {
@@ -659,19 +665,18 @@ define([
                                 // AppBarCommands defined in markup don't want to be disposed during initialization.
                                 this._disposeChildren();
                             }
-                            this._layoutCommands(commands);
+                            this._layoutCommands(commands);                           
                         }
                     },
 
                     _layoutCommands: function AppBar_layoutCommands(commands) {
                         // Empties AppBar HTML and repopulates with passed in commands.
 
-                        WinJS.Utilities.empty(this._element);
-
                         // In case they had only one command to set...
                         if (!Array.isArray(commands)) {
                             commands = [commands];
                         }
+                    },
 
                         this._layout.layout(commands);
                     },
@@ -692,7 +697,7 @@ define([
                                 // Minimal is default.
                                 this._closedDisplayMode = closedDisplayModes.minimal;
                             }
-
+                        
                             if (oldValue !== this._closedDisplayMode && this._closed) {
                                 // If the value changed while we were closed, update our position.
                                 this._changeVisiblePosition(displayModeVisiblePositions[this._closedDisplayMode]);
@@ -976,9 +981,7 @@ define([
 
                         // Layout might want to handle additional keys
                         this._layout.handleKeyDown(event);
-
                     },
-
                     _visiblePixels: {
                         get: function () {
                             // Returns object containing pixel height of each visible position
@@ -991,7 +994,6 @@ define([
                             }
                         }
                     },
-
                     _visiblePosition: {
                         // Returns string value of our nearest, stationary, visible position.
                         get: function () {
@@ -1000,8 +1002,6 @@ define([
                                 return this._element.winAnimating;
                             } else {
                                 return this._lastPositionVisited;
-                            }
-                        }
                     },
 
                     _closed: {
@@ -1013,14 +1013,12 @@ define([
                             }
                         }
                     },
-
                     _changeVisiblePosition: function (toPosition, newState) {
                         // Change the visible position of our AppBar.
                         // FIRST PARAMETER: 'toPosition' is the string value of the visible position we want to move to.
                         // SECOND PARAMETER: 'newState' is a string value of the new state we are entering (opened/closed). 
                         //   If the value is null, then we are not changing states, only changing visible positions.
                         // RETURN VALUE: This function returns true if the requested position change was successful, else returns false.
-
                         if (this._visiblePosition === toPosition || (this.disabled && toPosition !== displayModeVisiblePositions.disabled)) {
                             // If we want to go where we already are, or we're disabled return false.                    
                             return false;
@@ -1059,8 +1057,6 @@ define([
                                     // Need to animate to our desired position as if we were coming up from behind the keyboard.
                                     fromPosition = displayModeVisiblePositions.hidden;
                                     this._keyboardObscured = false;
-                                }
-                            }
 
                             // Fire "before" event if we are changing state.
                             if (newState === appbarOpenedState) {
@@ -1068,13 +1064,11 @@ define([
                             } else if (newState === appbarClosedState) {
                                 this._beforeClose();
                             }
-
                             // Define body of work to perform after changing positions. 
                             // Bind it to ourselves.
                             var afterPositionChange = function _afterPosiitonChange(newPosition) {
                                 if (this._disposed) {
                                     return;
-                                }
 
                                 // Clear animation flag and record having visited this position.
                                 this._element.winAnimating = "";
