@@ -19,7 +19,14 @@
     WinJS.Namespace.define("WinJS.UI", {
         _AppBarBaseLayout: WinJS.Namespace._lazy(function () {
             var _AppBarBaseLayout = WinJS.Class.define(function _AppBarBaseLayout_ctor(appBarEl, options) {
-                this._baseLayoutConstructor(appBarEl, options);
+                this._disposed = false;
+
+                options = options || {};
+                WinJS.UI.setOptions(this, options);
+
+                if (appBarEl) {
+                    this.connect(appBarEl);
+                }
             }, {
                 // Members               
                 className: {
@@ -36,7 +43,7 @@
                         var commands = this.appBarEl.querySelectorAll("." + appBarCommandClass);
 
                         // Needs to be an array, in case these are getting passed to a new layout.
-                        // The new layout will invoke the AppBar.commands setter, and it expects an 
+                        // The new layout will invoke the AppBar._layoutCommands, and it expects an 
                         // Array.
                         return Array.prototype.slice.call(commands);
                     }
@@ -121,19 +128,9 @@
                 },
                 resize: function _AppBarBaseLayout_resize(event) {
                     // NOP
-                },
+                },                
                 beforeOpen: function () { },
                 afterClose: function () { },
-                _baseLayoutConstructor: function _AppBarBaseLayout_baseLayoutConstructor(appBarEl, options) {
-                    this._disposed = false;
-
-                    options = options || {};
-                    WinJS.UI.setOptions(this, options);
-
-                    if (appBarEl) {
-                        this.connect(appBarEl);
-                    }
-                },
             });
             return _AppBarBaseLayout;
         }),
@@ -145,7 +142,7 @@
             var layoutClassName = "win-commandlayout";
 
             var _AppBarCommandsLayout = WinJS.Class.derive(WinJS.UI._AppBarBaseLayout, function _AppBarCommandsLayout_ctor(appBarEl) {
-                this._baseLayoutConstructor(appBarEl, { className: layoutClassName });
+                WinJS.UI._AppBarBaseLayout.call(this, appBarEl, {className: layoutClassName})
                 this._commandLayoutsInit(appBarEl);
             }, {
                 _getWidthOfCommands: function _AppBarCommandsLayout_getWidthOfCommands(commands) {
@@ -363,7 +360,7 @@
         endAnimateCommands: function _commandLayoutsMixin_endAnimateCommands() {
             if (this._scaleAfterAnimations) {
                 this.commandsUpdated();
-                this.appBarEl.winControl._scaleAppBar();
+                this.scale();
             }
         },
         scale: function _commandLayoutsMixin_scale() {
@@ -390,7 +387,7 @@
                 // Check for horizontal window resizes.
                 this._appBarTotalKnownWidth = null;
                 if (!this.appBarEl.winControl.hidden) {
-                    this.appBarEl.winControl._scaleAppBar();
+                    this.scale();
                 }
             }
         },

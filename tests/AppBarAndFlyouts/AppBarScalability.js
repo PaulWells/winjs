@@ -269,11 +269,11 @@ CorsicaTests.AppBarScalabilityTests = function () {
         setWidth(host, 750);
 
         // Workaround since we can't simulate a window resize event to trigger the 
-        // AppBars to call _scaleAppBar(true) in their window resize handlers.
-        topAppBar._layoutImpl._appBarTotalKnownWidth = null;
-        bottomAppBar._layoutImpl._appBarTotalKnownWidth = null;
-        bottomAppBar._scaleAppBar();
-        topAppBar._scaleAppBar();
+        // AppBars to call _layout.scale() in their window resize handlers.
+        topAppBar._layout._appBarTotalKnownWidth = null;
+        bottomAppBar._layout._appBarTotalKnownWidth = null;
+        bottomAppBar._layout.scale();
+        topAppBar._layout.scale();
 
         // Yield and verify sizes
         WinJS.Promise.timeout(100).
@@ -563,7 +563,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             appBarVisibleSeparatorCount = 2;
             verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
             LiveUnit.LoggingCore.logComment("Verify that visible AppBar waited until after the animations finished before scaling its content");
-            LiveUnit.Assert.areEqual(topAppBar._layoutImpl._scaleAfterAnimations, true, "AppBar should scale commands after hiding animations");
+            LiveUnit.Assert.areEqual(topAppBar._layout._scaleAfterAnimations, true, "AppBar should scale commands after hiding animations");
 
             LiveUnit.LoggingCore.logComment("Verify that when a call to AppBar.showOnlyCommands() on a visible AppBar results in a net increase of content width, the command size changes do happen synchronously");
             topAppBar.showOnlyCommands([commands[0], commands[1], commands[2], commands[3], commands[4], commands[5], commands[9]]);
@@ -573,7 +573,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             appBarVisibleSeparatorCount = 0;
             verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
             LiveUnit.LoggingCore.logComment("Verify that visible AppBar did not wait until after the animations to scale its content");
-            LiveUnit.Assert.areEqual(topAppBar._layoutImpl._scaleAfterAnimations, false, "AppBar should scale commands before staring animations");
+            LiveUnit.Assert.areEqual(topAppBar._layout._scaleAfterAnimations, false, "AppBar should scale commands before staring animations");
             complete();
         });
     };

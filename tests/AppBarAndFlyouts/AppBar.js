@@ -227,13 +227,13 @@ CorsicaTests.AppBarTests = function () {
         ab._updateFirstAndFinalDiv();
         LiveUnit.Assert.isTrue(ab.dispose);
         LiveUnit.Assert.isFalse(ab._disposed);
-        LiveUnit.Assert.isFalse(ab._layoutImpl._disposed);
+        LiveUnit.Assert.isFalse(ab._layout._disposed);
 
         ab.dispose();
         LiveUnit.Assert.isTrue(ab._disposed);
         LiveUnit.Assert.isTrue(abc1._disposed);
         LiveUnit.Assert.isTrue(abc2._disposed);
-        LiveUnit.Assert.isTrue(ab._layoutImpl._disposed);
+        LiveUnit.Assert.isTrue(ab._layout._disposed);
         ab.dispose();
     }
     this.testAppBarDispose["Description"] = "Unit test for dispose requirements.";
@@ -740,7 +740,7 @@ CorsicaTests.AppBarTests = function () {
         // Custom layout AppBar won't process commands automatically during construction
         // Create and process AppBar child elements now.     
         appBarElement.appendChild(new WinJS.UI.AppBarCommand(null, { id: 'Button0', label: 'Button 0', section: 'global' }).element);
-        appBarElement.appendChild(document.createElement("INPUT"));
+        appBarElement.appendChild(document.createElement("INPUT")); // Not an AppBarCommand, so not expected to get restored.
         appBarElement.appendChild(new WinJS.UI.AppBarCommand(null, { id: 'Button1', label: 'Button 1', section: 'selection' }).element);
         appBarElement.appendChild(new WinJS.UI.AppBarCommand(null, { id: 'Hr0', type: 'separator', hidden: true, section: 'global' }).element);
 
@@ -750,6 +750,7 @@ CorsicaTests.AppBarTests = function () {
         // Make sure we are starting from a sane place.
         verifyCommandsOrderInDOM(appBar.element);
         verifyCommandsNotDisposed(appBar.element);
+        LiveUnit.Assert.areEqual(appBar.layout, "custom", "AppBar should be using custom layout");
 
         appBar.layout = 'commands';
         appBar.layout = 'custom';
@@ -791,8 +792,8 @@ CorsicaTests.AppBarTests = function () {
     };
 
     this.testCommandsLayoutCleansUpAfterItself = function (complete) {
-        // Verify that switching off of from commands layout will remove the layout class 
-        // and any specific commands layout HTML from the AppBar element.
+        // Verify that switching away from commands layout will remove the commandlayout class 
+        // and any commands layout specific HTML from the AppBar element.
         var root = document.getElementById("appBarDiv");
         root.innerHTML =
             "<div id='appBar'>" +
