@@ -133,8 +133,6 @@
                 resize: function _AppBarBaseLayout_resize(event) {
                     // NOP
                 },
-                beforeOpen: function  _AppBarBaseLayout_beforeOpen() { },
-                afterClose: function  _AppBarBaseLayout_afterClose() { },                
             });
             return _AppBarBaseLayout;
         }),
@@ -395,14 +393,6 @@
                     this.scale();
                 }
             }
-        },
-        afterClose: function _commandLayoutsMixin_afterClose() {
-            this._primaryCommands.style.visibility = "hidden";
-            this._secondaryCommands.style.visibility = "hidden";
-        },
-        beforeOpen: function _commandLayoutsMixin_beforeOpen() {
-            this._primaryCommands.style.visibility = "";
-            this._secondaryCommands.style.visibility = "";
         },
         _commandLayoutsInit: function _commandLayoutsMixin_commandLayoutsInit(appBarEl) {
             // Create layout infrastructure

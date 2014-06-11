@@ -38,10 +38,12 @@ define([
                     reducedClass = "win-reduced",
                     settingsFlyoutClass = "win-settingsflyout",
                     topClass = "win-top",
-                    bottomClass = "win-bottom";
+                    bottomClass = "win-bottom",
+                    closedClass = "win-closed";
 
                 var firstDivClass = "win-firstdiv",
-                    finalDivClass = "win-finaldiv";
+                    finalDivClass = "win-finaldiv",
+                    ellipsisClass = "win-ellipsis";
 
                 // Constants for placement
                 var appBarPlacementTop = "top",
@@ -156,11 +158,11 @@ define([
                             AppBars.push(AppBar);
                             if (AppBar._closed) {
                                 AppBars.closed = true;
-                                } else {
+                            } else {
                                 AppBars._opened = true;
-                                }
                             }
                         }
+                    }
 
                     return AppBars;
                 }
@@ -1127,10 +1129,10 @@ define([
                         // Make sure everything fits before opening
                         this._layout.scale();
 
-                        this._layout.beforeOpen();
-                        //this.element.querySelector(".win-ellipsis").style.width = "";
+                        this.element.querySelector("." + ellipsisClass).style.width = "";
+                        WinJS.Utitilities.removeClass(this._element, closedClass);
 
-                        // Send our "beforeShow" event
+                        // Send our "beforeShow" event 
                         this._sendEvent(WinJS.UI._Overlay.beforeShow);
                     },
 
@@ -1144,12 +1146,11 @@ define([
                         // Send our "beforeHide" event
                         this._sendEvent(WinJS.UI._Overlay.beforeHide);
 
-                        //this.element.querySelector(".win-ellipsis").style.width = "100%";
+                        WinJS.Utitilities.addClass(this._element, closedClass);
+                        this.element.querySelector("." + ellipsisClass).style.width = "100%";
                     },
 
                     _afterClose: function AppBar_afterClose() {
-
-                        this._layout.afterClose();
 
                         // In case their 'afterhide' event handler is going to manipulate commands, 
                         // first see if there are any queued command animations we can handle now we're closed.
@@ -1568,8 +1569,8 @@ define([
                     if (WinJS.Utilities.hasClass(element, thisWinUI._Overlay._clickEatingAppBarClass) ||
                         WinJS.Utilities.hasClass(element, thisWinUI._Overlay._clickEatingFlyoutClass) ||
                         WinJS.Utilities.hasClass(element, firstDivClass) ||
-                                WinJS.Utilities.hasClass(element, finalDivClass) ||
-                                WinJS.Utilities.hasClass(element, "win-ellipsis")) {
+                        WinJS.Utilities.hasClass(element, finalDivClass) ||
+                        WinJS.Utilities.hasClass(element, ellipsisClass)) {
                         return element;
                     }
 
