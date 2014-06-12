@@ -1151,12 +1151,13 @@ define([
                         this._writeProfilerMark("show,StopTM");
                     },
 
-                    _beforeClose: function AppBar_beforeClose() {
-                        WinJS.Utilities.addClass(this._element, closedClass);
-                        this._ellipsis.style.width = "100%";
+                    _beforeClose: function AppBar_beforeClose() {                      
 
                         // Send our "beforeHide" event
                         this._sendEvent(WinJS.UI._Overlay.beforeHide);
+
+                        WinJS.Utilities.addClass(this._element, closedClass);
+                        this._ellipsis.style.width = "100%";
                     },
 
                     _afterClose: function AppBar_afterClose() {

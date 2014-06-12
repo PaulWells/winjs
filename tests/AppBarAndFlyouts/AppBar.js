@@ -41,6 +41,8 @@ CorsicaTests.AppBarTests = function () {
         open: "open",
     }
 
+    var appBarVisiblePositionChangeDuration = WinJS.UI._animationTimeAdjustment(367);
+
     var that = this;
     // Test AppBar Instantiation
     this.testAppBarInstantiation = function () {
@@ -198,6 +200,7 @@ CorsicaTests.AppBarTests = function () {
         LiveUnit.Assert.isFalse(AppBar.sticky, "Verifying that sticky is false");
         LiveUnit.Assert.isFalse(AppBar.disabled, "Verifying that disabled is false");
         LiveUnit.Assert.isTrue(AppBar.hidden, "Verifying that hidden is true");
+        LiveUnit.Assert.areEqual(AppBar.closedDisplayMode, 'none', "Verifying closedDisplayMode is none");
     }
     this.testDefaultAppBarParameters["Description"] = "Test default AppBar parameters";
 
@@ -401,9 +404,9 @@ CorsicaTests.AppBarTests = function () {
             var commandsInVisualOrder = [];
 
             // Verify initial focus
-            var focusedIndex = -1;
-            LiveUnit.LoggingCore.logComment("Verify that empty appbar recieves focus on itself when opened.");
-            LiveUnit.Assert.areEqual(that._element, document.activeElement, "The focused element should be the AppBar itself");
+            var activeElement = document.activeElement;
+            LiveUnit.LoggingCore.logComment("Verify that empty appbar contains focus after it opens.");
+            LiveUnit.Assert.isTrue(that._element.contains(activeElement), "The focused element should be in the AppBar HTML");
 
             LiveUnit.LoggingCore.logComment("Verify that 'End', 'Right', 'Left', & 'Home' keys do not crash when the AppBar is empty.");
             CommonUtilities.keydown(that._element, Key.end);
@@ -412,7 +415,7 @@ CorsicaTests.AppBarTests = function () {
             CommonUtilities.keydown(that._element, Key.rightArrow);
 
             LiveUnit.LoggingCore.logComment("Verify focus is still on the AppBarElement.");
-            LiveUnit.Assert.areEqual(that._element, document.activeElement, "The focused element should be the AppBar itself");
+            LiveUnit.Assert.isTrue(that._element.contains(activeElement), "The focused element should still be in the AppBar HTML.");
             complete();
         });
     };
@@ -838,7 +841,7 @@ CorsicaTests.AppBarTests = function () {
         complete();
     };
 
-    this.testOpenAndClose = function (complete) {
+    this.testOpenAndClose_Indicators_DisplayModes_And_VisiblePositions = function (complete) {
 
         var topInitialCDM = 'none';
         var bottomInitialCDM = 'minimal';
@@ -861,10 +864,14 @@ CorsicaTests.AppBarTests = function () {
         var bottomBar = new WinJS.UI.AppBar(root.querySelector("#bottomBar"), { placement: 'bottom', layout: 'custom', closedDisplayMode: bottomInitialCDM });
 
         var verifyClosedIndicators = function (expected, appBar, msg) {
+            verifyClosingIndicators(expected, appBar, msg);
+            LiveUnit.Assert.areEqual(expected, WinJS.Utilities.hasClass(appBar.element, "win-closed"), msg);
+        }
+
+        var verifyClosingIndicators = function (expected, appBar, msg) {
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual(expected, appBar.hidden, msg);
             LiveUnit.Assert.areEqual(expected, appBar._closed, msg);
-            LiveUnit.Assert.areEqual(expected, WinJS.Utilities.hasClass(appBar.element, "win-closed"), msg);
         }
 
         var topBarOpenedAndClosed;
@@ -876,10 +883,10 @@ CorsicaTests.AppBarTests = function () {
             bottomBarOpenedAndClosed = c;
         });
 
-        var verifyOpeningViaShow = function (evt) {            
+        var verifyOpeningViaShow = function (evt) {
             var appBar = evt.target.winControl;
             appBar.removeEventListener("beforeshow", verifyOpeningViaShow, false);
-            
+
             msg = "AppBars that are opening should not show indications of being closed."
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             verifyClosedIndicators(false, appBar, msg);
@@ -889,7 +896,7 @@ CorsicaTests.AppBarTests = function () {
             LiveUnit.Assert.areEqual("open", appBar._visiblePosition, msg);
         }
 
-        var verifyOpenedViaShow = function (evt) {            
+        var verifyOpenedViaShow = function (evt) {
             var appBar = evt.target.winControl;
             appBar.removeEventListener("aftershow", verifyOpenedViaShow, false);
 
@@ -909,9 +916,9 @@ CorsicaTests.AppBarTests = function () {
             var appBar = evt.target.winControl;
             appBar.removeEventListener("beforehide", verifyClosingViaHide, false);
 
-            msg = "AppBars that are closing should show indications of being closed."
+            msg = "AppBars that are closing should show indications of closing."
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            verifyClosedIndicators(true, appBar, msg);
+            verifyClosingIndicators(true, appBar, msg);
 
             msg = "AppBars that are closing via hide should indicate their visible position is their closedDisplayMode";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
@@ -931,7 +938,7 @@ CorsicaTests.AppBarTests = function () {
             LiveUnit.Assert.areEqual(displayModeVisiblePositions[appBar.closedDisplayMode], appBar._visiblePosition, msg);
 
             // Signal OpenedAndClosed promise completion.
-            if(appBar.placement === 'top'){
+            if (appBar.placement === 'top') {
                 topBarOpenedAndClosed();
             } else {
                 bottomBarOpenedAndClosed();
@@ -948,7 +955,7 @@ CorsicaTests.AppBarTests = function () {
         LiveUnit.Assert.areEqual(topInitialPosition, topBar._visiblePosition, msg);
         LiveUnit.Assert.areEqual(bottomInitialCDM, bottomBar.closedDisplayMode, msg);
         LiveUnit.Assert.areEqual(bottomInitialPosition, bottomBar._visiblePosition, msg);
-        
+
         topBar.addEventListener("beforeshow", verifyOpeningViaShow, false);
         topBar.addEventListener("aftershow", verifyOpenedViaShow, false);
         topBar.addEventListener("beforehide", verifyClosingViaHide, false);
@@ -973,6 +980,32 @@ CorsicaTests.AppBarTests = function () {
             complete();
         });
 
+    };
+
+
+    this.testChangingClosedDisplayModeChangesPosition = function (complete) {
+        var initialCDM = 'none';
+        var initialPosition = displayModeVisiblePositions[initialCDM];
+
+        var root = document.getElementById("appBarDiv");
+        root.innerHTML =
+            "<div id='appBar'>" +
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button0\", label:\"Button 0\", type:\"button\", section:\"global\"}'></button>" +
+                "<hr data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Hr0\", type:\"separator\", hidden: true, section:\"global\"}' />" +
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button1\", label:\"Button 1\", type:\"button\", section:\"selection\"}'></button>" +
+            "</div>";
+        var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"), null);
+
+        var msg = "AppBar should have the correct default visible position";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areEqual(initialCDM, appBar.closedDisplayMode, msg);
+        LiveUnit.Assert.areEqual(initialPosition, appBar._visiblePosition, msg);
+
+        appBar.closedDisplayMode = "minimal";
+        var delay = appBarVisiblePositionChangeDuration + 100;
+        WinJS.Promise.timeout(delay ).then(function () {
+            debugger;
+        });
     };
 
     this.testAppBarEllipsisIsNotATabStopWhenClosdDisplayModeIsNone = function (complete) {

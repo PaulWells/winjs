@@ -537,11 +537,14 @@ CorsicaTests.AppBarScalabilityTests = function () {
         LiveUnit.LoggingCore.logComment("Verify that AppBar.hideCommands() on visible AppBar doesn't happen syncronously, but rather waits for command hiding animations to complete.");
         verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
 
-        // Appbar doesn't fire any events when labels are added or dropped
-        // Hence the timeouts
-        var delay = 2000;
+        // Appbar doesn't fire any events when labels are added or dropped.
+        // We are waiting on more than just the command hiding animation, 
+        // the AppBar schedules a job to start the animation so we have to leave enough time for that as well.
+        // Hence the timeout of 2000ms. 
+        var delay = Math.min(WinJS.UI._animationTimeAdjustment(2000) * 5, 2000); 
         WinJS.Promise.timeout(delay).then(function () {
             appBarVisibleCommandCount--;
+            // If this Check is found to fail intermittenly on certain devices, it may be that we have to increase the timing delay or add a better hook to test for.
             verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
 
             LiveUnit.LoggingCore.logComment("Showing Button1 to force commands to scale down.");
