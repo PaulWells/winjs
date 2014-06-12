@@ -32,17 +32,17 @@
             }, {
                 // Members               
                 className: {
-                    get: function _AppBarBaseLayout_getClassName() {
+                    get: function _AppBarBaseLayout_get_className() {
                         return this._className;
                     },
                 },
                 type: {
-                    get: function _AppBarBaseLayout_getClassName() {
+                    get: function _AppBarBaseLayout_get_className() {
                         return this._type || baseType;
                     },
                 },
                 commandsInOrder: {
-                    get: function _AppBarBaseLayout_getCommandsInOrder() {
+                    get: function _AppBarBaseLayout_get_commandsInOrder() {
                         // Gets a DOM ordered Array of the AppBarCommand elements in the AppBar.                        
                         var commands = this.appBarEl.querySelectorAll("." + appBarCommandClass);
 

@@ -61,7 +61,7 @@ define([
                     minimal: 25,
                 }
 
-                // Maps each notion of a display modes to its corresponding visible position
+                // Maps each notion of a display modes to the corresponding visible position
                 var displayModeVisiblePositions = {
                     disabled: "hidden",
                     none: "hidden",
@@ -423,7 +423,7 @@ define([
                     // Simplify checking later
                     options = options || {};
 
-                    // Make sure there's an input element            
+                    // Make sure there's an element            
                     this._element = element || document.createElement("div");
                     this._id = this._element.id || WinJS.Utilities._uniqueID(this._element);
                     this._writeProfilerMark("constructor,StartTM");
@@ -432,32 +432,7 @@ define([
                         this._element.tabIndex = -1;
                     }
 
-                    // Run layout setter immediately. We need to know our layout in order to correctly 
-                    // position any commands that may be getting set through the constructor. 
-                    this.layout = options.layout || appBarLayoutCommands;
-                    delete options.layout;
-
-                    // validate that if they didn't set commands, but want command
-                    // layout that the HTML only contains commands.  Do this first
-                    // so that we don't leave partial AppBars in the DOM.
-                    if (this.layout !== appBarLayoutCustom && !options.commands && this._element) {
-                        // Shallow copy object so we can modify it.
-                        options = WinJS.Utilities._shallowCopy(options);
-                        options.commands = this._verifyCommandsOnly(this._element, "WinJS.UI.AppBarCommand");
-                    }
-
-                    this.placement = options.placement || appBarPlacementBottom;
-                    this.closedDisplayMode = options.closedDisplayMode || closedDisplayModes.none;
-
-                    // Call the base overlay constructor helper
-                    this._baseOverlayConstructor(this._element, options);
-
-                    this._initializing = false;
-
-                    // Make a click eating div
-                    thisWinUI._Overlay._createClickEatingDivAppBar();
-
-                    // Attach our css class,
+                    // Attach our css class.
                     WinJS.Utilities.addClass(this._element, appBarClass);
 
                     // Make sure we have an ARIA role
@@ -470,7 +445,44 @@ define([
                         this._element.setAttribute("aria-label", strings.ariaLabel);
                     }
 
-                    // Handle key down (esc) and key pressed (left & right)
+                    // Start off completely closed
+                    this._lastPositionVisited = displayModeVisiblePositions.none;
+                    WinJS.Utilities.addClass(this._element, closedClass);
+
+                    // validate that if they didn't set commands, but want command
+                    // layout that the HTML only contains commands.  Do this first
+                    // so that we don't leave partial AppBars in the DOM.
+                    if (options.layout !== appBarLayoutCustom && !options.commands && this._element) {
+                        // Shallow copy object so we can modify it.
+                        options = WinJS.Utilities._shallowCopy(options);
+                        options.commands = this._verifyCommandsOnly(this._element, "WinJS.UI.AppBarCommand");
+                    }
+
+                    // Add Open/Close button.
+                    this._ellipsis = document.createElement("BUTTON");
+                    this._ellipsis.innerHTML = "<span></span>"; 
+                    this._ellipsis.addEventListener('click', WinJS.UI.AppBar._toggleAppBarEdgy, false);
+                    WinJS.Utilities.addClass(this._ellipsis, ellipsisClass);
+                    this._element.appendChild(this._ellipsis);
+
+                    // Run layout setter immediately. We need to know our layout in order to correctly 
+                    // position any commands that may be getting set through the constructor. 
+                    this.layout = options.layout || appBarLayoutCommands;
+                    delete options.layout;
+
+                    // Need to set placement before closedDisplayMode, closedDisplayMode sets our starting position, which is dependant on placement.
+                    this.placement = options.placement || appBarPlacementBottom;
+                    this.closedDisplayMode = options.closedDisplayMode || closedDisplayModes.none;
+
+                    // Call the base overlay constructor helper
+                    this._baseOverlayConstructor(this._element, options);
+
+                    this._initializing = false;
+
+                    // Make a click eating div
+                    thisWinUI._Overlay._createClickEatingDivAppBar();
+
+                    // Handle key down (esc) and (left & right)
                     this._element.addEventListener("keydown", this._handleKeyDown.bind(this), false);
 
                     // Attach event handler
@@ -507,8 +519,6 @@ define([
                         this._element.style.display = "none";
                     }
 
-                    this._lastPositionVisited = displayModeVisiblePositions.none;
-
                     this._writeProfilerMark("constructor,StopTM");
 
                     return this;
@@ -517,10 +527,10 @@ define([
 
                     /// <field type="String" defaultValue="bottom" oamOptionsDatatype="WinJS.UI.AppBar.placement" locid="WinJS.UI.AppBar.placement" helpKeyword="WinJS.UI.AppBar.placement">The placement of the AppBar on the display.  Values are "top" or "bottom".</field>
                     placement: {
-                        get: function () {
+                        get: function AppBar_get_placement() {
                             return this._placement;
                         },
-                        set: function (value) {
+                        set: function AppBar_set_placement(value) {
                             // In designer we may have to move it
                             var wasOpen = false;
                             if (window.Windows && Windows.ApplicationModel && Windows.ApplicationModel.DesignMode && Windows.ApplicationModel.DesignMode.designModeEnabled && !this.hidden) {
@@ -555,10 +565,10 @@ define([
                     /// Gets or sets the layout of the AppBar contents to either "commands" or "custom".
                     /// </field>
                     layout: {
-                        get: function () {
+                        get: function AppBar_get_layout() {
                             return this._layout.type;
                         },
-                        set: function (layout) {
+                        set: function AppBar_set_layout(layout) {
                             if (layout !== appBarLayoutCommands && layout !== appBarLayoutCustom) {
                                 throw new WinJS.ErrorFromName("WinJS.UI.AppBar.BadLayout", strings.badLayout);
                             }
@@ -570,7 +580,7 @@ define([
                                 wasOpen = true;
                             }
 
-                            if (!this.hidden && !this._initializing) {
+                            if (!this.hidden) {
                                 throw new WinJS.ErrorFromName("WinJS.UI.AppBar.CannotChangeLayoutWhenVisible", strings.cannotChangeLayoutWhenVisible);
                             }
 
@@ -616,10 +626,10 @@ define([
                     /// This value is true if the AppBar is sticky; otherwise, it's false.
                     /// </field>
                     sticky: {
-                        get: function () {
+                        get: function AppBar_get_sticky() {
                             return this._sticky;
                         },
-                        set: function (value) {
+                        set: function AppBar_set_sticky(value) {
                             // If it doesn't change, do nothing
                             if (this._sticky === !!value) {
                                 return;
@@ -655,7 +665,7 @@ define([
                     /// Sets the AppBarCommands in the AppBar. This property accepts an array of AppBarCommand objects.
                     /// </field>
                     commands: {
-                        set: function (commands) {
+                        set: function AppBar_set_commands(commands) {
                             // Fail if trying to set when open
                             if (!this.hidden) {
                                 throw new WinJS.ErrorFromName("WinJS.UI.AppBar.CannotChangeCommandsWhenVisible", WinJS.Resources._formatString(thisWinUI._Overlay.commonstrings.cannotChangeCommandsWhenVisible, "AppBar"));
@@ -671,8 +681,11 @@ define([
                     },
 
                     _layoutCommands: function AppBar_layoutCommands(commands) {
+                        // Function precondition: AppBar must already be closed.
+
                         // Empties AppBar HTML and repopulates with passed in commands.
                         WinJS.Utilities.empty(this._element);
+                        this._element.appendChild(this._ellipsis); // Keep our Open/Close button.
 
                         // In case they had only one command to set...
                         if (!Array.isArray(commands)) {
@@ -686,10 +699,10 @@ define([
                     /// Sets the AppBarCommands in the AppBar. This property accepts an array of AppBarCommand objects.
                     /// </field>
                     closedDisplayMode: {
-                        get: function () {
+                        get: function AppBar_get_closedDisplayMode() {
                             return this._closedDisplayMode;
                         },
-                        set: function (value) {
+                        set: function AppBar_set_closedDisplayMode(value) {
                             var oldValue = this._closedDisplayMode;
 
                             if (value === closedDisplayModes.none) {
@@ -831,7 +844,7 @@ define([
                         var toPosition = displayModeVisiblePositions.open;
                         var opening = this._closed && appbarOpenedState;
 
-                        // If we're already opened, we just want to animate our position, not fire events or manage focus again.
+                        // If we're already opened, we just want to animate our position, not fire events or manage focus.
                         this._changeVisiblePosition(toPosition, opening);
                         if (opening) {
                             // Configure open state for lightdismiss & sticky appbars.
@@ -1009,11 +1022,7 @@ define([
 
                     _closed: {
                         get: function () {
-                            if (this._visiblePosition === displayModeVisiblePositions.open) {
-                                return false;
-                            } else {
-                                return true;
-                            }
+                            return (this._visiblePosition !== displayModeVisiblePositions.open);
                         }
                     },
                     _changeVisiblePosition: function (toPosition, newState) {
@@ -1129,8 +1138,8 @@ define([
                         // Make sure everything fits before opening
                         this._layout.scale();
 
-                        this.element.querySelector("." + ellipsisClass).style.width = "";
-                        WinJS.Utitilities.removeClass(this._element, closedClass);
+                        this._ellipsis.style.width = "";
+                        WinJS.Utilities.removeClass(this._element, closedClass);
 
                         // Send our "beforeShow" event 
                         this._sendEvent(WinJS.UI._Overlay.beforeShow);
@@ -1143,11 +1152,11 @@ define([
                     },
 
                     _beforeClose: function AppBar_beforeClose() {
+                        WinJS.Utilities.addClass(this._element, closedClass);
+                        this._ellipsis.style.width = "100%";
+
                         // Send our "beforeHide" event
                         this._sendEvent(WinJS.UI._Overlay.beforeHide);
-
-                        WinJS.Utitilities.addClass(this._element, closedClass);
-                        this.element.querySelector("." + ellipsisClass).style.width = "100%";
                     },
 
                     _afterClose: function AppBar_afterClose() {
@@ -1484,11 +1493,11 @@ define([
                         appBarFinalDiv = appBarFinalDiv.length >= 1 ? appBarFinalDiv[0] : null;
 
                         // Remove the firstDiv & finalDiv if they are not at the appropriate locations
-                        if (appBarFirstDiv && (this._element.children[0] != appBarFirstDiv)) {
+                        if (appBarFirstDiv && (this._element.children[0] !== appBarFirstDiv)) {
                             appBarFirstDiv.parentNode.removeChild(appBarFirstDiv);
                             appBarFirstDiv = null;
                         }
-                        if (appBarFinalDiv && (this._element.children[this._element.children.length - 1] != appBarFinalDiv)) {
+                        if (appBarFinalDiv && (this._element.children[this._element.children.length - 1] !== appBarFinalDiv)) {
                             appBarFinalDiv.parentNode.removeChild(appBarFinalDiv);
                             appBarFinalDiv = null;
                         }
@@ -1526,15 +1535,23 @@ define([
                             this._element.appendChild(appBarFinalDiv);
                         }
 
+
+                        // Ellipsis should be the second to last element in the AppBar's tab order. Second to the finalDiv.
+                        if (this._element.children[this._element.children.length - 2] !== this._ellipsis) {
+                            this._element.insertBefore(this._ellipsis, appBarFinalDiv);
+                        }
+                        var elms = this._element.getElementsByTagName("*");
+                        var highestTabIndex = WinJS.Utilities._getHighestTabIndexInList(elms);
+                        this._ellipsis.tabIndex = highestTabIndex;
+
                         // Update the tabIndex of the firstDiv & finalDiv
                         if (_isThereOpenNonStickyBar()) {
-                            var elms = this._element.getElementsByTagName("*");
 
                             if (appBarFirstDiv) {
                                 appBarFirstDiv.tabIndex = WinJS.Utilities._getLowestTabIndexInList(elms);
                             }
                             if (appBarFinalDiv) {
-                                appBarFinalDiv.tabIndex = WinJS.Utilities._getHighestTabIndexInList(elms);
+                                appBarFinalDiv.tabIndex = highestTabIndex;
                             }
                         } else {
                             if (appBarFirstDiv) {

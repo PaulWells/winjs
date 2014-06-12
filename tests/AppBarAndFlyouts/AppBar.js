@@ -33,6 +33,14 @@ CorsicaTests.AppBarTests = function () {
         OverlayHelpers.disposeAndRemove(document.querySelector("." + WinJS.UI._Overlay._clickEatingFlyoutClass));
     };
 
+    var displayModeVisiblePositions = {
+        disabled: "hidden",
+        none: "hidden",
+        hidden: "hidden",
+        minimal: "minimal",
+        open: "open",
+    }
+
     var that = this;
     // Test AppBar Instantiation
     this.testAppBarInstantiation = function () {
@@ -129,11 +137,26 @@ CorsicaTests.AppBarTests = function () {
         testGoodInitOption("placement", "top");
         testGoodInitOption("placement", "bottom");
         testGoodInitOption("placement", "fixed");
+        testGoodInitOption("placement", "");
         testGoodInitOption("placement", -1);
         testGoodInitOption("placement", 12);
         testGoodInitOption("placement", {});
         testGoodInitOption("placement", true);
         testGoodInitOption("placement", false);
+        testGoodInitOption("placement", undefined);
+        testGoodInitOption("placement", null);
+
+        testGoodInitOption("closedDisplayMode", "none");
+        testGoodInitOption("closedDisplayMode", "minimal");
+        testGoodInitOption("closedDisplayMode", "compact");
+        testGoodInitOption("closedDisplayMode", "");
+        testGoodInitOption("closedDisplayMode", -1);
+        testGoodInitOption("closedDisplayMode", 12);
+        testGoodInitOption("closedDisplayMode", {});
+        testGoodInitOption("closedDisplayMode", true);
+        testGoodInitOption("closedDisplayMode", false);
+        testGoodInitOption("closedDisplayMode", null);
+        testGoodInitOption("closedDisplayMode", undefined);
 
         LiveUnit.LoggingCore.logComment("Testing layout");
         testGoodInitOption("layout", "custom");
@@ -416,7 +439,7 @@ CorsicaTests.AppBarTests = function () {
 
          // This has tabindex -1, and both firstElementFocus and lastElementFocus are left to be default so arrow navigation will skip over it.)
         "<div id='textBox' tabindex=\"-1\" data-win-control=\"WinJS.UI.AppBarCommand\" data-win-options=\"{id:'textBox', section:'selection',type:'content'}\">" +
-        "<input class=\"win-interactive\" placeholder=\"Commands and textboxes co-exist!\" type=\"text\"/></div>" +        
+        "<input class=\"win-interactive\" placeholder=\"Commands and textboxes co-exist!\" type=\"text\"/></div>" +
 
         // Include this command to verify that it is skipped by keyboard navigation since its hidden property is set to true.
         "<div id='ratingContainer' data-win-control=\"WinJS.UI.AppBarCommand\" data-win-options=\"{id:'ratingContainer', hidden: true, section:'selection',type:'content', firstElementFocus:select('#topBar #ratingControl')}\">" +
@@ -730,7 +753,7 @@ CorsicaTests.AppBarTests = function () {
             LiveUnit.Assert.areEqual("Button1", commands[1].id);
             LiveUnit.Assert.areEqual("Hr0", commands[2].id);
         }
-        function verifyCommandsNotDisposed(appBarEl) {           
+        function verifyCommandsNotDisposed(appBarEl) {
             var commands = appBarEl.querySelectorAll(".win-command");
             for (var i = 0, len = commands.length; i < len; i++) {
                 LiveUnit.Assert.isFalse(commands[i].winControl._disposed);
@@ -797,25 +820,163 @@ CorsicaTests.AppBarTests = function () {
         var root = document.getElementById("appBarDiv");
         root.innerHTML =
             "<div id='appBar'>" +
-                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button0\", label:\"Button 0\", type:\"button\", section:\"global\"}'></button>" +                
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button0\", label:\"Button 0\", type:\"button\", section:\"global\"}'></button>" +
                 "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button1\", label:\"Button 1\", type:\"button\", section:\"selection\"}'></button>" +
             "</div>";
-        var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"), {layout:'commands'});
+        var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"), { layout: 'commands' });
 
         // Make sure we start from a sane place and verify initial commands layout HTML. 
-        LiveUnit.Assert.isTrue(appBar.element.classList.contains("win-commandlayout"), "Commands Layout AppBar should have the win-commandlayout CSS class");
+        LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(appBar.element, "win-commandlayout"), "Commands Layout AppBar should have the win-commandlayout CSS class");
         var layoutHTML = appBar.element.querySelectorAll(".win-primarygroup, .win-secondarygroup");
         LiveUnit.Assert.isTrue(layoutHTML.length === 2, "commands layout appbar should have its own HTML inside of the AppBar element.");
-        
+
         appBar.layout = "custom";
-        LiveUnit.Assert.isFalse(appBar.element.classList.contains("win-commandlayout"), "custom Layout AppBar should not have the commands layout CSS class");
-        var layoutHTML = appBar.element.querySelectorAll(".win-primarygroup, .win-secondarygroup");
+        LiveUnit.Assert.isFalse(WinJS.Utilities.hasClass(appBar.element, "win-commandlayout"), "Custom Layout AppBar should not have the commands layout CSS class");
+        layoutHTML = appBar.element.querySelectorAll(".win-primarygroup, .win-secondarygroup");
         LiveUnit.Assert.isTrue(layoutHTML.length === 0, "custom layout appbar should not have commands layout HTML inside of the AppBar element.");
-        
+
         complete();
     };
 
-    this.testMinimalAppBarHidesChildren = function (complete) {
+    this.testOpenAndClose = function (complete) {
+
+        var topInitialCDM = 'none';
+        var bottomInitialCDM = 'minimal';
+        var topInitialPosition = displayModeVisiblePositions[topInitialCDM];
+        var bottomInitialPosition = displayModeVisiblePositions[bottomInitialCDM];
+
+        var root = document.getElementById("appBarDiv");
+        root.innerHTML =
+            "<div id='topBar'>" +
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button0\", label:\"Button 0\", type:\"button\", section:\"global\"}'></button>" +
+                "<hr data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Hr0\", type:\"separator\", hidden: true, section:\"global\"}' />" +
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button1\", label:\"Button 1\", type:\"button\", section:\"selection\"}'></button>" +
+            "</div>" +
+            "<div id='bottomBar'>" +
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button2\", label:\"Button 0\", type:\"button\", section:\"global\"}'></button>" +
+                "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button3\", label:\"Button 1\", type:\"button\", section:\"selection\"}'></button>" +
+                "<input type=\"range\" />" +
+            "</div>";
+        var topBar = new WinJS.UI.AppBar(root.querySelector("#topBar"), { placement: 'top', layout: 'commands', closedDisplayMode: topInitialCDM });
+        var bottomBar = new WinJS.UI.AppBar(root.querySelector("#bottomBar"), { placement: 'bottom', layout: 'custom', closedDisplayMode: bottomInitialCDM });
+
+        var verifyClosedIndicators = function (expected, appBar, msg) {
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            LiveUnit.Assert.areEqual(expected, appBar.hidden, msg);
+            LiveUnit.Assert.areEqual(expected, appBar._closed, msg);
+            LiveUnit.Assert.areEqual(expected, WinJS.Utilities.hasClass(appBar.element, "win-closed"), msg);
+        }
+
+        var topBarOpenedAndClosed;
+        var topBarOpenAndClosePromise = new WinJS.Promise(function (c) {
+            topBarOpenedAndClosed = c;
+        });
+        var bottomBarOpenedAndClosed;
+        var bottomBarOpenAndClosePromise = new WinJS.Promise(function (c) {
+            bottomBarOpenedAndClosed = c;
+        });
+
+        var verifyOpeningViaShow = function (evt) {            
+            var appBar = evt.target.winControl;
+            appBar.removeEventListener("beforeshow", verifyOpeningViaShow, false);
+            
+            msg = "AppBars that are opening should not show indications of being closed."
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            verifyClosedIndicators(false, appBar, msg);
+
+            msg = "AppBars that are opening should indicate their visible position is 'open'";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            LiveUnit.Assert.areEqual("open", appBar._visiblePosition, msg);
+        }
+
+        var verifyOpenedViaShow = function (evt) {            
+            var appBar = evt.target.winControl;
+            appBar.removeEventListener("aftershow", verifyOpenedViaShow, false);
+
+            msg = "AppBars that are opened should not show indications of being closed."
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            verifyClosedIndicators(false, appBar, msg);
+
+            msg = "AppBars that are opened should indicate their visible position is 'open'";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            LiveUnit.Assert.areEqual("open", appBar._visiblePosition, msg);
+
+            appBar.hide();
+
+        }
+
+        var verifyClosingViaHide = function (evt) {
+            var appBar = evt.target.winControl;
+            appBar.removeEventListener("beforehide", verifyClosingViaHide, false);
+
+            msg = "AppBars that are closing should show indications of being closed."
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            verifyClosedIndicators(true, appBar, msg);
+
+            msg = "AppBars that are closing via hide should indicate their visible position is their closedDisplayMode";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            LiveUnit.Assert.areEqual(displayModeVisiblePositions[appBar.closedDisplayMode], appBar._visiblePosition, msg);
+        }
+
+        var verifyClosedViaHide = function (evt) {
+            var appBar = evt.target.winControl;
+            appBar.removeEventListener("afterhide", verifyClosedViaHide, false);
+
+            msg = "AppBars that are closed should show indications of being closed."
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            verifyClosedIndicators(true, appBar, msg);
+
+            msg = "AppBars that are closed via hide should indicate their visible position is their closedDisplayMode";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            LiveUnit.Assert.areEqual(displayModeVisiblePositions[appBar.closedDisplayMode], appBar._visiblePosition, msg);
+
+            // Signal OpenedAndClosed promise completion.
+            if(appBar.placement === 'top'){
+                topBarOpenedAndClosed();
+            } else {
+                bottomBarOpenedAndClosed();
+            }
+        }
+
+        var msg = "new AppBars should start out closed"
+        verifyClosedIndicators(true, topBar, msg);
+        verifyClosedIndicators(true, bottomBar, msg);
+
+        msg = "new AppBars should have initial closedDisplayMode and correct corresponding visible position";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areEqual(topInitialCDM, topBar.closedDisplayMode, msg);
+        LiveUnit.Assert.areEqual(topInitialPosition, topBar._visiblePosition, msg);
+        LiveUnit.Assert.areEqual(bottomInitialCDM, bottomBar.closedDisplayMode, msg);
+        LiveUnit.Assert.areEqual(bottomInitialPosition, bottomBar._visiblePosition, msg);
+        
+        topBar.addEventListener("beforeshow", verifyOpeningViaShow, false);
+        topBar.addEventListener("aftershow", verifyOpenedViaShow, false);
+        topBar.addEventListener("beforehide", verifyClosingViaHide, false);
+        topBar.addEventListener("afterhide", verifyClosedViaHide, false);
+        bottomBar.addEventListener("beforeshow", verifyOpeningViaShow, false);
+        bottomBar.addEventListener("aftershow", verifyOpenedViaShow, false);
+        bottomBar.addEventListener("beforehide", verifyClosingViaHide, false);
+        bottomBar.addEventListener("afterhide", verifyClosedViaHide, false);
+        topBar.show();
+        bottomBar.show();
+
+        WinJS.Promise.join([topBarOpenAndClosePromise, bottomBarOpenAndClosePromise]).then(function () {
+            // Both appbars after "afterhide".
+
+            msg = "AppBar original closedDisplayModes and visible positions should not have changed after opening and closing.";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            LiveUnit.Assert.areEqual(topInitialCDM, topBar.closedDisplayMode, msg);
+            LiveUnit.Assert.areEqual(bottomInitialCDM, bottomBar.closedDisplayMode, msg);
+            LiveUnit.Assert.areEqual(topInitialPosition, topBar._visiblePosition, msg);
+            LiveUnit.Assert.areEqual(bottomInitialPosition, bottomBar._visiblePosition, msg);
+
+            complete();
+        });
+
+    };
+
+    this.testAppBarEllipsisIsNotATabStopWhenClosdDisplayModeIsNone = function (complete) {
+
         complete();
     };
 }
