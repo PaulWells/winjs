@@ -39,7 +39,8 @@ define([
                     settingsFlyoutClass = "win-settingsflyout",
                     topClass = "win-top",
                     bottomClass = "win-bottom",
-                    closedClass = "win-closed";
+                    closingClass = "win-hiding",
+                    closedClass = "win-hidden";
 
                 var firstDivClass = "win-firstdiv",
                     finalDivClass = "win-finaldiv",
@@ -707,9 +708,15 @@ define([
 
                             if (value === closedDisplayModes.none) {
                                 this._closedDisplayMode = value;
+                                this._ellipsis.style.display = "none";
+                                this._element.style.padding = "";
+                                this._element.style.width = "";
                             } else {
                                 // Minimal is default.
                                 this._closedDisplayMode = closedDisplayModes.minimal;
+                                this._ellipsis.style.display = "";
+                                this._element.style.padding = "0px 40px 0px 0px";
+                                this._element.style.width = "calc(100% - 40px)";
                             }
                         
                             if (oldValue !== this._closedDisplayMode && this._closed) {
@@ -842,7 +849,7 @@ define([
                     _open: function AppBar_open() {
 
                         var toPosition = displayModeVisiblePositions.open;
-                        var opening = this._closed && appbarOpenedState;
+                        var opening = !this.disabled && this._closed && appbarOpenedState;
 
                         // If we're already opened, we just want to animate our position, not fire events or manage focus.
                         this._changeVisiblePosition(toPosition, opening);
@@ -1156,7 +1163,7 @@ define([
                         // Send our "beforeHide" event
                         this._sendEvent(WinJS.UI._Overlay.beforeHide);
 
-                        WinJS.Utilities.addClass(this._element, closedClass);
+                        WinJS.Utilities.addClass(this._element, closingClass);
                         this._ellipsis.style.width = "100%";
                     },
 
@@ -1169,6 +1176,9 @@ define([
                             this._queuedToShow = [];
                             this._queuedToHide = [];
                         }
+
+                        WinJS.Utilities.addClass(this._element, closedClass);
+                        WinJS.Utilities.removeClass(this._element, closingClass);
 
                         // Send our "afterHide" event
                         this._sendEvent(WinJS.UI._Overlay.afterHide);
@@ -1189,11 +1199,9 @@ define([
                         if (this._placement === appBarPlacementTop) {
                             // Top Bar
                             beginningOffset = { top: -distanceToMove + "px", left: "0px" };
-                            this._element.style.bottom = "auto";
                         } else {
                             // Bottom Bar
                             beginningOffset = { top: distanceToMove + "px", left: "0px" };
-                            this._element.style.top = "auto";
                         }
 
                         // Animate
@@ -1438,19 +1446,45 @@ define([
                     _ensurePosition: function AppBar_ensurePosition() {
                         // Position the AppBar element relative to the top or bottom edge of the visible
                         // document, based on the the visible position we think we need to be in.
+                        if (this._closed) {
+                            var innerEdgeOffSet = WinJS.UI._Overlay._keyboardInfo._visibleDocHeight - this._visiblePixels[this._visiblePosition];
 
-                        // How many pixels offscreen will our visible position require the outer edge of the AppBar to be?
-                        var offScreenHeight = (this._element.offsetHeight - this._visiblePixels[this._visiblePosition]);
-
-                        if (this._placement === appBarPlacementBottom) {
-                            // If the IHM is open, the bottom of the visual viewport may or may not be obscured 
-                            // Use _getAdjustedBottom to account for the IHM if it is covering the bottom edge.
-                            this._element.style.bottom = (this._getAdjustedBottom() - offScreenHeight) + "px";
-                        } else if (this._placement === appBarPlacementTop) {
-                            this._element.style.top = this._getTopOfVisualViewport() - offScreenHeight + "px";
+                            if (this._placement === appBarPlacementBottom) {
+                                this._element.style.bottom = "auto";
+                                this._element.style.top = innerEdgeOffSet + "px";
+                            } else {
+                                this._element.style.bottom = innerEdgeOffSet + "px";
+                                this._element.style.top = "auto";
+                            }
+                        } else {
+                            if (this._placement === appBarPlacementBottom) {
+                                // If the IHM is open, the bottom of the visual viewport may or may not be obscured 
+                                // Use _getAdjustedBottom to account for the IHM if it is covering the bottom edge.
+                                this._element.style.bottom = this._getAdjustedBottom() + "px";
+                                this._element.style.top = "auto";
+                            } else {
+                                this._element.style.bottom = "auto";
+                                this._element.style.top = this._getTopOfVisualViewport() + "px";
+                            }
                         }
-                        // else we don't touch custom positions
                     },
+
+                    //_ensurePosition: function AppBar_ensurePosition() {
+                    //    // Position the AppBar element relative to the top or bottom edge of the visible
+                    //    // document, based on the the visible position we think we need to be in.
+
+                    //    // How many pixels offscreen will our visible position require the outer edge of the AppBar to be?
+                    //    var offScreenHeight = (this._element.offsetHeight - this._visiblePixels[this._visiblePosition]);
+
+                    //    if (this._placement === appBarPlacementBottom) {
+                    //        // If the IHM is open, the bottom of the visual viewport may or may not be obscured 
+                    //        // Use _getAdjustedBottom to account for the IHM if it is covering the bottom edge.
+                    //        this._element.style.bottom = (this._getAdjustedBottom() - offScreenHeight) + "px";
+                    //    } else if (this._placement === appBarPlacementTop) {
+                    //        this._element.style.top = this._getTopOfVisualViewport() - offScreenHeight + "px";
+                    //    }
+                    //    // else we don't touch custom positions
+                    //},
 
                     _checkScrollPosition: function AppBar_checkScrollPosition(event) {
                         // If IHM has appeared, then remember we may come in

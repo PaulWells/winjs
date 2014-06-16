@@ -97,13 +97,19 @@ CorsicaTests.AppBarScalabilityTests = function () {
 
     function verifyCommandSizes(host, appBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, widthOfAllContentCommands) {
         var expectingReducedSize = isReducedSizeExpected(host, appBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, widthOfAllContentCommands);
-        LiveUnit.LoggingCore.logComment("Expecting Reduced-sized commands? " + expectingReducedSize);
-        LiveUnit.Assert.areEqual(WinJS.Utilities.hasClass(appBarElem, reducedAppBarClass), expectingReducedSize),
-        "AppBar hasClass \"" + reducedAppBarClass + "\":" + expectingReducedSize + ", but we were expecting " + !expectingReducedSize;
+
+        verifyReducedClass(expectingReducedSize, appBarElem);
+
         LiveUnit.LoggingCore.logComment("Verifying Command Sizes");
         // We have a hard coded expectaion about button and separator command sizes. Verify them now.
         verifyButtonCommandSizes(expectingReducedSize, appBarElem);
         verifySeparatorCommandSizes(expectingReducedSize, appBarElem);
+    }
+
+    function verifyReducedClass(expectingReducedSize, appBarElem) {
+        LiveUnit.LoggingCore.logComment("Expecting Reduced-sized commands? " + expectingReducedSize);
+        LiveUnit.Assert.areEqual(WinJS.Utilities.hasClass(appBarElem, reducedAppBarClass), expectingReducedSize),
+        "AppBar hasClass \"" + reducedAppBarClass + "\":" + expectingReducedSize + ", but we were expecting " + !expectingReducedSize;
     }
 
     function verifyButtonCommandSizes(expectingReducedSize, appBarElem) {
@@ -287,6 +293,127 @@ CorsicaTests.AppBarScalabilityTests = function () {
     this.testHideShowAndShowOnlyCommandsWhileClosed = function (complete) {
         // This test verifies that any changes to commands while the AppBar is closed get 
         // reflected by AppBar Scalability just before the next time the AppBar is opened.
+
+        function getRandomCommands(cmdArr) {
+            var arr = [],
+                visibleCmdCount = 0,
+                visibleSepCount = 0,
+                visibleContentWidth = 0,
+                cmdArrLen = cmdArr.length,
+                cmd,
+                arrLen = 0;
+
+            while (arrLen === 0) {
+                arrLen = Math.floor(Math.random() * cmdArrLen);
+            }
+            for (var i = 0; i < arrLen; i++) {
+                cmd = cmdArr[i];
+                if (cmd.type === "separator") {
+                    visibleSepCount++;
+                } else if (cmd.type !== "content") {
+                    visibleCmdCount++;
+                } else {
+                    visibleContentWidth += WinJS.Utilities.getTotalWidth(cmd);
+                }
+                arr.push(cmdArr[i]);
+            }
+            return {
+                arr: arr,
+                visibleCmdCount: visibleCmdCount,
+                visibleSepCount: visibleSepCount,
+                visibleContentWidth: visibleContentWidth,
+            };
+        }
+
+        function testHideCommandsAfterHide() {
+            topAppBar.removeEventListener("afterhide", testHideCommandsAfterHide, false);
+            nextTestIndex++;
+            var cmd;
+            LiveUnit.LoggingCore.logComment("AppBar.hideCommands to make room for other commands to grow to full size.");
+            for (var i = 0; i < commands.length; i++) {
+                cmd = commands[i];
+                if (!cmd.hidden) {
+                    if (cmd.type === "separator") {
+                        appBarVisibleSeparatorCount--;
+                    } else if (cmd.type !== "content") {
+                        appBarVisibleCommandCount--;
+                    } else {
+                        appBarVisibleContentWidth -= contentDivWidth;
+                    }
+                    topAppBar.hideCommands([cmd]);
+                    var expectingReducedClass = isReducedSizeExpected(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+                    verifyReducedClass(expectingReducedClass, topAppBarElem);
+
+                }
+            };
+            topAppBar.show();
+        }
+
+        function testShowCommandsAfterHide() {
+            topAppBar.removeEventListener("afterhide", testShowCommandsAfterHide, false);
+            nextTestIndex++;
+            var cmd;
+            LiveUnit.LoggingCore.logComment("AppBar.showCommands to force commands to shrink down");
+            for (var i = 0; i < commands.length; i++) {
+                cmd = commands[i];
+                topAppBar.showCommands([cmd]);
+                if (cmd.type === "separator") {
+                    appBarVisibleSeparatorCount++;
+                } else if (cmd.type !== "content") {
+                    appBarVisibleCommandCount++;
+                } else {
+                    appBarVisibleContentWidth += contentDivWidth;
+                }
+                var expectingReducedClass = isReducedSizeExpected(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+                verifyReducedClass(expectingReducedClass, topAppBarElem);
+            }
+            topAppBar.show();
+        }
+
+        function testShowOnlyCommandsAfterHide() {
+            topAppBar.removeEventListener("afterhide", testShowOnlyCommandsAfterHide, false);
+            nextTestIndex++;
+            var cmd;
+            LiveUnit.LoggingCore.logComment("AppBar.showOnlyCommands to make it full size");
+            var iterations = 25;
+            var foo;
+            for (var i = 0; i < iterations; i++) {
+                foo = getRandomCommands(commands);
+                topAppBar.showOnlyCommands(foo.arr);
+
+                appBarVisibleCommandCount = foo.visibleCmdCount;
+                appBarVisibleSeparatorCount = foo.visibleSepCount;
+                appBarVisibleContentWidth = foo.visibleContentWidth;
+
+                var expectingReducedClass = isReducedSizeExpected(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+                verifyReducedClass(expectingReducedClass, topAppBarElem);
+            }
+            topAppBar.show();
+        }
+
+        function testComplete() {
+            topAppBar.removeEventListener("beforeshow", verifyCommandSizesAtShowTime, false);
+            topAppBar.removeEventListener("afterhide", testComplete, false);
+            complete();
+        }
+
+        function verifyCommandSizesAtShowTime() {
+            verifyCommandSizes(host, topAppBar.element, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+            // Verify that AppBar scalability tracks calls to the showCommands, hideCommands, 
+            // and showOnlyCommands api's while closed, and sizes the buttons correctly.
+            topAppBar.addEventListener("afterhide", testOrder[nextTestIndex], false);
+            topAppBar.hide();
+        }
+
+        // our 'beforeshow' event listener will use these to set the correct 'afterhide' listener.
+        var nextTestIndex = 0;
+        var testOrder = [
+            testHideCommandsAfterHide,
+            testShowCommandsAfterHide,
+            testShowOnlyCommandsAfterHide,
+            testComplete,
+        ]
+
         var topAppBarElem = document.getElementById("topappbar"),
             host = document.getElementById("host"),
             appBarVisibleCommandCount = 6,
@@ -319,10 +446,6 @@ CorsicaTests.AppBarScalabilityTests = function () {
         var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands });
         LiveUnit.LoggingCore.logComment("Top AppBar Initialized with commands");
 
-        var verifyCommandSizesAtShowTime = function verifyCommandSizesAtShowTime() {
-            verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
-            topAppBar.removeEventListener("beforeshow", verifyCommandSizesAtShowTime, false); // remove ourselves.
-        }
 
         // Set up event listener to check for correct command sizes when the AppBar is opening.
         topAppBar.addEventListener("beforeshow", verifyCommandSizesAtShowTime, false);
@@ -330,15 +453,18 @@ CorsicaTests.AppBarScalabilityTests = function () {
         // Need to force the AppBar to measure the contentCommand we added. The AppBar does this lazily upon construction or whenever it is opened. 
         // Open the AppBar to run our 'beforeshow' handler and verify that the commands set in the constructor are scaled correctly.
         topAppBar.show();
-        
-        // Immediately close after showing, 
-        // to continue rest of tests while closed.
-        topAppBar.hide();
-        topAppBar.addEventListener("afterhide", function () {
-            // Verify that AppBar scalability tracks calls to the showCommands, hideCommands, 
-            // and showOnlyCommands api's while closed, and sizes the buttons correctly.
+
+
+    };
+
+    this.testAppBarCommandsHiddenProperty = function (complete) {
+
+        function testSettingHiddenTrue() {
+            topAppBar.removeEventListener("afterhide", testSettingHiddenTrue, false);
+            nextTestIndex++;
             var cmd;
-            LiveUnit.LoggingCore.logComment("AppBar.hideCommands to make room for other commands to grow to full size.");
+            LiveUnit.LoggingCore.logComment("AppBarCommand.hidden to make room for other commands to grow to full size.");
+            // Hide appbarcommands
             for (var i = 0; i < commands.length; i++) {
                 cmd = commands[i];
                 if (!cmd.hidden) {
@@ -349,15 +475,21 @@ CorsicaTests.AppBarScalabilityTests = function () {
                     } else {
                         appBarVisibleContentWidth -= contentDivWidth;
                     }
-                    topAppBar.hideCommands([cmd]);
-                    verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+                    cmd.hidden = true;
+                    var expectingReducedClass = isReducedSizeExpected(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+                    verifyReducedClass(expectingReducedClass, topAppBarElem);
                 }
             }
+            topAppBar.show();
+        }
 
-            LiveUnit.LoggingCore.logComment("AppBar.showCommands to force commands to shrink down");
-            for (i = 0; i < commands.length; i++) {
+        function testSettingHiddenFalse() {
+            topAppBar.removeEventListener("afterhide", testSettingHiddenFalse, false);
+            nextTestIndex++;
+            var cmd;
+            // Show appbarcommands
+            for (var i = 0; i < commands.length; i++) {
                 cmd = commands[i];
-                topAppBar.showCommands([cmd]);
                 if (cmd.type === "separator") {
                     appBarVisibleSeparatorCount++;
                 } else if (cmd.type !== "content") {
@@ -365,54 +497,34 @@ CorsicaTests.AppBarScalabilityTests = function () {
                 } else {
                     appBarVisibleContentWidth += contentDivWidth;
                 }
-                verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+                cmd.hidden = false;
+                var expectingReducedClass = isReducedSizeExpected(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+                verifyReducedClass(expectingReducedClass, topAppBarElem);
             }
+            topAppBar.show();
+        }
 
-            function getRandomCommands(cmdArr) {
-                var arr = [],
-                    visibleCmdCount = 0,
-                    visibleSepCount = 0,
-                    visibleContentWidth = 0,
-                    cmdArrLen = cmdArr.length,
-                    cmd,
-                    arrLen = 0;
-
-                while (arrLen === 0) {
-                    arrLen = Math.floor(Math.random() * cmdArrLen);
-                }
-                for (var i = 0; i < arrLen; i++) {
-                    cmd = cmdArr[i];
-                    if (cmd.type === "separator") {
-                        visibleSepCount++;
-                    } else if (cmd.type !== "content") {
-                        visibleCmdCount++;
-                    } else {
-                        visibleContentWidth += WinJS.Utilities.getTotalWidth(cmd);
-                    }
-                    arr.push(cmdArr[i]);
-                }
-                return {
-                    arr: arr,
-                    visibleCmdCount: visibleCmdCount,
-                    visibleSepCount: visibleSepCount,
-                    visibleContentWidth: visibleContentWidth,
-                };
-            }
-
-            LiveUnit.LoggingCore.logComment("AppBar.showOnlyCommands to make it full size");
-            var iterations = 25;
-            var foo;
-            for (i = 0; i < iterations; i++) {
-                foo = getRandomCommands(commands);
-                topAppBar.showOnlyCommands(foo.arr);
-                verifyCommandSizes(host, topAppBarElem, foo.visibleCmdCount, foo.visibleSepCount, foo.visibleContentWidth);
-            }
-            topAppBar.show()
+        function testComplete() {
+            topAppBar.removeEventListener("beforeshow", verifyCommandSizesAtShowTime, false);
+            topAppBar.removeEventListener("afterhide", testComplete, false); 
             complete();
-        }, false);
-    };
+        }
 
-    this.testAppBarCommandsHiddenProperty = function (complete) {
+        var verifyCommandSizesAtShowTime = function verifyCommandSizesAtShowTime() {
+            verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+
+            topAppBar.addEventListener("afterhide", testOrder[nextTestIndex], false);
+            topAppBar.hide();
+        }
+
+        // our 'beforeshow' event listener will use these to set the correct 'afterhide' listener.
+        var nextTestIndex = 0;
+        var testOrder = [
+            testSettingHiddenTrue,
+            testSettingHiddenFalse,
+            testComplete,
+        ]
+
         var topAppBarElem = document.getElementById("topappbar"),
             host = document.getElementById("host"),
             appBarVisibleCommandCount = 6,
@@ -444,11 +556,6 @@ CorsicaTests.AppBarScalabilityTests = function () {
         LiveUnit.LoggingCore.logComment("Top AppBarCommands created");
         var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands });
         LiveUnit.LoggingCore.logComment("Top AppBar Initialized with commands");
-       
-        var verifyCommandSizesAtShowTime = function verifyCommandSizesAtShowTime() {
-            verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
-            topAppBar.removeEventListener("beforeshow", verifyCommandSizesAtShowTime, false); // remove ourselves.
-        }
 
         // Set up event listener to check for correct command sizes when the AppBar is opening.
         topAppBar.addEventListener("beforeshow", verifyCommandSizesAtShowTime, false);
@@ -456,46 +563,6 @@ CorsicaTests.AppBarScalabilityTests = function () {
         // Need to force the AppBar to measure the contentCommand we added. The AppBar does this lazily upon construction or whenever it is opened. 
         // Open the AppBar to run our 'beforeshow' handler and verify that the commands set in the constructor are scaled correctly.
         topAppBar.show();
-
-        // Immediately close after showing, 
-        // to continue rest of tests while closed.
-        topAppBar.hide();
-        topAppBar.addEventListener("afterhide", function () {
-            var cmd;
-            LiveUnit.LoggingCore.logComment("AppBarCommand.hidden to make room for other commands to grow to full size.");
-            // Hide appbarcommands
-            for (var i = 0; i < commands.length; i++) {
-                cmd = commands[i];
-                if (!cmd.hidden) {
-                    if (cmd.type === "separator") {
-                        appBarVisibleSeparatorCount--;
-                    } else if (cmd.type !== "content") {
-                        appBarVisibleCommandCount--;
-                    } else {
-                        appBarVisibleContentWidth -= contentDivWidth;
-                    }
-                    cmd.hidden = true;
-                    verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
-                }
-            }
-            // Show appbarcommands
-            for (i = 0; i < commands.length; i++) {
-                cmd = commands[i];
-                if (cmd.type === "separator") {
-                    appBarVisibleSeparatorCount++;
-                } else if (cmd.type !== "content") {
-                    appBarVisibleCommandCount++;
-                } else {
-                    appBarVisibleContentWidth += contentDivWidth;
-                }
-                cmd.hidden = false;
-                verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
-            }
-
-            LiveUnit.LoggingCore.logComment("Showing AppBar");
-            topAppBar.show();
-            complete();
-        }, false);
     };
 
     this.testAppBarScalabilityWhileAppBarIsVisible = function (complete) {
@@ -541,7 +608,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         // We are waiting on more than just the command hiding animation, 
         // the AppBar schedules a job to start the animation so we have to leave enough time for that as well.
         // Hence the timeout of 2000ms. 
-        var delay = Math.min(WinJS.UI._animationTimeAdjustment(2000) * 5, 2000); 
+        var delay = Math.min(WinJS.UI._animationTimeAdjustment(2000) * 5, 2000);
         WinJS.Promise.timeout(delay).then(function () {
             appBarVisibleCommandCount--;
             // If this Check is found to fail intermittenly on certain devices, it may be that we have to increase the timing delay or add a better hook to test for.
