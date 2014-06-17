@@ -1202,7 +1202,7 @@ CorsicaTests.AppBarTests = function () {
         appBar = appBar.element || appBar;
         LiveUnit.Assert.areEqual(!!shouldBeSticky, shouldBeSticky, "Test Bug!! An explicit value boolean must be passed.");
 
-        var msg,
+        var msg, 
             failures;
 
         var firstDiv = appBar.querySelector(".win-firstdiv");

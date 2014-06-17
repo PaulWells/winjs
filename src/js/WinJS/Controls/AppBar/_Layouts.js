@@ -15,10 +15,14 @@
         separatorWidth = 60,
         buttonWidth = 100;
 
-    // AppBar will use this when AppBar.layout property is set to "custom"
+    // AppBat "custom" layout uses this and AppBar 'commands' layout inherits from this.
     WinJS.Namespace.define("WinJS.UI", {
         _AppBarBaseLayout: WinJS.Namespace._lazy(function () {
             var baseType = "custom";
+
+            var strings = {                
+                get nullCommand() { return WinJS.Resources._getWinJSString("ui/nullCommand").value; },
+            };
 
             var _AppBarBaseLayout = WinJS.Class.define(function _AppBarBaseLayout_ctor(appBarEl, options) {
                 this._disposed = false;
@@ -75,7 +79,7 @@
                 },
                 sanitizeCommand: function _AppBarBaseLayout_sanitizeCommand(command) {
                     if (!command) {
-                        throw new WinJS.ErrorFromName("WinJS.UI.AppBar.NullCommand", strings.nullCommand);
+                        throw new WinJS.ErrorFromName("WinJS.UI._AppBarBaseLayout.NullCommand", strings.nullCommand);
                     }
                     // See if it's a command already
                     command = command.winControl || command;
@@ -138,7 +142,7 @@
         }),
     });
 
-    // AppBar will use this when AppBar.layout property is set to "commands"
+    // AppBar "commands" layout uses this.
     WinJS.Namespace.define("WinJS.UI", {
         _AppBarCommandsLayout: WinJS.Namespace._lazy(function () {
             var layoutClassName = "win-commandlayout";

@@ -354,7 +354,7 @@ define([
                     for (var i = 0; i < appBars.length; i++) {
                         var appBarControl = appBars[i].winControl;
                         if (appBarControl && !appBarControl.sticky &&
-                            (!appBarControl.hidden || appBarControl._element.winAnimating === "open")) {
+                            (!appBarControl.hidden || appBarControl._element.winAnimating === displayModeVisiblePositions.open)) {
                             return true;
                         }
                     }
@@ -396,8 +396,7 @@ define([
 
                 var strings = {
                     get ariaLabel() { return WinJS.Resources._getWinJSString("ui/appBarAriaLabel").value; },
-                    get requiresCommands() { return WinJS.Resources._getWinJSString("ui/requiresCommands").value; },
-                    get nullCommand() { return WinJS.Resources._getWinJSString("ui/nullCommand").value; },
+                    get requiresCommands() { return WinJS.Resources._getWinJSString("ui/requiresCommands").value; },                    
                     get cannotChangePlacementWhenVisible() { return WinJS.Resources._getWinJSString("ui/cannotChangePlacementWhenVisible").value; },
                     get badLayout() { return WinJS.Resources._getWinJSString("ui/badLayout").value; },
                     get cannotChangeLayoutWhenVisible() { return WinJS.Resources._getWinJSString("ui/cannotChangeLayoutWhenVisible").value; }
@@ -1236,7 +1235,7 @@ define([
                     _isABottomAppBarInTheProcessOfOpening: function AppBar_isABottomAppBarInTheProcessOfOpening() {
                         var appbars = document.querySelectorAll("." + appBarClass + "." + bottomClass);
                         for (var i = 0; i < appbars.length; i++) {
-                            if (appbars[i].winAnimating === "open") {
+                            if (appbars[i].winAnimating === displayModeVisiblePositions.open) {
                                 return true;
                             }
                         }
