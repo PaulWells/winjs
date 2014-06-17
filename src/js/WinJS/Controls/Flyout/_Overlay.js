@@ -1208,7 +1208,9 @@
 
             _Overlay._hideClickEatingDivAppBar = function () {
                 WinJS.Utilities.Scheduler.schedule(function Overlay_async_hideClickEatingDivAppBar() {
-                    _Overlay._clickEatingAppBarDiv.style.display = "none";
+                    if (_Overlay._clickEatingAppBarDiv) {
+                        _Overlay._clickEatingAppBarDiv.style.display = "none";
+                    }
                 }, WinJS.Utilities.Scheduler.Priority.high, null, "WinJS.UI._Overlay._hideClickEatingDivAppBar");
             };
 
@@ -1220,7 +1222,9 @@
 
             _Overlay._hideClickEatingDivFlyout = function () {
                 WinJS.Utilities.Scheduler.schedule(function Overlay_async_hideClickEatingDivFlyout() {
-                    _Overlay._clickEatingFlyoutDiv.style.display = "none";
+                    if (_Overlay._clickEatingFlyoutDiv) {
+                        _Overlay._clickEatingFlyoutDiv.style.display = "none";
+                    }
                 }, WinJS.Utilities.Scheduler.Priority.high, null, "WinJS.UI._Overlay._hideClickEatingDivFlyout");
             };
 

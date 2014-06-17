@@ -246,7 +246,7 @@ AppBar
     left: 0;
     position: fixed;
     position: -ms-device-fixed;
-    min-height: 25px; /* Necessary minimum to support closedDisplayMode: minimal*/
+    min-height: 25px; 
 
     &.win-hiding > :not(.win-ellipsis) {
         opacity: 0;
@@ -254,10 +254,15 @@ AppBar
         transition-duration: 367ms;
         transition-delay: 1ms;
         transition-timing-function: cubic-bezier(0.1, 0.9, 0.2, 1);
-    }
+    }    
 
     &.win-hidden > :not(.win-ellipsis) {
         display: none !important;
+    }
+
+    &.win-hiding .win-ellipsis, 
+    &.win-hidden .win-ellipsis {
+        width: 100%;
     }
 
     & .win-ellipsis {
@@ -284,11 +289,22 @@ AppBar
                 position: absolute;
             }
         }
-        //move to colors?
+        //move to colors
         &:focus span {
             border: solid white 2px;
             padding: 0px;
         }
+
+        &:-ms-keyboard-active {
+            color: #ffffff;
+            background-color: transparent;
+            border-color: #ffffff;
+
+            & span {
+                background-color: #ffffff;
+                color: #000000;
+            }
+        }            
     }
 
     &.win-bottom .win-ellipsis {

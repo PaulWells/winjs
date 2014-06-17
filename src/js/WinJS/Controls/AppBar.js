@@ -158,7 +158,7 @@ define([
                         if (AppBar) {
                             AppBars.push(AppBar);
                             if (AppBar._closed) {
-                                AppBars.closed = true;
+                                AppBars._closed = true;
                             } else {
                                 AppBars._opened = true;
                             }
@@ -446,7 +446,7 @@ define([
                         this._element.setAttribute("aria-label", strings.ariaLabel);
                     }
 
-                    // Start off completely closed
+                    // Start off closed
                     this._lastPositionVisited = displayModeVisiblePositions.none;
                     WinJS.Utilities.addClass(this._element, closedClass);
 
@@ -462,7 +462,10 @@ define([
                     // Add Open/Close button.
                     this._ellipsis = document.createElement("BUTTON");
                     this._ellipsis.innerHTML = "<span></span>"; 
-                    this._ellipsis.addEventListener('click', WinJS.UI.AppBar._toggleAppBarEdgy, false);
+                    this._ellipsis.addEventListener("pointerdown", function () {
+                        thisWinUI._Overlay._addHideFocusClass(this._ellipsis);
+                    }.bind(this), false);
+                    this._ellipsis.addEventListener("click", WinJS.UI.AppBar._toggleAppBarEdgy, false);
                     WinJS.Utilities.addClass(this._ellipsis, ellipsisClass);
                     this._element.appendChild(this._ellipsis);
 
@@ -1145,7 +1148,6 @@ define([
                         // Make sure everything fits before opening
                         this._layout.scale();
 
-                        this._ellipsis.style.width = "";
                         WinJS.Utilities.removeClass(this._element, closedClass);
 
                         // Send our "beforeShow" event 
@@ -1164,7 +1166,6 @@ define([
                         this._sendEvent(WinJS.UI._Overlay.beforeHide);
 
                         WinJS.Utilities.addClass(this._element, closingClass);
-                        this._ellipsis.style.width = "100%";
                     },
 
                     _afterClose: function AppBar_afterClose() {
