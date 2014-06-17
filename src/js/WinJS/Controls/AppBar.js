@@ -1469,23 +1469,6 @@ define([
                         }
                     },
 
-                    //_ensurePosition: function AppBar_ensurePosition() {
-                    //    // Position the AppBar element relative to the top or bottom edge of the visible
-                    //    // document, based on the the visible position we think we need to be in.
-
-                    //    // How many pixels offscreen will our visible position require the outer edge of the AppBar to be?
-                    //    var offScreenHeight = (this._element.offsetHeight - this._visiblePixels[this._visiblePosition]);
-
-                    //    if (this._placement === appBarPlacementBottom) {
-                    //        // If the IHM is open, the bottom of the visual viewport may or may not be obscured 
-                    //        // Use _getAdjustedBottom to account for the IHM if it is covering the bottom edge.
-                    //        this._element.style.bottom = (this._getAdjustedBottom() - offScreenHeight) + "px";
-                    //    } else if (this._placement === appBarPlacementTop) {
-                    //        this._element.style.top = this._getTopOfVisualViewport() - offScreenHeight + "px";
-                    //    }
-                    //    // else we don't touch custom positions
-                    //},
-
                     _checkScrollPosition: function AppBar_checkScrollPosition(event) {
                         // If IHM has appeared, then remember we may come in
                         if (this._needToHandleShowingKeyboard) {

@@ -999,11 +999,8 @@ CorsicaTests.AppBarTests = function () {
             "</div>";
         var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"), null);
 
-        var msg = "AppBar should have the correct default visible position";
+        var msg = "Default AppBar should begin completely hidden.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        LiveUnit.Assert.areEqual(initialCDM, appBar.closedDisplayMode, msg);
-        LiveUnit.Assert.areEqual(initialPosition, appBar._visiblePosition, msg);
-
         isAppBarCompletelyHidden(appBar);
 
         appBar.closedDisplayMode = "minimal";
@@ -1035,12 +1032,12 @@ CorsicaTests.AppBarTests = function () {
         });
     }
 
-    var isAppBarOpen = function (appBar) {
+    var isAppBarOpenAndLightDismissable = function (appBar) {
         appBar = appBar.element || appBar;
 
         var isSticky = appBar.winControl.sticky;
         var shouldHaveEllipsis = appBar.winControl.closedDisplayMode !== "none";
-        
+
         var msg,
             failures;
 
@@ -1081,21 +1078,21 @@ CorsicaTests.AppBarTests = function () {
         msg = "Closed Minimal AppBar should be visible and take up space some space.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         failures = checkShouldBeDisplayNone(appBar, false);
-        LiveUnit.Assert.isFalse(failures.length, msg);       
+        LiveUnit.Assert.isFalse(failures.length, msg);
 
         // Closed Minimal AppBar should have Ellipsis.        
         verifyEllipsisState(appBar, true);
 
         var subTreeMinusEllipsis = document.body.querySelectorAll("#" + appBar.id + " > :not(.win-ellipsis)");
         msg = "Except for Ellipsis, Subtree of Closed Minimal AppBar should not be visible or take up space.";
-        LiveUnit.LoggingCore.logComment("Test: " + msg);        
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
         failures = checkShouldBeDisplayNone(subTreeMinusEllipsis, true);
         LiveUnit.Assert.isFalse(failures.length, msg);
 
         msg = "Except for Ellipsis, Subtree of Closed Minimal AppBar should not be a tab stop";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         failures = checkShouldBeTabStop(subTreeMinusEllipsis, false);
-        LiveUnit.Assert.isFalse(failures.length, msg);        
+        LiveUnit.Assert.isFalse(failures.length, msg);
     }
 
     var isAppBarCompletelyHidden = function (appBar) {
@@ -1198,86 +1195,104 @@ CorsicaTests.AppBarTests = function () {
         }
     }
 
-    function verifyStickyState(appBar, shouldBeSticky) {
+    function verifyIsSticky(appBar) {
         appBar = appBar.element || appBar;
-        LiveUnit.Assert.areEqual(!!shouldBeSticky, shouldBeSticky, "Test Bug!! An explicit value boolean must be passed.");
+        //LiveUnit.Assert.areEqual(!!shouldBeSticky, shouldBeSticky, "Test Bug!! An explicit value boolean must be passed.");
 
-        var msg, 
+        var msg,
             failures;
 
         var firstDiv = appBar.querySelector(".win-firstdiv");
         var finalDiv = appBar.querySelector(".win-finaldiv");
         var clickEater = document.querySelector(".win-appbarclickeater");
 
-        if (shouldBeSticky) {
-            if (firstDiv) {
-                // verify its not a tab stop
-                msg = "";
-                LiveUnit.LoggingCore.logComment("Test: " + msg);
-                failures = checkShouldBeTabStop(firstDiv, false);
-                LiveUnit.Assert.isFalse(failures.length, msg);
-            }
-            if (finalDiv) {
-                // verify its not a tab stop
-                msg = "";
-                LiveUnit.LoggingCore.logComment("Test: " + msg);
-                failures = checkShouldBeTabStop(finalDiv, false);
-                LiveUnit.Assert.isFalse(failures.length, msg);
-            }
-            if (clickEater) {
-                // verify it is not visible / has no display
-                msg = "";
-                LiveUnit.LoggingCore.logComment("Test: " + msg);
-                failures = checkShouldBeDisplayNone(clickEater, true);
-                LiveUnit.Assert.isFalse(failures.length, msg);
-            }
-        } else {
-            // Verify light dismiss properties.            
+        // Verify sticky properties.
+        msg = "";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.isTrue(appBar.winControl.sticky, msg);
 
-            // Verify sub components
-            msg = "";
-            LiveUnit.LoggingCore.logComment("Test: " + msg);;
-            LiveUnit.Assert.isNotNull(firstDiv, msg);
-            LiveUnit.Assert.isNotNull(finalDiv, msg);
-            LiveUnit.Assert.isNotNull(clickEater, msg);
-
-            // verify first and final divs are tabstops
+        if (firstDiv) {
+            // verify its not a tab stop
             msg = "";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            failures = checkShouldBeTabStop(firstDiv, true);
-            LiveUnit.Assert.isFalse(failures.length, msg);
-
+            LiveUnit.Assert.isTrue(firstDiv.tabIndex < 0, msg);
+        }
+        if (finalDiv) {
+            // verify its not a tab stop
             msg = "";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            failures = checkShouldBeTabStop(finalDiv, true);
-            LiveUnit.Assert.isFalse(failures.length, msg);
-
-            // verify they have the highest and lowest tab indices
-            var subTree = appBar.querySelector("*");
-            var highestTabIndex = WinJS.Utilities._getHighestTabIndexInList(subTree);
-            var lowestTabIndex = WinJS.Utilities._getLowestTabIndexInList(subTree);
+            LiveUnit.Assert.isTrue(finalDiv.tabIndex < 0, msg);
+        }
+        if (clickEater) {
+            // verify it is not visible / has no display
             msg = "";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.areEqual(lowestTabIndex, firstDiv.tabIndex, msg);
-            msg = ""
-            LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.areEqual(highestTabIndex, finalDiv.tabIndex, msg);
-
-            // verify they are the first and last element in the AppBar
-            msg = "";
-            LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.areEqual(appBar.children[0], firstDiv, msg);
-            msg = "";
-            LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.areEqual(appBar.children[appBar.children.length - 1], finalDiv, msg);
-
-            // verify clickeater is not display none
-            msg = "";
-            LiveUnit.LoggingCore.logComment("Test: " + msg);
-            failures = checkShouldBeDisplayNone(clickEater, false);
+            failures = checkShouldBeDisplayNone(clickEater, true);
             LiveUnit.Assert.isFalse(failures.length, msg);
         }
+
     }
+
+    function verifyIsLightDismiss(appBar) {
+        appBar = appBar.element || appBar;
+        //LiveUnit.Assert.areEqual(!!shouldBeSticky, shouldBeSticky, "Test Bug!! An explicit value boolean must be passed.");
+
+        var msg,
+            failures;
+
+        var firstDiv = appBar.querySelector(".win-firstdiv");
+        var finalDiv = appBar.querySelector(".win-finaldiv");
+        var clickEater = document.querySelector(".win-appbarclickeater");
+
+        // Verify light dismiss properties.           
+        msg = "";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.isFalse(appBar.winControl.sticky, msg);
+
+        // Verify sub components
+        msg = "";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.isNotNull(firstDiv, msg);
+        LiveUnit.Assert.isNotNull(finalDiv, msg);
+        LiveUnit.Assert.isNotNull(clickEater, msg);
+
+        // verify first and final divs are not display none.
+        msg = "";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        failures = checkShouldBeDisplayNone(firstDiv, false);
+        LiveUnit.Assert.isFalse(failures.length, msg);
+
+        msg = "";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        failures = checkShouldBeDisplayNone(finalDiv, false);
+        LiveUnit.Assert.isFalse(failures.length, msg);
+
+        // verify they have the highest and lowest tab indices
+        var subTree = appBar.querySelector("*");
+        var highestTabIndex = WinJS.Utilities._getHighestTabIndexInList(subTree);
+        var lowestTabIndex = WinJS.Utilities._getLowestTabIndexInList(subTree);
+        msg = "";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areEqual(lowestTabIndex, firstDiv.tabIndex, msg);
+        msg = ""
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areEqual(highestTabIndex, finalDiv.tabIndex, msg);
+
+        // verify they are the first and last element in the AppBar
+        msg = "";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areEqual(appBar.children[0], firstDiv, msg);
+        msg = "";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areEqual(appBar.children[appBar.children.length - 1], finalDiv, msg);
+
+        // verify clickeater is not display none
+        msg = "";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        failures = checkShouldBeDisplayNone(clickEater, false);
+        LiveUnit.Assert.isFalse(failures.length, msg);
+    }
+
 
 
 
