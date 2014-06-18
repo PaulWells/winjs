@@ -35,14 +35,6 @@ CorsicaTests.AppBarTests = function () {
         WinJS.UI._Overlay._clickEatingFlyoutDiv = false;
     };
 
-    var displayModeVisiblePositions = {
-        disabled: "hidden",
-        none: "hidden",
-        hidden: "hidden",
-        minimal: "minimal",
-        open: "open",
-    }
-
     var appBarVisiblePositionChangeDuration = WinJS.UI._animationTimeAdjustment(367);
 
     var that = this;
@@ -843,6 +835,13 @@ CorsicaTests.AppBarTests = function () {
         complete();
     };
 
+    var displayModeVisiblePositions = {
+        disabled: "hidden",
+        none: "hidden",
+        hidden: "hidden",
+        minimal: "minimal",
+        open: "open",
+    }
     this.testOpenAndClose_Indicators_DisplayModes_And_VisiblePositions = function (complete) {
 
         var topInitialCDM = 'none';
@@ -862,8 +861,8 @@ CorsicaTests.AppBarTests = function () {
                 "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button3\", label:\"Button 1\", type:\"button\", section:\"selection\"}'></button>" +
                 "<input type=\"range\" />" +
             "</div>";
-        var topBar = new WinJS.UI.AppBar(root.querySelector("#topBar"), { placement: 'top', layout: 'commands', closedDisplayMode: topInitialCDM });
-        var bottomBar = new WinJS.UI.AppBar(root.querySelector("#bottomBar"), { placement: 'bottom', layout: 'custom', closedDisplayMode: bottomInitialCDM });
+        var topBar = new WinJS.UI.AppBar(root.querySelector("#topBar"), { placement: 'top', layout: 'commands', closedDisplayMode: topInitialCDM, sticky: true });
+        var bottomBar = new WinJS.UI.AppBar(root.querySelector("#bottomBar"), { placement: 'bottom', layout: 'custom', closedDisplayMode: bottomInitialCDM, sticky: false });
 
         var verifyClosedIndicators = function (expected, appBar, msg) {
             verifyClosingIndicators(expected, appBar, msg);
@@ -985,10 +984,8 @@ CorsicaTests.AppBarTests = function () {
     };
 
 
-    this.testChangingClosedDisplayModeChangesPosition = function (complete) {
-        var initialCDM = 'none';
-        var initialPosition = displayModeVisiblePositions[initialCDM];
-        var delay = appBarVisiblePositionChangeDuration + 200 + 100;
+    this.testPositionChangeScenarios = function (complete) {
+        var delay = appBarVisiblePositionChangeDuration + 200;
 
         var root = document.getElementById("appBarDiv");
         root.innerHTML =
@@ -997,78 +994,138 @@ CorsicaTests.AppBarTests = function () {
                 "<hr data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Hr0\", type:\"separator\", hidden: false, section:\"global\"}' />" +
                 "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button1\", label:\"Button 1\", type:\"button\", section:\"selection\"}'></button>" +
             "</div>";
-        var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"), null);
+        var appBar = new WinJS.UI.AppBar(root.querySelector("#appBar"), {sticky: false});
 
         var msg = "Default AppBar should begin completely hidden.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         isAppBarCompletelyHidden(appBar);
 
+        msg = "Changing closedDisplayMode to 'minimal' while AppBar is closed should move the AppBar into mininmal position.";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
         appBar.closedDisplayMode = "minimal";
-
         WinJS.Promise.timeout(delay).then(function () {
             isAppBarClosedMinimal(appBar);
+
+            msg = "Changing closedDisplayMode to 'none' while AppBar is closed should hide the AppBar completely.";
             appBar.closedDisplayMode = "none";
             return WinJS.Promise.timeout(delay)
         }).then(function () {
             isAppBarCompletelyHidden(appBar);
+
+            msg = "Disabling the AppBar should hide it completely.";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.disabled = true;
+
+            return WinJS.Promise.timeout(delay);
+        }).then(function () {
+            isAppBarCompletelyHidden(appBar);
+
+            msg = "Changing closedDisplayMode should not change the AppBar's visible position if the AppBar is disabled.";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.closedDisplayMode = "minimal";
             return WinJS.Promise.timeout(delay);
         }).then(function () {
             isAppBarCompletelyHidden(appBar);
+
+            msg = "Disabled AppBar should not open.";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.show();
             return WinJS.Promise.timeout(delay)
         }).then(function () {
             isAppBarCompletelyHidden(appBar);
+
+            msg = "When AppBar is re-enabled, it should remain closed and assume the visible position of its closedDisplayMode.";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.disabled = false;
             return WinJS.Promise.timeout(delay)
         }).then(function () {
             isAppBarClosedMinimal(appBar);
-            appBar.show()
+
+            msg = "Calling AppBar.show() on non sticky AppBar should open the AppBar and make it light dismissable.";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            appBar.show();
             return WinJS.Promise.timeout(delay)
         }).then(function () {
-            isAppBarOpen(appBar);
+            isAppBarOpenAndLightDismiss(appBar);
+
+            msg = "Changing AppBar.sticky to true, on Open Light Dismissable AppBar, should change it to an Open sticky AppBar. ";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            appBar.sticky = true;
+            return WinJS.Promise.timeout(delay)
+        }).then(function () {
+            isAppBarOpenAndSticky(appBar);
+
+            msg = "Changing closedDisplayMode on Open Sticky AppBar should not change its visible position.";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            appBar.closedDisplayMode = "none";
+            return WinJS.Promise.timeout(delay)
+        }).then(function () {
+            isAppBarOpenAndSticky(appBar);
+
+            msg = "Changing AppBar.sticky to false, on Open sticky AppBar, should change it to an Open Light Dismissable AppBar. ";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            appBar.sticky = false;
+            return WinJS.Promise.timeout(delay)
+        }).then(function () {
+            isAppBarOpenAndLightDismiss(appBar);
+
+            msg = "Closing an AppBar whose closedDisplayMode is equal to 'none', should hide the AppBar completely";
+            LiveUnit.LoggingCore.logComment("Test: " + msg);
+            appBar.hide();
+            return WinJS.Promise.timeout(delay)
+        }).then(function () {
+            isAppBarCompletelyHidden(appBar);
             complete();
         });
     }
 
-    var isAppBarOpenAndLightDismissable = function (appBar) {
-        appBar = appBar.element || appBar;
-
-        var isSticky = appBar.winControl.sticky;
-        var shouldHaveEllipsis = appBar.winControl.closedDisplayMode !== "none";
+    var isAppBarOpenAndLightDismiss = function (appBar) {
+        appBar = appBar.element || appBar;        
 
         var msg,
             failures;
 
+        verifyIsOpen(appBar);
+        verifyLightDismissable(appBar);
 
-        // Verify the AppBar is visible and takes up space.
-        msg = "";
-        LiveUnit.LoggingCore.logComment("Test: " + msg);
-        failures = checkShouldBeDisplayNone(appBar, false);
-        LiveUnit.Assert.isFalse(failures.length, msg);
+        var shouldHaveEllipsis = appBar.winControl.closedDisplayMode !== "none";
+        if (shouldHaveEllipsis) {
+            verifyHasEllipsis(appBar);            
+        } else {
+            verifyNoEllipsis(appBar);
+        }
 
-        // Verify user added contents are visible and take up space.
-        msg = "";
-        LiveUnit.LoggingCore.logComment("Test: " + msg);
-        var contents = appBar.querySelectorAll("*:not(.win-ellipsis):not(.win-finaldiv):not(.win-firstdiv)");
-        failures = checkShouldBeDisplayNone(contents, false);
-        LiveUnit.Assert.isFalse(failures.length, msg);
+    }
 
-        verifyStickyState(appBar, isSticky);
+    var isAppBarOpenAndSticky = function (appBar) {
+        appBar = appBar.element || appBar;        
 
-        verifyEllipsisState(appBar, shouldHaveEllipsis);
+        var msg,
+            failures;
 
-        // Verify Ellipsis properties of Open Appbar only.
-        // Ellipsis is either last or 2nd to last element in AppBar.
+        verifyIsOpen(appBar);
+        verifyIsSticky(appBar);
+
+        var shouldHaveEllipsis = appBar.winControl.closedDisplayMode !== "none";
+        if (shouldHaveEllipsis) {
+            verifyHasEllipsis(appBar);
+        } else {
+            verifyNoEllipsis(appBar);
+        }
 
     }
 
     var isAppBarClosedMinimal = function (appBar) {
         appBar = appBar.element || appBar;
+        LiveUnit.Assert.isNotNull(appBar.id, "Test Bug!! This test requires the AppBar element have an id.");
 
         var msg,
             failures;
+
+        // verify is closed
+        msg = "Closed Minimal AppBar should be closed";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.isTrue(appBar.winControl.hidden, msg);
 
         msg = "Closed Minimal AppBar should not be a tab stop";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
@@ -1081,24 +1138,31 @@ CorsicaTests.AppBarTests = function () {
         LiveUnit.Assert.isFalse(failures.length, msg);
 
         // Closed Minimal AppBar should have Ellipsis.        
-        verifyEllipsisState(appBar, true);
+        verifyHasEllipsis(appBar);
 
-        var subTreeMinusEllipsis = document.body.querySelectorAll("#" + appBar.id + " > :not(.win-ellipsis)");
-        msg = "Except for Ellipsis, Subtree of Closed Minimal AppBar should not be visible or take up space.";
+        // Every all immediate children of the AppBar other than the ellipsis should not be displayed or be tabbable.
+        var childrenMinusEllipsis = document.body.querySelectorAll("#" + appBar.id + " > :not(.win-ellipsis)");
+        msg = "Except for Ellipsis, children of Closed Minimal AppBar should not be visible or have dimensions.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        failures = checkShouldBeDisplayNone(subTreeMinusEllipsis, true);
+        failures = checkShouldBeDisplayNone(childrenMinusEllipsis, true);
         LiveUnit.Assert.isFalse(failures.length, msg);
 
-        msg = "Except for Ellipsis, Subtree of Closed Minimal AppBar should not be a tab stop";
+        msg = "Except for Ellipsis, children of Closed Minimal AppBar should not be tab stops";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        failures = checkShouldBeTabStop(subTreeMinusEllipsis, false);
+        failures = checkShouldBeTabStop(childrenMinusEllipsis, false);
         LiveUnit.Assert.isFalse(failures.length, msg);
     }
 
     var isAppBarCompletelyHidden = function (appBar) {
         appBar = appBar.element || appBar;
+        LiveUnit.Assert.isNotNull(appBar.id, "Test Bug!! This test requires the AppBar have a unique id.");
 
-        var msg = "Completely Hidden AppBar should not be visible or take up space"
+        // verify is closed
+        msg = "Completely Hidden AppBar should be closed";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.isTrue(appBar.winControl.hidden, msg);
+
+        var msg = "Completely Hidden AppBar should not be visible or take up space";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         var failures = checkShouldBeDisplayNone(appBar, true);
         LiveUnit.Assert.isFalse(failures.length, msg);
@@ -1130,6 +1194,9 @@ CorsicaTests.AppBarTests = function () {
 
         var filterFunction = function (element) {
             var isFocusable = function (element) {
+                // First make sure it isn't already the active element. 
+                // Firefox for example, doesn't clear focus when an element's display is set to "none".
+                element.blur();
                 element.focus();
                 return document.activeElement === element;
             }
@@ -1151,53 +1218,95 @@ CorsicaTests.AppBarTests = function () {
         return failures;
     }
 
-    function verifyEllipsisState(appBar, shouldHaveEllipsis) {
+    function verifyIsOpen(appBar) {
+        appBar = appBar.element || appBar
+
+        var msg,
+         failures;
+
+        msg = "Open AppBar should not be hidden";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.isFalse(appBar.winControl.hidden, msg);
+
+        msg = "Open AppBar should have dimensions";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        failures = checkShouldBeDisplayNone(appBar, false);
+        LiveUnit.Assert.isFalse(failures.length, msg);
+
+        msg = "Content hosted by Open AppBar should have dimensions";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        var contents = appBar.querySelectorAll("*:not(.win-ellipsis):not(.win-finaldiv):not(.win-firstdiv)");
+        failures = checkShouldBeDisplayNone(contents, false);
+        LiveUnit.Assert.isFalse(failures.length, msg);        
+
+        // Verify appBar sub components are in proper DOM order.
+        var firstDiv = appBar.querySelector(".win-firstdiv");
+        var finalDiv = appBar.querySelector(".win-finaldiv");
+        var ellipsis = appBar.querySelector(".win-ellipsis");
+        var children = appBar.children;
+
+        msg = "firstDiv should be first element in open AppBar";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areEqual(children[0].className, firstDiv.className, msg);
+
+        msg = "finalDiv should be last element in open AppBar";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);        
+        LiveUnit.Assert.areEqual(children[children.length - 1].className, finalDiv.className, msg);
+
+        msg = "ellipsis should be 2nd to last element in open AppBar";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areEqual(children[children.length - 2].className, ellipsis.className, msg);
+    }
+
+    var ellipsisWidth = 40;
+    function verifyHasEllipsis(appBar) {
         appBar = appBar.element || appBar;
-        LiveUnit.Assert.areEqual(!!shouldHaveEllipsis, shouldHaveEllipsis, "Test Bug!! An explicit value boolean must be passed.");
 
         var msg,
             failures;
 
         var ellipsis = appBar.querySelector(".win-ellipsis");
         var ellipsisSubTree = appBar.querySelectorAll(".win-ellipsis *");
-        var ellipsisPadding = 40;
+                  
+        msg = "AppBar with 'minimal' closedDisplayMode should have Ellipsis TabStop.";
+        failures = checkShouldBeTabStop(ellipsis, true);
+        LiveUnit.Assert.isFalse(failures.length, msg);
 
-        if (shouldHaveEllipsis) {
-            // verify Ellipsis is visible and is tab stop            
-            msg = "Closed Minimal AppBar should have Ellipsis TabStop.";
-            failures = checkShouldBeTabStop(ellipsis, true);
-            LiveUnit.Assert.isFalse(failures.length, msg);
+        msg = "AppBar with 'minimal' closedDisplayMode should have visible Ellipsis with dimensions.";
+        failures = checkShouldBeDisplayNone(ellipsis, false);
+        LiveUnit.Assert.isFalse(failures.length, msg);
+        failures = checkShouldBeDisplayNone(ellipsisSubTree, false);
+        LiveUnit.Assert.isFalse(failures.length, msg);
+       
+        msg = "AppBar with 'minimal' closedDisplayMode should reserve right padding that matches the width of the ellipsis";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areEqual(ellipsisWidth, parseInt(getComputedStyle(appBar).paddingRight), msg);
+    }
 
-            msg = "Closed Minimal AppBar Ellipsis should be visible and take up space.";
-            failures = checkShouldBeDisplayNone(ellipsis, false);
-            LiveUnit.Assert.isFalse(failures.length, msg);
-            failures = checkShouldBeDisplayNone(ellipsisSubTree, false);
-            LiveUnit.Assert.isFalse(failures.length, msg);
+    function verifyNoEllipsis(appBar) {
+        appBar = appBar.element || appBar;
 
-            // verify appbar right padding equal ellipsis total width
-            msg = "";
-            LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.areEqual(ellipsisPadding, parseInt(getComputedStyle(appBar).paddingRight), msg);
-        } else {
-            // verify Ellipsis is not visible and is not a tab stop.            
-            msg = "Closed Minimal AppBar should not have Ellipsis TabStop.";
-            failures = checkShouldBeTabStop(ellipsis, false);
-            LiveUnit.Assert.isFalse(failures.length, msg);
+        var msg,
+            failures;
 
-            msg = "Closed Minimal AppBar Ellipsis should be visible and take up space.";
-            failures = checkShouldBeDisplayNone(ellipsis, true);
-            LiveUnit.Assert.isFalse(failures.length, msg);
+        var ellipsis = appBar.querySelector(".win-ellipsis");
+        var ellipsisSubTree = appBar.querySelectorAll(".win-ellipsis *");
+          
+        msg = "AppBar with 'none' closedDisplayMode should not have Ellipsis tab stop.";
+        failures = checkShouldBeTabStop(ellipsis, false);
+        LiveUnit.Assert.isFalse(failures.length, msg);
 
-            // verify appbar right padding not making room for ellipsis total width
-            msg = "";
-            LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.areNotEqual(ellipsisPadding, parseInt(getComputedStyle(appBar).paddingRight), msg);
-        }
+        msg = "AppBar with 'none' closedDisplayMode should not have visible Ellipsis with dimensions.";
+        failures = checkShouldBeDisplayNone(ellipsis, true);
+        LiveUnit.Assert.isFalse(failures.length, msg);
+        
+        msg = "AppBar with 'none' closedDisplayMode should not reserve right padding for ellipsis width";
+        LiveUnit.LoggingCore.logComment("Test: " + msg);
+        LiveUnit.Assert.areNotEqual(ellipsisWidth, parseInt(getComputedStyle(appBar).paddingRight), msg);
     }
 
     function verifyIsSticky(appBar) {
-        appBar = appBar.element || appBar;
-        //LiveUnit.Assert.areEqual(!!shouldBeSticky, shouldBeSticky, "Test Bug!! An explicit value boolean must be passed.");
+        appBar = appBar.element || appBar;        
 
         var msg,
             failures;
@@ -1207,35 +1316,32 @@ CorsicaTests.AppBarTests = function () {
         var clickEater = document.querySelector(".win-appbarclickeater");
 
         // Verify sticky properties.
-        msg = "";
+        msg = "Sticky AppBar should be sticky";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         LiveUnit.Assert.isTrue(appBar.winControl.sticky, msg);
 
         if (firstDiv) {
-            // verify its not a tab stop
-            msg = "";
+            // verify its not reachable by tabbing. No use trying to focus it as part of the test since it has a focusin handler that moves focus away.
+            msg = "firstDiv should not be reachable by tabbing";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.isTrue(firstDiv.tabIndex < 0, msg);
         }
         if (finalDiv) {
-            // verify its not a tab stop
-            msg = "";
+            // verify its not reachable by tabbing. No use trying to focus it as part of the test since it has a focusin handler that moves focus away.
+            msg = "finalDiv should not be reachable by tabbing";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.isTrue(finalDiv.tabIndex < 0, msg);
         }
-        if (clickEater) {
-            // verify it is not visible / has no display
-            msg = "";
+        if (clickEater) {            
+            msg = "AppBar Clickeater should not have dimensions when AppBar is sticky";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             failures = checkShouldBeDisplayNone(clickEater, true);
             LiveUnit.Assert.isFalse(failures.length, msg);
         }
-
     }
 
-    function verifyIsLightDismiss(appBar) {
+    function verifyLightDismissable(appBar) {
         appBar = appBar.element || appBar;
-        //LiveUnit.Assert.areEqual(!!shouldBeSticky, shouldBeSticky, "Test Bug!! An explicit value boolean must be passed.");
 
         var msg,
             failures;
@@ -1245,57 +1351,31 @@ CorsicaTests.AppBarTests = function () {
         var clickEater = document.querySelector(".win-appbarclickeater");
 
         // Verify light dismiss properties.           
-        msg = "";
+        msg = "Light dismiss AppBar should not be sticky";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         LiveUnit.Assert.isFalse(appBar.winControl.sticky, msg);
 
-        // Verify sub components
-        msg = "";
+        msg = "Light dismiss html components should all be in the document.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         LiveUnit.Assert.isNotNull(firstDiv, msg);
         LiveUnit.Assert.isNotNull(finalDiv, msg);
         LiveUnit.Assert.isNotNull(clickEater, msg);
-
-        // verify first and final divs are not display none.
-        msg = "";
-        LiveUnit.LoggingCore.logComment("Test: " + msg);
-        failures = checkShouldBeDisplayNone(firstDiv, false);
-        LiveUnit.Assert.isFalse(failures.length, msg);
-
-        msg = "";
-        LiveUnit.LoggingCore.logComment("Test: " + msg);
-        failures = checkShouldBeDisplayNone(finalDiv, false);
-        LiveUnit.Assert.isFalse(failures.length, msg);
-
-        // verify they have the highest and lowest tab indices
+        
         var subTree = appBar.querySelector("*");
         var highestTabIndex = WinJS.Utilities._getHighestTabIndexInList(subTree);
         var lowestTabIndex = WinJS.Utilities._getLowestTabIndexInList(subTree);
-        msg = "";
+        msg = "firstDiv in Light Dismiss AppBar should have the lowest tabIndex in the AppBar.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         LiveUnit.Assert.areEqual(lowestTabIndex, firstDiv.tabIndex, msg);
-        msg = ""
+        msg = msg = "finalDiv in Light Dismiss AppBar should have the highest tabIndex in the AppBar.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         LiveUnit.Assert.areEqual(highestTabIndex, finalDiv.tabIndex, msg);
-
-        // verify they are the first and last element in the AppBar
-        msg = "";
-        LiveUnit.LoggingCore.logComment("Test: " + msg);
-        LiveUnit.Assert.areEqual(appBar.children[0], firstDiv, msg);
-        msg = "";
-        LiveUnit.LoggingCore.logComment("Test: " + msg);
-        LiveUnit.Assert.areEqual(appBar.children[appBar.children.length - 1], finalDiv, msg);
-
-        // verify clickeater is not display none
-        msg = "";
+        
+        msg = "AppBar clickeater should have dimensions when AppBar is light dismissable";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         failures = checkShouldBeDisplayNone(clickEater, false);
         LiveUnit.Assert.isFalse(failures.length, msg);
     }
-
-
-
-
 }
 
 // register the object as a test class by passing in the name

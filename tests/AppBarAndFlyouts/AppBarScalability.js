@@ -194,7 +194,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         ]);
 
         LiveUnit.LoggingCore.logComment("Top AppBarCommands created");
-        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands });
+        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'minimal' });
         LiveUnit.LoggingCore.logComment("Top AppBar Initialized with commands");
 
         // Appbar with labels       
@@ -246,7 +246,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         ]);
 
         LiveUnit.LoggingCore.logComment("Top AppBarCommands created");
-        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands });
+        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'minimal' });
         LiveUnit.LoggingCore.logComment("Top AppBar Initialized with commands");
         topAppBar.show();
 
@@ -261,7 +261,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             "<hr data-win-control='WinJS.UI.AppBarCommand' data-win-options='{type:\"separator\", hidden: true, section:\"global\"}' />" +
             "<hr data-win-control='WinJS.UI.AppBarCommand' data-win-options='{type:\"separator\", section:\"selection\"}' />" +
             "<div style=\"border:none; padding:0px; margin:0px;\" data-win-control='WinJS.UI.AppBarCommand' data-win-options='{type:\"content\", section:\"selection\"}'> <div style=\"height:50px;width:50px; background-color:yellow;\"></div> </div>";
-        var bottomAppBar = new WinJS.UI.AppBar(bottomAppBarElem, { sticky: true });
+        var bottomAppBar = new WinJS.UI.AppBar(bottomAppBarElem, { sticky: true, closedDisplayMode: 'minimal' });
         LiveUnit.LoggingCore.logComment("Bottom AppBar Initialized with commands");
         bottomAppBar.show();
 
@@ -443,7 +443,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         appBarVisibleContentWidth += contentDivWidth;
 
         LiveUnit.LoggingCore.logComment("Top AppBarCommands created");
-        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands });
+        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'minimal' });
         LiveUnit.LoggingCore.logComment("Top AppBar Initialized with commands");
 
 
@@ -554,7 +554,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         appBarVisibleContentWidth += contentDivWidth;
 
         LiveUnit.LoggingCore.logComment("Top AppBarCommands created");
-        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands });
+        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'minimal' });
         LiveUnit.LoggingCore.logComment("Top AppBar Initialized with commands");
 
         // Set up event listener to check for correct command sizes when the AppBar is opening.
@@ -595,7 +595,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         appBarVisibleContentWidth += contentDivWidth;
 
         LiveUnit.LoggingCore.logComment("Top AppBarCommands created");
-        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands });
+        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'minimal' });
         LiveUnit.LoggingCore.logComment("Top AppBar Initialized with commands");
         topAppBar.show();
 
