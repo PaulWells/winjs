@@ -10,6 +10,10 @@ var CorsicaTests = CorsicaTests || {};
 CorsicaTests.AppBarScalabilityTests = function () {
     "use strict";
 
+    // If the AppBar has the ellipsis (ie closedDisplayMode !== 'none', then the AppBar also has reserved some right padding 
+    // to keep other contents in the flow of the AppBar DOM from overlaying it. 
+    var rightPaddingReservedForEllipsis = 40;
+
     this.setUp = function () {
         LiveUnit.LoggingCore.logComment("In setUp");
         var host = document.createElement("div");
@@ -23,9 +27,9 @@ CorsicaTests.AppBarScalabilityTests = function () {
             "<div id='bottomappbar' style='background-color:blue;position:absolute;'></div>";
         document.body.appendChild(host);
 
-        // Overwrite _scaleHelper so that we can mock test the scaling commands on window resize.
-        originalHelper = WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper;
-        WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper = testHelper;
+        //// Overwrite _scaleHelper so that we can mock test the scaling commands on window resize.
+        //originalHelper = WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper;
+        //WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper = testHelper;
     };
 
     this.tearDown = function () {
@@ -37,8 +41,8 @@ CorsicaTests.AppBarScalabilityTests = function () {
             element = null;
         }
 
-        // Restore original implementation.
-        WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper = originalHelper;
+        //// Restore original implementation.
+        //WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper = originalHelper;
     };
 
     var that = this,
@@ -49,13 +53,13 @@ CorsicaTests.AppBarScalabilityTests = function () {
         originalHelper,
         reducedAppBarClass = "win-reduced";
 
-    function testHelper() {
-        var prevDisplay = this.appBarEl.style.displaay;
-        this.appBarEl.style.display = "";
-        var returnValue = this.appBarEl.offsetWidth;
-        this.appBarEl.style.display = prevDisplay;
-        return returnValue;
-    }
+    //function testHelper() {
+    //    var prevDisplay = this.appBarEl.style.display;
+    //    this.appBarEl.style.display = "";
+    //    var returnValue = getComputedStyle(this.appBarEl).width;
+    //    this.appBarEl.style.display = prevDisplay;
+    //    return returnValue;
+    //}
 
     function createAppBarCommands(cmdButtonCount, separatorCount) {
         var cmds = [],
@@ -82,7 +86,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
     }
 
     function isReducedSizeExpected(host, appBarElem, cmdCount, sepCount, widthOfAllContentCommands) {
-        var ctrlWidth = parseInt(host.style.width, 10);
+        var ctrlWidth = parseInt(getComputedStyle(appBarElem).width, 10);
 
         LiveUnit.LoggingCore.logComment("Control width: " + ctrlWidth);
         LiveUnit.LoggingCore.logComment("AppBar command button count: " + cmdCount);
@@ -172,51 +176,48 @@ CorsicaTests.AppBarScalabilityTests = function () {
     }
 
     this.testAppBarPadding = function (complete) {
-        var topAppBarElem = document.getElementById("topappbar"),
-            appBarVisibleCommandCount = 6,
-            appBarVisibleSeparatorCount = 1;
-
-        // Create AppBarCommands via JavaScript for the topAppBar and then pass them to the constructor of the TopAppBar.
-        var commands = createAppBarCommands(appBarVisibleCommandCount, appBarVisibleSeparatorCount);
-        // Add 2 hidden commands to verify that these are not included when we calculate how wide the commands are.
-        commands = commands.concat([
-            new WinJS.UI.AppBarCommand(null, { label: "hiddenButton", hidden: true }),
-            new WinJS.UI.AppBarCommand(null, { hidden: true, type: "separator" })
-        ]);
-        // Add a content command
-        var contentDiv = document.createElement("DIV");
-        contentDiv.innerHTML = "<div style=\"height:50px; width:50px; background-color:yellow;\"></div>";
-        contentDiv.style.padding = "0px";
-        contentDiv.style.margin = "0px";
-        contentDiv.style.border = "none";
-        commands = commands.concat([
-            new WinJS.UI.AppBarCommand(contentDiv, { id: "contentDiv", type: 'content' }),
-        ]);
-
-        LiveUnit.LoggingCore.logComment("Top AppBarCommands created");
-        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'minimal' });
+        var topAppBarElem = document.getElementById("topappbar");
+       
+        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top'});
         LiveUnit.LoggingCore.logComment("Top AppBar Initialized with commands");
-
-        // Appbar with labels       
-        topAppBar.show();
+          
+        topAppBar.show();        
+        
+        LiveUnit.LoggingCore.logComment("Verify padding for full-size AppBar with Ellipsis");
+        topAppBar.closedDisplayMode = 'minimal';
         WinJS.Utilities.removeClass(topAppBarElem, reducedAppBarClass);
-
-        LiveUnit.LoggingCore.logComment("Verify padding for full-size AppBar");
-        // Full-size appbar has no padding.
-        var sidePadding = 0;
+        var expectedLeftPadding = 0;
+        var expectedRightPadding = rightPaddingReservedForEllipsis;
         var appBarStyle = getComputedStyle(topAppBarElem);
-        var computedPadding = parseInt(appBarStyle.paddingLeft, 10) + parseInt(appBarStyle.paddingRight, 10);
-        LiveUnit.Assert.areEqual(sidePadding, computedPadding, "Incorrect padding for full-size AppBar");
+        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with Ellipsis");
+        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with Ellipsis");
 
-        // Appbar with hidden labels
-        WinJS.Utilities.addClass(topAppBarElem, reducedAppBarClass);
-
-        LiveUnit.LoggingCore.logComment("Verify padding for win-reduced AppBar");
-        // Padding-left = padding-right = 10px
-        sidePadding = 10 + 10;
+        LiveUnit.LoggingCore.logComment("Verify padding for full-size AppBar with no Ellipsis");      
+        topAppBar.closedDisplayMode = "none";
+        WinJS.Utilities.removeClass(topAppBarElem, reducedAppBarClass);
+        expectedLeftPadding = 0;
+        expectedRightPadding = 0;
         appBarStyle = getComputedStyle(topAppBarElem);
-        computedPadding = parseInt(appBarStyle.paddingLeft, 10) + parseInt(appBarStyle.paddingRight, 10);
-        LiveUnit.Assert.areEqual(sidePadding, computedPadding, "Incorrect padding for win-reduced AppBar");
+        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with no Ellipsis");
+        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with no Ellipsis");        
+
+        LiveUnit.LoggingCore.logComment("Verify padding for win-reduced AppBar with Ellipsis");
+        topAppBar.closedDisplayMode = 'minimal';
+        WinJS.Utilities.addClass(topAppBarElem, reducedAppBarClass);
+        expectedLeftPadding = 10;
+        expectedRightPadding = rightPaddingReservedForEllipsis;
+        appBarStyle = getComputedStyle(topAppBarElem);
+        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with Ellipsis");
+        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with Ellipsis");
+
+        LiveUnit.LoggingCore.logComment("Verify padding for win-reduced AppBar with no Ellipsis");
+        topAppBar.closedDisplayMode = "none";
+        WinJS.Utilities.addClass(topAppBarElem, reducedAppBarClass);
+        expectedLeftPadding = 10;
+        expectedRightPadding = 10;
+        appBarStyle = getComputedStyle(topAppBarElem);
+        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with no Ellipsis");
+        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with no Ellipsis");      
 
         complete();
     };
@@ -246,7 +247,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         ]);
 
         LiveUnit.LoggingCore.logComment("Top AppBarCommands created");
-        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'minimal' });
+        var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'none' });
         LiveUnit.LoggingCore.logComment("Top AppBar Initialized with commands");
         topAppBar.show();
 
@@ -270,22 +271,24 @@ CorsicaTests.AppBarScalabilityTests = function () {
         verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv));
         verifyCommandSizes(host, bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(bottomAppBarElem.querySelector("div.win-command")));
 
-        // Increase the container size to allow full size commands to fit.
+        // Increase the container width to in crease the AppBars width's in turn. Allowwng full size commands to fit on a single row.
         LiveUnit.LoggingCore.logComment("Increasing AppBarContainer size");
         setWidth(host, 750);
 
-        // Workaround since we can't simulate a window resize event to trigger the 
-        // AppBars to call _layout.scale() in their window resize handlers.
-        topAppBar._layout._appBarTotalKnownWidth = null;
-        bottomAppBar._layout._appBarTotalKnownWidth = null;
-        bottomAppBar._layout.scale();
-        topAppBar._layout.scale();
+        // Workaround since we can't trigger a window resize from javascript directly.
+        // Let the AppBar layout know that a resize occurred.
+        topAppBar._layout.resize();
+        bottomAppBar._layout.resize();
 
         // Yield and verify sizes
         WinJS.Promise.timeout(100).
-            then(function () {
+            then(function () {                
                 verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv));
                 verifyCommandSizes(host, bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(bottomAppBarElem.querySelector("div.win-command")));
+                return WinJS.Promise.timeout(100);
+            }).then(function () {
+                verifyCommandSizes(host, topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv));
+                verifyCommandSizes(host, bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(bottomAppBarElem.querySelector("div.win-command")));                
             }).
             done(complete);
     };

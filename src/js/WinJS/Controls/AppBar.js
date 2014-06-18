@@ -445,6 +445,10 @@ define([
                         this._element.setAttribute("aria-label", strings.ariaLabel);
                     }
 
+                    // Call the _Overlay constructor helper to finish setting up our element.
+                    // Don't pass constructor options, AppBar needs to set those itself specific order.
+                    this._baseOverlayConstructor(this._element);
+
                     // Start off closed
                     this._lastPositionVisited = displayModeVisiblePositions.none;
                     WinJS.Utilities.addClass(this._element, closedClass);
@@ -476,9 +480,8 @@ define([
                     // Need to set placement before closedDisplayMode, closedDisplayMode sets our starting position, which is dependant on placement.
                     this.placement = options.placement || appBarPlacementBottom;
                     this.closedDisplayMode = options.closedDisplayMode || closedDisplayModes.none;
-
-                    // Call the base overlay constructor helper
-                    this._baseOverlayConstructor(this._element, options);
+                    
+                    WinJS.UI.setOptions(this, options);
 
                     this._initializing = false;
 
@@ -708,24 +711,26 @@ define([
                         set: function AppBar_set_closedDisplayMode(value) {
                             var oldValue = this._closedDisplayMode;
 
-                            if (value === closedDisplayModes.none) {
-                                this._closedDisplayMode = value;
-                                this._ellipsis.style.display = "none";
-                                this._element.style.padding = "";
-                                this._element.style.width = "";
-                            } else {
-                                // Minimal is default.
-                                this._closedDisplayMode = closedDisplayModes.minimal;
-                                this._ellipsis.style.display = "";
-                                this._element.style.padding = "0px 40px 0px 0px";
-                                this._element.style.width = "calc(100% - 40px)";
-                            }
+                            if (oldValue !== value) {
+                                if (value === closedDisplayModes.none) {
+                                    this._closedDisplayMode = closedDisplayModes.none;
+                                    this._ellipsis.style.display = "none";
+                                    this._element.style.paddingRight = "";
+                                    this._element.style.width = "";
+                                } else {
+                                    // Minimal is default.
+                                    this._closedDisplayMode = closedDisplayModes.minimal;
+                                    this._ellipsis.style.display = "";
+                                    this._element.style.paddingRight = "40px";
+                                    this._element.style.width = "calc(100% - 40px)";                                
+                                }
+                                this._layout.resize();
                         
-                            if (oldValue !== this._closedDisplayMode && this._closed) {
-                                // If the value changed while we were closed, update our position.
-                                this._changeVisiblePosition(displayModeVisiblePositions[this._closedDisplayMode]);
+                                if (this._closed) {
+                                    // If the value changed while we were closed, move to our new position.
+                                    this._changeVisiblePosition(displayModeVisiblePositions[this._closedDisplayMode]);
+                                }
                             }
-
                         },
                     },
 

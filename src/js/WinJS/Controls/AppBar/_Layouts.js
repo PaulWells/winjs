@@ -20,7 +20,7 @@
         _AppBarBaseLayout: WinJS.Namespace._lazy(function () {
             var baseType = "custom";
 
-            var strings = {                
+            var strings = {
                 get nullCommand() { return WinJS.Resources._getWinJSString("ui/nullCommand").value; },
             };
 
@@ -149,7 +149,7 @@
             var layoutType = "commands";
 
             var _AppBarCommandsLayout = WinJS.Class.derive(WinJS.UI._AppBarBaseLayout, function _AppBarCommandsLayout_ctor(appBarEl) {
-                WinJS.UI._AppBarBaseLayout.call(this, appBarEl, {_className: layoutClassName, _type: layoutType})
+                WinJS.UI._AppBarBaseLayout.call(this, appBarEl, { _className: layoutClassName, _type: layoutType })
                 this._commandLayoutsInit(appBarEl);
             }, {
                 _getWidthOfCommands: function _AppBarCommandsLayout_getWidthOfCommands(commands) {
@@ -374,19 +374,21 @@
             // If the total width of all AppBarCommands in the primary row is greater than the
             // width of the AppBar, add the win-reduced class to the AppBar element and all 
             // AppBarCommands will reduce in size.
+            if (!this.appBarEl.winControl._closed) {
 
-            // Measure the width all visible commands in  AppBar's primary row, the AppBar's offsetWidth and the AppBar horizontal padding:
-            var widthOfVisibleContent = this._getWidthOfCommands();
-            if (this._appBarTotalKnownWidth !== +this._appBarTotalKnownWidth) {
-                this._appBarTotalKnownWidth = this._scaleHelper();
-            }
+                // Measure the width all visible commands in  AppBar's primary row, the AppBar's offsetWidth and the AppBar horizontal padding:
+                var widthOfVisibleContent = this._getWidthOfCommands();
+                if (this._appBarTotalKnownWidth !== +this._appBarTotalKnownWidth) {
+                    this._appBarTotalKnownWidth = parseInt(getComputedStyle(this.appBarEl).width, 10);
+                }
 
-            if (widthOfVisibleContent <= this._appBarTotalKnownWidth) {
-                // Full size commands
-                WinJS.Utilities.removeClass(this.appBarEl, reducedClass);
-            } else {
-                // Reduced size commands
-                WinJS.Utilities.addClass(this.appBarEl, reducedClass);
+                if (widthOfVisibleContent <= this._appBarTotalKnownWidth) {
+                    // Full size commands
+                    WinJS.Utilities.removeClass(this.appBarEl, reducedClass);
+                } else {
+                    // Reduced size commands
+                    WinJS.Utilities.addClass(this.appBarEl, reducedClass);
+                }
             }
         },
         resize: function _commandLayoutsMixin_resize(event) {
@@ -405,11 +407,11 @@
             WinJS.Utilities.addClass(this._primaryCommands, primaryCommandsClass);
             WinJS.Utilities.addClass(this._secondaryCommands, secondaryCommandsClass);
         },
-        _scaleHelper: function _commandLayoutsMixin_scaleHelper() {
-            // This exists as a single line function so that unit tests can 
-            // overwrite it since they can't resize the WWA window.
-            return document.documentElement.clientWidth;
-        },
+        //_scaleHelper: function _commandLayoutsMixin_scaleHelper() {
+        //    // This exists as a single line function so that unit tests can 
+        //    // overwrite it since they can't resize the WWA window.
+        //    return document.documentElement.clientWidth;
+        //},
         _measureContentCommands: function _commandLayoutsMixin_measureContentCommands() {
             // AppBar measures the width of content commands when they are first added
             // and then caches that value to avoid additional layouts in the future.     
