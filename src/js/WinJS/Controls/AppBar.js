@@ -227,7 +227,6 @@ define([
                 // AppBar tabbing order:
                 //    1) Bottom AppBars
                 //    2) Top AppBars
-                //    3) Other AppBars
                 // DOM order is respected, because an AppBar should not have a defined tabIndex
                 function _setFocusToPreviousAppBar() {
                     var appBars = document.querySelectorAll("." + appBarClass);
@@ -245,23 +244,15 @@ define([
 
                     var appBarControl = this.parentElement.winControl;
                     if (appBarControl.placement === appBarPlacementBottom) {
-                        // Bottom appBar: Focus order: (1)previous bottom appBars (2)other appBars (3)top appBars (4)bottom appBars
+                        // Bottom appBar: Focus order: (1)previous bottom appBars (2)top appBars (3)bottom appBars
                         if (thisAppBarIndex && _setFocusToPreviousAppBarHelper(thisAppBarIndex - 1, appBarPlacementBottom, appBars)) { return; }
-                        if (_setFocusToPreviousAppBarHelperNeither(appBars.length - 1, appBars)) { return; }
                         if (_setFocusToPreviousAppBarHelper(appBars.length - 1, appBarPlacementTop, appBars)) { return; }
                         if (_setFocusToPreviousAppBarHelper(appBars.length - 1, appBarPlacementBottom, appBars)) { return; }
                     } else if (appBarControl.placement === appBarPlacementTop) {
-                        // Top appBar: Focus order: (1)previous top appBars (2)bottom appBars (3)other appBars (4)top appBars
+                        // Top appBar: Focus order: (1)previous top appBars (2)bottom appBars (3)top appBars
                         if (thisAppBarIndex && _setFocusToPreviousAppBarHelper(thisAppBarIndex - 1, appBarPlacementTop, appBars)) { return; }
                         if (_setFocusToPreviousAppBarHelper(appBars.length - 1, appBarPlacementBottom, appBars)) { return; }
-                        if (_setFocusToPreviousAppBarHelperNeither(appBars.length - 1, appBars)) { return; }
                         if (_setFocusToPreviousAppBarHelper(appBars.length - 1, appBarPlacementTop, appBars)) { return; }
-                    } else {
-                        // Other appBar: Focus order: (1)previous other appBars (2)top appBars (3)bottom appBars (4)other appBars
-                        if (thisAppBarIndex && _setFocusToPreviousAppBarHelperNeither(thisAppBarIndex - 1, appBars)) { return; }
-                        if (_setFocusToPreviousAppBarHelper(appBars.length - 1, appBarPlacementTop, appBars)) { return; }
-                        if (_setFocusToPreviousAppBarHelper(appBars.length - 1, appBarPlacementBottom, appBars)) { return; }
-                        if (_setFocusToPreviousAppBarHelperNeither(appBars.length - 1, appBars)) { return; }
                     }
                 }
 
@@ -300,7 +291,6 @@ define([
                 // AppBar tabbing order:
                 //    1) Bottom AppBars
                 //    2) Top AppBars
-                //    3) Other AppBars
                 // DOM order is respected, because an AppBar should not have a defined tabIndex
                 function _setFocusToNextAppBar() {
                     var appBars = document.querySelectorAll("." + appBarClass);
@@ -315,24 +305,16 @@ define([
 
                     var appBarControl = this.parentElement.winControl;
                     if (this.parentElement.winControl.placement === appBarPlacementBottom) {
-                        // Bottom appBar: Focus order: (1)next bottom appBars (2)top appBars (3)other appBars (4)bottom appBars
+                        // Bottom appBar: Focus order: (1)next bottom appBars (2)top appBars (3)bottom appBars
                         if (_setFocusToNextAppBarHelper(thisAppBarIndex + 1, appBarPlacementBottom, appBars)) { return; }
                         if (_setFocusToNextAppBarHelper(0, appBarPlacementTop, appBars)) { return; }
-                        if (_setFocusToNextAppBarHelperNeither(0, appBars)) { return; }
                         if (_setFocusToNextAppBarHelper(0, appBarPlacementBottom, appBars)) { return; }
                     } else if (this.parentElement.winControl.placement === appBarPlacementTop) {
-                        // Top appBar: Focus order: (1)next top appBars (2)other appBars (3)bottom appBars (4)top appBars
-                        if (_setFocusToNextAppBarHelper(thisAppBarIndex + 1, appBarPlacementTop, appBars)) { return; }
-                        if (_setFocusToNextAppBarHelperNeither(0, appBars)) { return; }
+                        // Top appBar: Focus order: (1)next top appBars (2)bottom appBars (3)top appBars
+                        if (_setFocusToNextAppBarHelper(thisAppBarIndex + 1, appBarPlacementTop, appBars)) { return; }                        
                         if (_setFocusToNextAppBarHelper(0, appBarPlacementBottom, appBars)) { return; }
                         if (_setFocusToNextAppBarHelper(0, appBarPlacementTop, appBars)) { return; }
-                    } else {
-                        // Other appBar: Focus order: (1)next other appBars (2)bottom appBars (3)top appBars (4)other appBars
-                        if (_setFocusToNextAppBarHelperNeither(thisAppBarIndex + 1, appBars)) { return; }
-                        if (_setFocusToNextAppBarHelper(0, appBarPlacementBottom, appBars)) { return; }
-                        if (_setFocusToNextAppBarHelper(0, appBarPlacementTop, appBars)) { return; }
-                        if (_setFocusToNextAppBarHelperNeither(0, appBars)) { return; }
-                    }
+                    } 
                 }
 
                 // Updates the firstDiv & finalDiv of all open AppBars
@@ -358,7 +340,6 @@ define([
                             return true;
                         }
                     }
-
                     return false;
                 }
 
