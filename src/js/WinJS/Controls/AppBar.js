@@ -205,23 +205,7 @@ define([
                         }
                     }
                     return false;
-                }
-
-                // Sets focus to the last AppBar in the provided appBars array with other placement.
-                // Returns true if focus was set.  False otherwise.
-                function _setFocusToPreviousAppBarHelperNeither(startIndex, appBars) {
-                    for (var i = startIndex; i >= 0; i--) {
-                        if (appBars[i].winControl
-                         && appBars[i].winControl.placement != appBarPlacementBottom
-                         && appBars[i].winControl.placement != appBarPlacementTop
-                         && !appBars[i].winControl.hidden
-                         && appBars[i].winControl._focusOnLastFocusableElement
-                         && appBars[i].winControl._focusOnLastFocusableElement()) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
+                }                
 
                 // Sets focus to the last tab stop of the previous AppBar
                 // AppBar tabbing order:
@@ -262,22 +246,6 @@ define([
                     for (var i = startIndex; i < appBars.length; i++) {
                         if (appBars[i].winControl
                          && appBars[i].winControl.placement === appBarPlacement
-                         && !appBars[i].winControl.hidden
-                         && appBars[i].winControl._focusOnFirstFocusableElement
-                         && appBars[i].winControl._focusOnFirstFocusableElement()) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-
-                // Sets focus to the first AppBar in the provided appBars array with other placement.
-                // Returns true if focus was set.  False otherwise.
-                function _setFocusToNextAppBarHelperNeither(startIndex, appBars) {
-                    for (var i = startIndex; i < appBars.length; i++) {
-                        if (appBars[i].winControl
-                         && appBars[i].winControl.placement != appBarPlacementBottom
-                         && appBars[i].winControl.placement != appBarPlacementTop
                          && !appBars[i].winControl.hidden
                          && appBars[i].winControl._focusOnFirstFocusableElement
                          && appBars[i].winControl._focusOnFirstFocusableElement()) {
