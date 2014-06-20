@@ -120,7 +120,7 @@ define([
                     if (edgyHappening === "opening") {
                         _closeAllBars(bars, false);
                     } else if (edgyHappening === "closing") {
-                        _showAllBars(bars, false);
+                        _openAllBars(bars, false);
                     }
                     edgyHappening = null;
                 }
