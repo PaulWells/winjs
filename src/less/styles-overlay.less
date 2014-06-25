@@ -288,19 +288,12 @@ AppBar
         //move to colors
         &:focus span {
             border: solid white 2px;
-            padding: 0px;
         }
 
-        &:-ms-keyboard-active {
+        &:active:enabled {
             color: #ffffff;
-            background-color: transparent;
-            border-color: #ffffff;
-
-            & span {
-                background-color: #ffffff;
-                color: #000000;
-            }
-        }            
+            background-color: rgba(255,255,255,0.13);
+        }        
     }
 
     &.win-bottom .win-ellipsis {
