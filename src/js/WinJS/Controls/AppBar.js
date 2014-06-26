@@ -1414,28 +1414,6 @@ define([
                     _ensurePosition: function AppBar_ensurePosition() {
                         // Position the AppBar element relative to the top or bottom edge of the visible
                         // document, based on the the visible position we think we need to be in.
-                        //if (this._closed) {
-                        //    var innerEdgeOffSet = WinJS.UI._Overlay._keyboardInfo._visibleDocHeight - this._visiblePixels[this._visiblePosition];
-
-                        //    if (this._placement === appBarPlacementBottom) {
-                        //        this._element.style.bottom = "";
-                        //        this._element.style.top = innerEdgeOffSet + "px";
-                        //    } else {
-                        //        this._element.style.bottom = innerEdgeOffSet + "px";
-                        //        this._element.style.top = "";
-                        //    }
-                        //} else {
-                        //    if (this._placement === appBarPlacementBottom) {
-                        //        // If the IHM is open, the bottom of the visual viewport may or may not be obscured 
-                        //        // Use _getAdjustedBottom to account for the IHM if it is covering the bottom edge.
-                        //        this._element.style.bottom = this._getAdjustedBottom() + "px";
-                        //        this._element.style.top = "";
-                        //    } else {
-                        //        this._element.style.bottom = "";
-                        //        this._element.style.top = this._getTopOfVisualViewport() + "px";
-                        //    }
-                        //}
-
                         var offSet = this._computePositionOffset();
                         this._element.style.bottom = offSet.bottom;
                         this._element.style.top = offSet.top;
@@ -1443,7 +1421,7 @@ define([
                     },
 
                     _computePositionOffset: function AppBar_computePositionOffset() {
-                        // Position the AppBar element relative to the top or bottom edge of the visible
+                        // Calculates and returns top and bottom offsets for the AppBar element, relative to the top or bottom edge of the visible
                         // document, based on the the visible position we think we need to be in.
                         var positionOffSet = {};
 
@@ -1504,18 +1482,6 @@ define([
                         // See if we're already where we're supposed to be.
                         var offSet = this._computePositionOffset();
                         return (offSet.top === this._element.style.top && offSet.bottom === this._element.style.bottom);
-
-                        //if (this._placement === appBarPlacementBottom) {
-                        //    if (parseInt(this._element.style.bottom) === this._getAdjustedBottom()) {
-                        //        return true;
-                        //    }
-                        //} else if (this._placement === appBarPlacementTop) {
-                        //    if (parseInt(this._element.style.top) === this._getTopOfVisualViewport()) {
-                        //        return true;
-                        //    }
-                        //}
-                        // else we don't understand custom positioning
-                        //return false;
                     },
 
                     // If there is an open non-sticky AppBar then it sets the firstDiv tabIndex to
