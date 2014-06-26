@@ -417,7 +417,9 @@ define([
                     this._ellipsis.addEventListener("pointerdown", function () {
                         thisWinUI._Overlay._addHideFocusClass(this._ellipsis);
                     }.bind(this), false);
-                    this._ellipsis.addEventListener("click", WinJS.UI.AppBar._toggleAppBarEdgy, false);
+                    this._ellipsis.addEventListener("click", function () {
+                        WinJS.UI.AppBar._toggleAppBarEdgy(!WinJS.Utilities.hasClass(this._ellipsis, "win-hidefocus"));
+                    }.bind(this), false);
                     WinJS.Utilities.addClass(this._ellipsis, ellipsisClass);
                     this._element.appendChild(this._ellipsis);
 

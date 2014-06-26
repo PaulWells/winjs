@@ -1389,7 +1389,8 @@
                     return (widthRatio / heightRatio < 0.99);
                 },
 
-                // Get the top of our visible area in terms of document.documentElement.
+                // Get the top of our visible area in terms of its absolute distance from the top of document.documentElement. 
+                // Normalizes any offsets which have have occured between the visual viewport and the layout viewport due to resizing the viewport to fit the IHM and/or optical zoom.
                 get _visibleDocTop() {
                     return window.pageYOffset - document.documentElement.scrollTop;
                 },
