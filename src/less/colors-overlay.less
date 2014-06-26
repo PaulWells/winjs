@@ -96,6 +96,28 @@
         &.win-appbar, .win-appbar {
             background-color: rgb(0, 0, 0);
             border-color: rgb(0, 0, 0);
+                    
+            & button.win-ellipsis {                
+                background-color: rgb(0, 0, 0);
+
+                & span {
+                     border-color: transparent;
+                }
+                
+                &:focus span {
+                    border-color: rgb(255, 255, 255);
+                }
+                               
+                &:hover:enabled, &:hover:active:enabled, &:active:enabled {
+                    /* Counter act intrinsic button:active styles */
+                    background-color: rgba(255,255,255,0.13);
+                    color: rgb(255, 255, 255);
+                }      
+
+                &:-ms-keyboard-active:enabled {
+                     background-color: rgb(0, 0, 0);
+                }
+            }
         }
 
 
@@ -252,6 +274,28 @@
         &.win-appbar, .win-appbar {
             background-color: rgb(240, 240, 240);
             border-color: rgb(240, 240, 240);
+
+              & button.win-ellipsis {        
+                  background-color: rgb(240, 240, 240);        
+                
+                & span {
+                     border-color: transparent;
+                }
+                
+                &:focus span {
+                   border-color: rgb(0, 0, 0);
+                }
+                
+                &:hover:enabled, &:hover:active:enabled, &:active:enabled {                 
+                    background-color: rgba(205, 205, 205, 0.82);
+                    color: rgb(0, 0, 0);
+                }
+
+                &:-ms-keyboard-active:enabled {
+                     background-color: rgb(240, 240, 240);
+                }
+            }
+
         }
 
 
