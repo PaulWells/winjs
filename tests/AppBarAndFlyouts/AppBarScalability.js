@@ -479,14 +479,14 @@ CorsicaTests.AppBarScalabilityTests = function () {
             var cmd;
             LiveUnit.LoggingCore.logComment("AppBar.showOnlyCommands to make it full size");
             var iterations = 25;
-            var foo;
+            var randomCommands;
             for (var i = 0; i < iterations; i++) {
-                foo = getRandomCommands(commands);
-                topAppBar.showOnlyCommands(foo.arr);
+                randomCommands = getRandomCommands(commands);
+                topAppBar.showOnlyCommands(randomCommands.arr);
 
-                appBarVisibleCommandCount = foo.visibleCmdCount;
-                appBarVisibleSeparatorCount = foo.visibleSepCount;
-                appBarVisibleContentWidth = foo.visibleContentWidth;
+                appBarVisibleCommandCount = randomCommands.visibleCmdCount;
+                appBarVisibleSeparatorCount = randomCommands.visibleSepCount;
+                appBarVisibleContentWidth = randomCommands.visibleContentWidth;
 
                 var expectingReducedClass = isReducedSizeExpected(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
                 verifyReducedClass(expectingReducedClass, topAppBarElem);
