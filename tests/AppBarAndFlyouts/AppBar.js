@@ -998,7 +998,7 @@ CorsicaTests.AppBarTests = function () {
 
         var msg = "Default AppBar should begin completely hidden.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        isAppBarCompletelyHidden(appBar);
+        verifyAppBarCompletelyHidden(appBar);
 
         msg = "Changing closedDisplayMode to 'minimal' while AppBar is closed should move the AppBar into mininmal position.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
