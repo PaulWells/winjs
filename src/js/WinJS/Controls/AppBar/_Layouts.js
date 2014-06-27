@@ -374,7 +374,6 @@
             // If the total width of all AppBarCommands in the primary row is greater than the
             // width of the AppBar, add the win-reduced class to the AppBar element and all 
             // AppBarCommands will reduce in size.
-            //if (!this.appBarEl.winControl._closed) {
 
             // Measure the width all visible commands in  AppBar's primary row, the AppBar's offsetWidth and the AppBar horizontal padding:
             var fullSizeWidthOfVisibleContent = this._getWidthOfFullSizeCommands();
@@ -389,7 +388,6 @@
                 // Reduced size commands
                 WinJS.Utilities.addClass(this.appBarEl, reducedClass);
             }
-            //}
         },
         resize: function _commandLayoutsMixin_resize(event) {
             if (!this._disposed) {
@@ -429,7 +427,7 @@
                 var hadReducedClass = WinJS.Utilities.hasClass(this.appBarEl, reducedClass);
                 WinJS.Utilities.removeClass(this.appBarEl, reducedClass);
 
-                var hadClosedClass = WinJS.Utilities.hasClass(this.appBarEl, "win-hidden");
+                var hadHiddenClass = WinJS.Utilities.hasClass(this.appBarEl, "win-hidden");
                 WinJS.Utilities.removeClass(this.appBarEl, "win-hidden");
 
                 // Make sure AppBar and children have width dimensions.
@@ -455,7 +453,7 @@
                 if (hadReducedClass) {
                     WinJS.Utilities.addClass(this.appBarEl, reducedClass);
                 }
-                if (hadClosedClass) {
+                if (hadHiddenClass) {
                     WinJS.Utilities.addClass(this.appBarEl, "win-hidden");
                 }
 

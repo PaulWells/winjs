@@ -243,12 +243,14 @@ define([
                 // Sets focus to the first AppBar in the provided appBars array with given placement.
                 // Returns true if focus was set.  False otherwise.
                 function _setFocusToNextAppBarHelper(startIndex, appBarPlacement, appBars) {
+                    var appBar;
                     for (var i = startIndex; i < appBars.length; i++) {
-                        if (appBars[i].winControl
-                         && appBars[i].winControl.placement === appBarPlacement
-                         && !appBars[i].winControl.hidden
-                         && appBars[i].winControl._focusOnFirstFocusableElement
-                         && appBars[i].winControl._focusOnFirstFocusableElement()) {
+                        appBar = appBars[i].winControl;
+                        if (appBar
+                         && appBar.placement === appBarPlacement
+                         && appBar.hidden
+                         && appBar._focusOnFirstFocusableElement
+                         && appBar._focusOnFirstFocusableElement()) {
                             return true;
                         }
                     }
@@ -288,12 +290,13 @@ define([
                 // Updates the firstDiv & finalDiv of all open AppBars
                 function _updateAllAppBarsFirstAndFinalDiv() {
                     var appBars = document.querySelectorAll("." + appBarClass);
-
+                    var appBar;
                     for (var i = 0; i < appBars.length; i++) {
-                        if (appBars[i].winControl
-                         && !appBars[i].winControl.hidden
-                         && appBars[i].winControl._updateFirstAndFinalDiv) {
-                            appBars[i].winControl._updateFirstAndFinalDiv();
+                        appBar = appBars[i].winControl;
+                        if (appBar
+                         && !appBar.hidden
+                         && appBar._updateFirstAndFinalDiv) {
+                            appBar._updateFirstAndFinalDiv();
                         }
                     }
                 }
@@ -414,14 +417,17 @@ define([
                     // Add Open/Close button.
                     this._ellipsis = document.createElement("BUTTON");
                     this._ellipsis.innerHTML = "<span></span>";
-                    this._ellipsis.addEventListener("pointerdown", function () {
-                        thisWinUI._Overlay._addHideFocusClass(this._ellipsis);
-                    }.bind(this), false);
-                    this._ellipsis.addEventListener("click", function () {
-                        WinJS.UI.AppBar._toggleAppBarEdgy(!WinJS.Utilities.hasClass(this._ellipsis, "win-hidefocus"));
-                    }.bind(this), false);
                     WinJS.Utilities.addClass(this._ellipsis, ellipsisClass);
                     this._element.appendChild(this._ellipsis);
+                    this._ellipsisPointerDown = function AppBar_ellipsisPointerDown() {
+                        thisWinUI._Overlay._addHideFocusClass(this._ellipsis);
+                    };
+                    this._ellipsisClick = function AppBar_ellipsisClick() {
+                        WinJS.UI.AppBar._toggleAppBarEdgy(WinJS.UI._keyboardSeenLast);
+                    };
+                    this._ellipsis.addEventListener("pointerdown", this._ellipsisPointerDown.bind(this), false);
+                    this._ellipsis.addEventListener("click", this._ellipsisClick.bind(this), false);
+                    
 
                     // Run layout setter immediately. We need to know our layout in order to correctly 
                     // position any commands that may be getting set through the constructor. 
@@ -652,8 +658,8 @@ define([
                         this._layout.layout(commands);
                     },
 
-                    /// <field type="String" defaultValue="compact" locid="WinJS.UI.AppBar.commands" helpKeyword="WinJS.UI.AppBar.commands" isAdvanced="true">
-                    /// Sets the AppBarCommands in the AppBar. This property accepts an array of AppBarCommand objects.
+                    /// <field type="String" defaultValue="minimal" locid="WinJS.UI.AppBar.closedDisplayMode" helpKeyword="WinJS.UI.AppBar.closedDisplayMode" isAdvanced="true">
+                    /// Gets/Sets how AppBar will display itself while closed. Values are "none" and "minimal".
                     /// </field>
                     closedDisplayMode: {
                         get: function AppBar_get_closedDisplayMode() {
@@ -669,7 +675,7 @@ define([
                                     this._element.style.paddingRight = "";
                                     this._element.style.width = "";
                                 } else {
-                                    // Minimal is default.
+                                    // Minimal is default fallback.
                                     this._closedDisplayMode = closedDisplayModes.minimal;
                                     this._ellipsis.style.display = "";
                                     this._element.style.paddingRight = "40px";
@@ -794,7 +800,7 @@ define([
                     show: function () {
                         /// <signature helpKeyword="WinJS.UI.AppBar.show">
                         /// <summary locid="WinJS.UI.AppBar.show">
-                        /// Opens the AppBar, if closed, regardless of other state.
+                        /// Opens the AppBar, if closed and not disabled, regardless of other state.
                         /// </summary>
                         /// </signature>
                         // Just wrap the private one, turning off keyboard invoked flag
@@ -976,7 +982,7 @@ define([
                     _visiblePosition: {
                         // Returns string value of our nearest, stationary, visible position.
                         get: function () {
-                            // If we're we're performing an animation that is a position change,  return that position.  
+                            // If we're animating into a new posistion, return the position we're animating into.  
                             if (this._animating && displayModeVisiblePositions[this._element.winAnimating]) {
                                 return this._element.winAnimating;
                             } else {
@@ -1431,16 +1437,9 @@ define([
                             if (this._placement === appBarPlacementBottom) {
                                 positionOffSet.bottom = "";
                                 positionOffSet.top = innerEdgeOffSet + "px";
-
-                                //this._element.style.bottom = "";
-                                //this._element.style.top = innerEdgeOffSet + "px";
-
                             } else {
                                 positionOffSet.bottom = innerEdgeOffSet + "px";
                                 positionOffSet.top = "";
-
-                                //this._element.style.bottom = innerEdgeOffSet + "px";
-                                //this._element.style.top = "";
                             }
                         } else {
                             if (this._placement === appBarPlacementBottom) {
@@ -1448,15 +1447,9 @@ define([
                                 // Use _getAdjustedBottom to account for the IHM if it is covering the bottom edge.
                                 positionOffSet.bottom = this._getAdjustedBottom() + "px";
                                 positionOffSet.top = "";
-
-                                //this._element.style.bottom = this._getAdjustedBottom() + "px";
-                                //this._element.style.top = "";
                             } else {
                                 positionOffSet.bottom = "";
                                 positionOffSet.top = this._getTopOfVisualViewport() + "px";
-
-                                //this._element.style.bottom = "";
-                                //this._element.style.top = this._getTopOfVisualViewport() + "px";
                             }
                         }
                         return positionOffSet;

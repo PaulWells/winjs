@@ -261,7 +261,7 @@ AppBar
         width: 100%;
     }
 
-    & .win-ellipsis {
+    .win-ellipsis {
         width: 40px;
         height: 40px;
         position: absolute;
@@ -271,7 +271,7 @@ AppBar
         border: none;
         min-width: 0px;
 
-        & span {
+        span {
             width: 36px;
             height: 36px;
             right: 0px;
@@ -285,41 +285,23 @@ AppBar
                 position: absolute;
             }
         }
-        //move to colors
+                
         &:focus span {
             border: solid 2px;
-        }
-
-        &:active:enabled {
-            color: #ffffff;
-            background-color: rgba(255,255,255,0.13);
-        }        
+        }  
     }
 
-    &.win-bottom .win-ellipsis {
+    &.win-bottom .win-ellipsis, 
+    &.win-bottom .win-ellipsis span, 
+    &.win-bottom .win-ellipsis span ::before {
         top: 0px;
-
-        & span {
-            top: 0px;
-
-            &::before {
-                top: 0px;
-            }
-        }
     }
 
-    &.win-top .win-ellipsis {
+    &.win-top .win-ellipsis, 
+    &.win-top .win-ellipsis span, 
+    &.win-top .win-ellipsis span ::before {
         bottom: 0px;
-
-        & span {
-            bottom: 0px;
-
-            &::before {
-                bottom: 0px;
-            }
-        }
     }
-}
 
 /*
 AppBar commands layout
@@ -334,19 +316,17 @@ AppBar commands layout
     #flex > .justify-content(center);
     #flex > .align-items(flex-start);
 
-    & .win-primarygroup {
+    .win-primarygroup {
         #flex > .order(2);
         #flex > .display-inline-flex();
-        #flex > .flex(1;
-        1;
-        auto );
+        #flex > .flex(1; 1; auto);
         #flex > .flex-direction(row);
         #flex > .flex-wrap(wrap);
         #flex > .justify-content(flex-end);
         #flex > .align-items(flex-start);
     }
 
-    & .win-secondarygroup {
+    .win-secondarygroup {
         #flex > .order(1);
         #flex > .display-inline-flex();
         #flex > .flex(1; 1; auto);
@@ -356,7 +336,7 @@ AppBar commands layout
         #flex > .align-items(flex-start);
     }
 
-    & .win-command {
+    .win-command {
         #flex > .flex(0; 0; auto);
     }
 }
@@ -365,11 +345,11 @@ AppBar commands layout
 .win-commandlayout:-ms-lang(@{rtl}) {
     #flex > .flex-direction(row-reverse);
 
-    & .win-primarygroup {
+    .win-primarygroup {
         #flex > .flex-direction(row-reverse);
     }
 
-    & .win-secondarygroup {
+    .win-secondarygroup {
         #flex > .flex-direction(row-reverse);
     }
 }
@@ -750,82 +730,11 @@ Settings Pane
 }
 
 /*Flyout control animations*/
-@keyframes WinJS-showFlyoutTop {
-    from {
-        transform: translateY(50px);
-    }
-
-    to {
-        transform: none;
-    }
-}
-
-@keyframes WinJS-showFlyoutBottom {
-    from {
-        transform: translateY(-50px);
-    }
-
-    to {
-        transform: none;
-    }
-}
-
-@keyframes WinJS-showFlyoutLeft {
-    from {
-        transform: translateX(50px);
-    }
-
-    to {
-        transform: none;
-    }
-}
-
-@keyframes WinJS-showFlyoutRight {
-    from {
-        transform: translateX(-50px);
-    }
-
-    to {
-        transform: none;
-    }
-}
-
-@-webkit-keyframes -webkit-WinJS-showFlyoutTop {
-    from {
-        -webkit-transform: translateY(50px);
-    }
-
-    to {
-        -webkit-transform: none;
-    }
-}
-
-@-webkit-keyframes -webkit-WinJS-showFlyoutBottom {
-    from {
-        -webkit-transform: translateY(-50px);
-    }
-
-    to {
-        -webkit-transform: none;
-    }
-}
-
-@-webkit-keyframes -webkit-WinJS-showFlyoutLeft {
-    from {
-        -webkit-transform: translateX(50px);
-    }
-
-    to {
-        -webkit-transform: none;
-    }
-}
-
-@-webkit-keyframes -webkit-WinJS-showFlyoutRight {
-    from {
-        -webkit-transform: translateX(-50px);
-    }
-
-    to {
-        -webkit-transform: none;
-    }
-}
+@keyframes WinJS-showFlyoutTop               { from { transform: translateY(50px); } to { transform: none; } }
+@keyframes WinJS-showFlyoutBottom            { from { transform: translateY(-50px); } to { transform: none; } }
+@keyframes WinJS-showFlyoutLeft              { from { transform: translateX(50px); } to { transform: none; } }
+@keyframes WinJS-showFlyoutRight             { from { transform: translateX(-50px); } to { transform: none; } }
+@-webkit-keyframes -webkit-WinJS-showFlyoutTop               { from { -webkit-transform: translateY(50px); } to { -webkit-transform: none; } }
+@-webkit-keyframes -webkit-WinJS-showFlyoutBottom            { from { -webkit-transform: translateY(-50px); } to { -webkit-transform: none; } }
+@-webkit-keyframes -webkit-WinJS-showFlyoutLeft              { from { -webkit-transform: translateX(50px); } to { -webkit-transform: none; } }
+@-webkit-keyframes -webkit-WinJS-showFlyoutRight             { from { -webkit-transform: translateX(-50px); } to { -webkit-transform: none; } }

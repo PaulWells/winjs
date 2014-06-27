@@ -1004,13 +1004,13 @@ CorsicaTests.AppBarTests = function () {
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         appBar.closedDisplayMode = "minimal";
         WinJS.Promise.timeout(delay).then(function () {
-            isAppBarClosedMinimal(appBar);
+            verifyAppBarClosedMinimal(appBar);
 
             msg = "Changing closedDisplayMode to 'none' while AppBar is closed should hide the AppBar completely.";
             appBar.closedDisplayMode = "none";
-            return WinJS.Promise.timeout(delay)
+            return WinJS.Promise.timeout(delay);
         }).then(function () {
-            isAppBarCompletelyHidden(appBar);
+            verifyAppBarCompletelyHidden(appBar);
 
             msg = "Disabling the AppBar should hide it completely.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
@@ -1018,68 +1018,68 @@ CorsicaTests.AppBarTests = function () {
 
             return WinJS.Promise.timeout(delay);
         }).then(function () {
-            isAppBarCompletelyHidden(appBar);
+            verifyAppBarCompletelyHidden(appBar);
 
             msg = "Changing closedDisplayMode should not change the AppBar's visible position if the AppBar is disabled.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.closedDisplayMode = "minimal";
             return WinJS.Promise.timeout(delay);
         }).then(function () {
-            isAppBarCompletelyHidden(appBar);
+            verifyAppBarCompletelyHidden(appBar);
 
             msg = "Disabled AppBar should not open.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.show();
-            return WinJS.Promise.timeout(delay)
+            return WinJS.Promise.timeout(delay);
         }).then(function () {
-            isAppBarCompletelyHidden(appBar);
+            verifyAppBarCompletelyHidden(appBar);
 
             msg = "When AppBar is re-enabled, it should remain closed and assume the visible position of its closedDisplayMode.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.disabled = false;
             return WinJS.Promise.timeout(delay)
         }).then(function () {
-            isAppBarClosedMinimal(appBar);
+            verifyAppBarClosedMinimal(appBar);
 
             msg = "Calling AppBar.show() on non sticky AppBar should open the AppBar and make it light dismissable.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.show();
-            return WinJS.Promise.timeout(delay)
+            return WinJS.Promise.timeout(delay);
         }).then(function () {
-            isAppBarOpenAndLightDismiss(appBar);
+            verifyAppBarOpenAndLightDismiss(appBar);
 
             msg = "Changing AppBar.sticky to true, on Open Light Dismissable AppBar, should change it to an Open sticky AppBar. ";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.sticky = true;
-            return WinJS.Promise.timeout(delay)
+            return WinJS.Promise.timeout(delay);
         }).then(function () {
-            isAppBarOpenAndSticky(appBar);
+            verifyAppBarOpenAndSticky(appBar);
 
             msg = "Changing closedDisplayMode on Open Sticky AppBar should not change its visible position.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.closedDisplayMode = "none";
-            return WinJS.Promise.timeout(delay)
+            return WinJS.Promise.timeout(delay);
         }).then(function () {
-            isAppBarOpenAndSticky(appBar);
+            verifyAppBarOpenAndSticky(appBar);
 
             msg = "Changing AppBar.sticky to false, on Open sticky AppBar, should change it to an Open Light Dismissable AppBar. ";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.sticky = false;
-            return WinJS.Promise.timeout(delay)
+            return WinJS.Promise.timeout(delay);
         }).then(function () {
-            isAppBarOpenAndLightDismiss(appBar);
+            verifyAppBarOpenAndLightDismiss(appBar);
 
             msg = "Closing an AppBar whose closedDisplayMode is equal to 'none', should hide the AppBar completely";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             appBar.hide();
-            return WinJS.Promise.timeout(delay)
+            return WinJS.Promise.timeout(delay);
         }).then(function () {
-            isAppBarCompletelyHidden(appBar);
+            verifyAppBarCompletelyHidden(appBar);
             complete();
         });
     }
 
-    var isAppBarOpenAndLightDismiss = function (appBar) {
+    var verifyAppBarOpenAndLightDismiss = function (appBar) {
         appBar = appBar.element || appBar;        
 
         var msg,
@@ -1097,7 +1097,7 @@ CorsicaTests.AppBarTests = function () {
 
     }
 
-    var isAppBarOpenAndSticky = function (appBar) {
+    var verifyAppBarOpenAndSticky = function (appBar) {
         appBar = appBar.element || appBar;        
 
         var msg,
@@ -1115,7 +1115,7 @@ CorsicaTests.AppBarTests = function () {
 
     }
 
-    var isAppBarClosedMinimal = function (appBar) {
+    var verifyAppBarClosedMinimal = function (appBar) {
         appBar = appBar.element || appBar;
         LiveUnit.Assert.isNotNull(appBar.id, "Test Bug!! This test requires the AppBar element have an id.");
 
@@ -1153,7 +1153,7 @@ CorsicaTests.AppBarTests = function () {
         LiveUnit.Assert.isFalse(failures.length, msg);
     }
 
-    var isAppBarCompletelyHidden = function (appBar) {
+    var verifyAppBarCompletelyHidden = function (appBar) {
         appBar = appBar.element || appBar;
         LiveUnit.Assert.isNotNull(appBar.id, "Test Bug!! This test requires the AppBar have a unique id.");
 

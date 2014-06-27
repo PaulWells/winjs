@@ -19,6 +19,18 @@ CorsicaTests.AppBarScalabilityTests = function () {
     // we fake it by putting the AppBar in an element we can resize ourselves.
     var host;
 
+    var that = this,
+        fullSizeCommandWidth = 100,
+        reducedSizeCommandWidth = 60,
+        fullSizeSeparatorWidth = 60,
+        reducedSizeSeparatorWidth = 20,
+        originalHelper,
+        reducedAppBarClass = "win-reduced",
+        hiddenAppBarClass = "win-hidden";
+
+    var testHelperPromise;
+    var testHelperPromiseComplete;
+
     this.setUp = function () {
         LiveUnit.LoggingCore.logComment("In setUp");
         host = document.createElement("div");
@@ -48,23 +60,12 @@ CorsicaTests.AppBarScalabilityTests = function () {
         // Restore original implementation.
         WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper = originalHelper;
 
-        testHelperPromise && testHelperPromise.cancel && testHelperPromise.cancel();
+        testHelperPromise && testHelperPromise.cancel();
         testHelperPromiseComplete = null;
     };
 
-    var that = this,
-        fullSizeCommandWidth = 100,
-        reducedSizeCommandWidth = 60,
-        fullSizeSeparatorWidth = 60,
-        reducedSizeSeparatorWidth = 20,
-        originalHelper,
-        reducedAppBarClass = "win-reduced",
-        hiddenAppBarClass = "win-hidden";
-
-    var testHelperPromise;
-    var testHelperPromiseComplete;
     function testHelper() {
-        // Return the width that would be available to the AppBar when full size (not reduced). Full size AppBar always 0 left padding. 
+        // Return the width that would be available to the AppBar when full size (not reduced). Full size AppBar always has 0 left padding. 
         // If it doesn't have ellipsis because of closedDisplayMode 'none', Full-sized AppBar has 0 right padding, otherwise it will have some right padding.
 
         if (testHelperPromise) {
@@ -514,7 +515,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             testShowCommandsAfterHide,
             testShowOnlyCommandsAfterHide,
             testComplete,
-        ]
+        ];
 
         var topAppBarElem = document.getElementById("topappbar"),
             appBarVisibleCommandCount = 6,
@@ -624,7 +625,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             testSettingHiddenTrue,
             testSettingHiddenFalse,
             testComplete,
-        ]
+        ];
 
         var topAppBarElem = document.getElementById("topappbar"),
             appBarVisibleCommandCount = 6,
