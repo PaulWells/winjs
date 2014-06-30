@@ -16,7 +16,7 @@ define([
     '../../Utilities/_ElementUtilities',
     '../../Utilities/_UIUtilities',
     '../AppBar/_Constants'
-    ], function overlayInit(exports, _Base, _BaseUtils, _ErrorFromName, _Events, _Resources, _WriteProfilerMark, Animations, ControlProcessor, Promise, Scheduler, _Control, _ElementUtilities, _UIUtilities, _Constants) {
+], function overlayInit(exports, _Base, _BaseUtils, _ErrorFromName, _Events, _Resources, _WriteProfilerMark, Animations, ControlProcessor, Promise, Scheduler, _Control, _ElementUtilities, _UIUtilities, _Constants) {
     "use strict";
 
     _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
@@ -1067,153 +1067,153 @@ define([
                 }
             },
             {
-            // Statics
+                // Statics
                 _clickEatingAppBarDiv: false,
                 _clickEatingFlyoutDiv: false,
                 _flyoutEdgeLightDismissEvent: false,
 
                 _hideFlyouts: function (testElement, notSticky) {
                     var elements = testElement.querySelectorAll(_Constants.flyoutSelector);
-                var len = elements.length;
-                for (var i = 0; i < len; i++) {
-                    var element = elements[i];
-                    if (element.style.visibility !== "hidden") {
-                        var flyout = element.winControl;
-                        if (flyout && (!notSticky || !flyout._sticky)) {
-                            flyout._hideOrDismiss();
+                    var len = elements.length;
+                    for (var i = 0; i < len; i++) {
+                        var element = elements[i];
+                        if (element.style.visibility !== "hidden") {
+                            var flyout = element.winControl;
+                            if (flyout && (!notSticky || !flyout._sticky)) {
+                                flyout._hideOrDismiss();
+                            }
                         }
                     }
-                }
                 },
 
                 _hideSettingsFlyouts: function (testElement, notSticky) {
                     var elements = testElement.querySelectorAll(_Constants.settingsFlyoutSelector);
-                var len = elements.length;
-                for (var i = 0; i < len; i++) {
-                    var element = elements[i];
-                    if (element.style.visibility !== "hidden") {
-                        var settingsFlyout = element.winControl;
-                        if (settingsFlyout && (!notSticky || !settingsFlyout._sticky)) {
-                            settingsFlyout._hideOrDismiss();
+                    var len = elements.length;
+                    for (var i = 0; i < len; i++) {
+                        var element = elements[i];
+                        if (element.style.visibility !== "hidden") {
+                            var settingsFlyout = element.winControl;
+                            if (settingsFlyout && (!notSticky || !settingsFlyout._sticky)) {
+                                settingsFlyout._hideOrDismiss();
+                            }
                         }
                     }
-                }
                 },
 
                 _hideAllFlyouts: function () {
-                _Overlay._hideFlyouts(document, true);
+                    _Overlay._hideFlyouts(document, true);
                     _Overlay._hideSettingsFlyouts(document, true);
                 },
 
                 _createClickEatingDivTemplate: function (divClass, hideClickEatingDivFunction) {
-                var clickEatingDiv = document.createElement("section");
+                    var clickEatingDiv = document.createElement("section");
                     _ElementUtilities.addClass(clickEatingDiv, divClass);
                     _ElementUtilities._addEventListener(clickEatingDiv, "pointerdown", function (event) { _Overlay._checkSameClickEatingPointerUp(event, true); }, true);
                     _ElementUtilities._addEventListener(clickEatingDiv, "pointerup", function (event) { _Overlay._checkClickEatingPointerDown(event, true); }, true);
-                clickEatingDiv.addEventListener("click", hideClickEatingDivFunction, true);
-                // Tell Aria that it's clickable
-                clickEatingDiv.setAttribute("role", "menuitem");
-                clickEatingDiv.setAttribute("aria-label", strings.closeOverlay);
-                // Prevent CED from removing any current selection
-                clickEatingDiv.setAttribute("unselectable", "on");
-                document.body.appendChild(clickEatingDiv);
-                return clickEatingDiv;
+                    clickEatingDiv.addEventListener("click", hideClickEatingDivFunction, true);
+                    // Tell Aria that it's clickable
+                    clickEatingDiv.setAttribute("role", "menuitem");
+                    clickEatingDiv.setAttribute("aria-label", strings.closeOverlay);
+                    // Prevent CED from removing any current selection
+                    clickEatingDiv.setAttribute("unselectable", "on");
+                    document.body.appendChild(clickEatingDiv);
+                    return clickEatingDiv;
                 },
 
-            // Used by AppBar, and Settings Pane
+                // Used by AppBar, and Settings Pane
                 _createClickEatingDivAppBar: function () {
-                if (!_Overlay._clickEatingAppBarDiv) {
+                    if (!_Overlay._clickEatingAppBarDiv) {
                         _Overlay._clickEatingAppBarDiv = _Overlay._createClickEatingDivTemplate(_Constants._clickEatingAppBarClass, _Overlay._handleAppBarClickEatingClick);
-                }
-                },
-
-            // Used by Flyout and Menu
-                _createClickEatingDivFlyout: function () {
-                if (!_Overlay._clickEatingFlyoutDiv) {
-                        _Overlay._clickEatingFlyoutDiv = _Overlay._createClickEatingDivTemplate(_Constants._clickEatingFlyoutClass, _Overlay._handleFlyoutClickEatingClick);
-                }
-                },
-
-            // All click-eaters eat "down" clicks so that we can still eat
-            // the "up" click that'll come later.
-                _checkClickEatingPointerDown: function (event, stopPropogation) {
-                var target = event.currentTarget;
-                if (target) {
-                    try {
-                        // Remember pointer id and remember right mouse
-                        target._winPointerId = event.pointerId;
-                        // Cache right mouse if that was what happened
-                        target._winRightMouse = (event.button === 2);
-                    } catch (e) { }
-                }
-
-                if (stopPropogation && !target._winRightMouse) {
-                    event.stopPropagation();
-                    event.preventDefault();
-                }
-                },
-
-            // Make sure that if we have an up we had an earlier down of the same kind
-                _checkSameClickEatingPointerUp: function (event, stopPropogation) {
-                var result = false,
-                    rightMouse = false,
-                    target = event.currentTarget;
-
-                // Same pointer we were watching?
-                try {
-                    if (target && target._winPointerId === event.pointerId) {
-                        // Same pointer
-                        result = true;
-                        rightMouse = target._winRightMouse;
-                        // For click-eaters, don't count right click the same because edgy will dismiss
-                        if (rightMouse && stopPropogation) {
-                            result = false;
-                        }
                     }
-                } catch (e) { }
-
-
-                if (stopPropogation && !rightMouse) {
-                    event.stopPropagation();
-                    event.preventDefault();
-                }
-
-                return result;
                 },
 
-            // If they click on a click eating div, even with a right click,
-            // touch or anything, then we want to light dismiss that layer.
+                // Used by Flyout and Menu
+                _createClickEatingDivFlyout: function () {
+                    if (!_Overlay._clickEatingFlyoutDiv) {
+                        _Overlay._clickEatingFlyoutDiv = _Overlay._createClickEatingDivTemplate(_Constants._clickEatingFlyoutClass, _Overlay._handleFlyoutClickEatingClick);
+                    }
+                },
+
+                // All click-eaters eat "down" clicks so that we can still eat
+                // the "up" click that'll come later.
+                _checkClickEatingPointerDown: function (event, stopPropogation) {
+                    var target = event.currentTarget;
+                    if (target) {
+                        try {
+                            // Remember pointer id and remember right mouse
+                            target._winPointerId = event.pointerId;
+                            // Cache right mouse if that was what happened
+                            target._winRightMouse = (event.button === 2);
+                        } catch (e) { }
+                    }
+
+                    if (stopPropogation && !target._winRightMouse) {
+                        event.stopPropagation();
+                        event.preventDefault();
+                    }
+                },
+
+                // Make sure that if we have an up we had an earlier down of the same kind
+                _checkSameClickEatingPointerUp: function (event, stopPropogation) {
+                    var result = false,
+                        rightMouse = false,
+                        target = event.currentTarget;
+
+                    // Same pointer we were watching?
+                    try {
+                        if (target && target._winPointerId === event.pointerId) {
+                            // Same pointer
+                            result = true;
+                            rightMouse = target._winRightMouse;
+                            // For click-eaters, don't count right click the same because edgy will dismiss
+                            if (rightMouse && stopPropogation) {
+                                result = false;
+                            }
+                        }
+                    } catch (e) { }
+
+
+                    if (stopPropogation && !rightMouse) {
+                        event.stopPropagation();
+                        event.preventDefault();
+                    }
+
+                    return result;
+                },
+
+                // If they click on a click eating div, even with a right click,
+                // touch or anything, then we want to light dismiss that layer.
                 _handleAppBarClickEatingClick: function (event) {
-                event.stopPropagation();
-                event.preventDefault();
+                    event.stopPropagation();
+                    event.preventDefault();
 
                     _Overlay._hideLightDismissAppBars(null, false);
-                _Overlay._hideClickEatingDivAppBar();
-                _Overlay._hideAllFlyouts();
+                    _Overlay._hideClickEatingDivAppBar();
+                    _Overlay._hideAllFlyouts();
                 },
 
-            // If they click on a click eating div, even with a right click,
-            // touch or anything, then we want to light dismiss that layer.
+                // If they click on a click eating div, even with a right click,
+                // touch or anything, then we want to light dismiss that layer.
                 _handleFlyoutClickEatingClick: function (event) {
-                event.stopPropagation();
-                event.preventDefault();
+                    event.stopPropagation();
+                    event.preventDefault();
 
-                // Don't light dismiss AppBars because edgy will do that as needed,
-                // so flyouts only.
-                _Overlay._hideClickEatingDivFlyout();
-                _Overlay._hideFlyouts(document, true);
+                    // Don't light dismiss AppBars because edgy will do that as needed,
+                    // so flyouts only.
+                    _Overlay._hideClickEatingDivFlyout();
+                    _Overlay._hideFlyouts(document, true);
                 },
 
                 _checkRightClickDown: function (event) {
-                _Overlay._checkClickEatingPointerDown(event, false);
+                    _Overlay._checkClickEatingPointerDown(event, false);
                 },
 
                 _checkRightClickUp: function (event) {
-                if (_Overlay._checkSameClickEatingPointerUp(event, false)) {
-                    // It was a right click we may want to eat.
-                    _Overlay._rightMouseMightEdgy = true;
+                    if (_Overlay._checkSameClickEatingPointerUp(event, false)) {
+                        // It was a right click we may want to eat.
+                        _Overlay._rightMouseMightEdgy = true;
                         _BaseUtils._yieldForEvents(function () { _Overlay._rightMouseMightEdgy = false; });
-                }
+                    }
                 },
 
                 _showClickEatingDivAppBar: function () {
@@ -1234,7 +1234,7 @@ define([
 
                 _showClickEatingDivFlyout: function () {
                     Scheduler.schedule(function Overlay_async_showClickEatingDivFlyout() {
-                        if (_Overlay._clickEatingAppBarDiv) {
+                        if (_Overlay._clickEatingFlyoutDiv) {
                             _Overlay._clickEatingFlyoutDiv.style.display = "block";
                         }
                     }, Scheduler.Priority.high, null, "WinJS.UI._Overlay._showClickEatingDivFlyout");
@@ -1242,126 +1242,126 @@ define([
 
                 _hideClickEatingDivFlyout: function () {
                     Scheduler.schedule(function Overlay_async_hideClickEatingDivFlyout() {
-                        if (_Overlay._clickEatingAppBarDiv) {
+                        if (_Overlay._clickEatingFlyoutDiv) {
                             _Overlay._clickEatingFlyoutDiv.style.display = "none";
                         }
                     }, Scheduler.Priority.high, null, "WinJS.UI._Overlay._hideClickEatingDivFlyout");
                 },
 
                 _isFlyoutVisible: function () {
-                if (!_Overlay._clickEatingFlyoutDiv) {
-                    return false;
-                }
-                return (_Overlay._clickEatingFlyoutDiv.style.display === "block");
+                    if (!_Overlay._clickEatingFlyoutDiv) {
+                        return false;
+                    }
+                    return (_Overlay._clickEatingFlyoutDiv.style.display === "block");
                 },
 
                 _hideIfLostFocus: function (overlay, focusEvent) {
-                // If we're still showing we haven't really lost focus
-                if (overlay.hidden || overlay.element.winAnimating === "showing" || overlay._sticky) {
-                    return;
-                }
-                // If the active thing is within our element, we haven't lost focus
-                var active = document.activeElement;
-                if (overlay._element && overlay._element.contains(active)) {
-                    return;
-                }
-                // SettingFlyouts don't dismiss if they spawned a flyout
-                    if (_ElementUtilities.hasClass(overlay._element, _Constants.settingsFlyoutClass)) {
-                    var settingsFlyout = overlay;
-                    var flyoutControl = _Overlay._getParentControlUsingClassName(active, "win-flyout");
-                    if (flyoutControl && flyoutControl._previousFocus && settingsFlyout.element.contains(flyoutControl._previousFocus)) {
-                            _ElementUtilities._addEventListener(flyoutControl.element, 'focusout', function focusOut(event) {
-                            // When the Flyout closes, hide the SetingsFlyout if it didn't regain focus.
-                                _Overlay._hideIfLostFocus(settingsFlyout, event);
-                                _ElementUtilities._removeEventListener(flyoutControl.element, 'focusout', focusOut, false);
-                        }, false);
+                    // If we're still showing we haven't really lost focus
+                    if (overlay.hidden || overlay.element.winAnimating === "showing" || overlay._sticky) {
                         return;
                     }
-                }
-                // Do not hide focus if focus moved to a CED. Let the click handler on the CED take care of hiding us.
-                if (active &&
-                        (_ElementUtilities.hasClass(active, _Constants._clickEatingFlyoutClass) ||
-                         _ElementUtilities.hasClass(active, _Constants._clickEatingAppBarClass))) {
-                    return;
-                }
-
-                overlay._hideOrDismiss();
-                },
-
-            // Want to hide flyouts on blur.
-            // We get blur if we click off the window, including to an iframe within our window.
-            // Both blurs call this function, but fortunately document.hasFocus is true if either
-            // the document window or our iframe window has focus.
-                _checkBlur: function (focusEvent) {
-                if (!document.hasFocus()) {
-                    // The document doesn't have focus, so they clicked off the app, so light dismiss.
-                    _Overlay._hideAllFlyouts();
-                        _Overlay._hideLightDismissAppBars(null, false);
-                } else {
-                    if ((_Overlay._clickEatingFlyoutDiv &&
-                         _Overlay._clickEatingFlyoutDiv.style.display === "block") ||
-                        (_Overlay._clickEatingAppBarDiv &&
-                         _Overlay._clickEatingAppBarDiv.style.display === "block")) {
-                        // We were trying to unfocus the window, but document still has focus,
-                        // so make sure the iframe that took the focus will check for blur next time.
-                        // We don't have to do this if the click eating div is hidden because then
-                        // there would be no flyout or appbar needing light dismiss.
-                        var active = document.activeElement;
-                        if (active && active.tagName === "IFRAME" && !active.msLightDismissBlur) {
-                            // - This will go away when the IFRAME goes away, and we only create one.
-                            // - This only works in IE because other browsers don't fire focus events on iframe elements.
-                            // - Can't use WinJS.Utilities._addEventListener's focusout because it doesn't fire when an
-                            //   iframe loses focus due to changing windows.
-                            active.addEventListener("blur", _Overlay._checkBlur, false);
-                            active.msLightDismissBlur = true;
+                    // If the active thing is within our element, we haven't lost focus
+                    var active = document.activeElement;
+                    if (overlay._element && overlay._element.contains(active)) {
+                        return;
+                    }
+                    // SettingFlyouts don't dismiss if they spawned a flyout
+                    if (_ElementUtilities.hasClass(overlay._element, _Constants.settingsFlyoutClass)) {
+                        var settingsFlyout = overlay;
+                        var flyoutControl = _Overlay._getParentControlUsingClassName(active, "win-flyout");
+                        if (flyoutControl && flyoutControl._previousFocus && settingsFlyout.element.contains(flyoutControl._previousFocus)) {
+                            _ElementUtilities._addEventListener(flyoutControl.element, 'focusout', function focusOut(event) {
+                                // When the Flyout closes, hide the SetingsFlyout if it didn't regain focus.
+                                _Overlay._hideIfLostFocus(settingsFlyout, event);
+                                _ElementUtilities._removeEventListener(flyoutControl.element, 'focusout', focusOut, false);
+                            }, false);
+                            return;
                         }
                     }
-                }
-                },
-
-            // Try to set us as active
-                _trySetActive: function (element) {
-                if (!element || !document.body || !document.body.contains(element)) {
-                    return false;
-                }
-                    if (!_ElementUtilities._setActive(element)) {
-                    return false;
-                }
-                return (element === document.activeElement);
-                },
-
-            // Try to select the text so keyboard can be used.
-                _trySelect: function (element) {
-                try {
-                    if (element && element.select) {
-                        element.select();
+                    // Do not hide focus if focus moved to a CED. Let the click handler on the CED take care of hiding us.
+                    if (active &&
+                            (_ElementUtilities.hasClass(active, _Constants._clickEatingFlyoutClass) ||
+                             _ElementUtilities.hasClass(active, _Constants._clickEatingAppBarClass))) {
+                        return;
                     }
-                } catch (e) { }
+
+                    overlay._hideOrDismiss();
                 },
 
-            // Prevent the document.activeElement from showing focus
+                // Want to hide flyouts on blur.
+                // We get blur if we click off the window, including to an iframe within our window.
+                // Both blurs call this function, but fortunately document.hasFocus is true if either
+                // the document window or our iframe window has focus.
+                _checkBlur: function (focusEvent) {
+                    if (!document.hasFocus()) {
+                        // The document doesn't have focus, so they clicked off the app, so light dismiss.
+                        _Overlay._hideAllFlyouts();
+                        _Overlay._hideLightDismissAppBars(null, false);
+                    } else {
+                        if ((_Overlay._clickEatingFlyoutDiv &&
+                             _Overlay._clickEatingFlyoutDiv.style.display === "block") ||
+                            (_Overlay._clickEatingAppBarDiv &&
+                             _Overlay._clickEatingAppBarDiv.style.display === "block")) {
+                            // We were trying to unfocus the window, but document still has focus,
+                            // so make sure the iframe that took the focus will check for blur next time.
+                            // We don't have to do this if the click eating div is hidden because then
+                            // there would be no flyout or appbar needing light dismiss.
+                            var active = document.activeElement;
+                            if (active && active.tagName === "IFRAME" && !active.msLightDismissBlur) {
+                                // - This will go away when the IFRAME goes away, and we only create one.
+                                // - This only works in IE because other browsers don't fire focus events on iframe elements.
+                                // - Can't use WinJS.Utilities._addEventListener's focusout because it doesn't fire when an
+                                //   iframe loses focus due to changing windows.
+                                active.addEventListener("blur", _Overlay._checkBlur, false);
+                                active.msLightDismissBlur = true;
+                            }
+                        }
+                    }
+                },
+
+                // Try to set us as active
+                _trySetActive: function (element) {
+                    if (!element || !document.body || !document.body.contains(element)) {
+                        return false;
+                    }
+                    if (!_ElementUtilities._setActive(element)) {
+                        return false;
+                    }
+                    return (element === document.activeElement);
+                },
+
+                // Try to select the text so keyboard can be used.
+                _trySelect: function (element) {
+                    try {
+                        if (element && element.select) {
+                            element.select();
+                        }
+                    } catch (e) { }
+                },
+
+                // Prevent the document.activeElement from showing focus
                 _addHideFocusClass: function (element) {
-                if (element) {
+                    if (element) {
                         _ElementUtilities.addClass(element, _Constants.hideFocusClass);
                         _ElementUtilities._addEventListener(element, "focusout", _Overlay._removeHideFocusClass, false);
-                }
+                    }
                 },
 
-            // Allow the event.target (element that is losing focus) to show focus next time it gains focus
+                // Allow the event.target (element that is losing focus) to show focus next time it gains focus
                 _removeHideFocusClass: function (event) {
-                // Make sure we really lost focus and was not just an App switch
-                var target = event.target;
-                if (target && target !== document.activeElement) {
+                    // Make sure we really lost focus and was not just an App switch
+                    var target = event.target;
+                    if (target && target !== document.activeElement) {
                         _ElementUtilities.removeClass(target, _Constants.hideFocusClass);
                         _ElementUtilities._removeEventListener(event.target, "focusout", _Overlay._removeHideFocusClass, false);
-                }
+                    }
                 },
 
                 _getParentControlUsingClassName: function (element, className) {
-                while (element && element !== document.body) {
+                    while (element && element !== document.body) {
                         if (_ElementUtilities.hasClass(element, className)) {
-                        return element.winControl;
-                    }
+                            return element.winControl;
+                        }
                         element = element.parentNode;
                     }
                     return null;
@@ -1376,7 +1376,7 @@ define([
                     }
                 },
 
-                _hideLightDismissAppBars:  function(event, keyboardInvoked) {
+                _hideLightDismissAppBars: function (event, keyboardInvoked) {
                     var elements = document.querySelectorAll("." + _Constants.appBarClass);
                     var len = elements.length;
                     var AppBars = [];
@@ -1393,7 +1393,7 @@ define([
                 // Show or hide all bars
                 _hideAllBars: function _hideAllBars(bars, keyboardInvoked) {
                     var len = bars.length;
-                    var allBarsAnimationPromises = bars.map(function(bar) {
+                    var allBarsAnimationPromises = bars.map(function (bar) {
                         bar._keyboardInvoked = keyboardInvoked;
                         bar.hide();
                         return bar._animationPromise;
@@ -1406,7 +1406,7 @@ define([
                 //   2) OR in the subtree of an AppBar,
                 //   3) OR an AppBar click eating div.
                 // Returns null otherwise.
-                _isAppBarOrChild: function(element) {
+                _isAppBarOrChild: function (element) {
                     // If it's null, we can't do this
                     if (!element) {
                         return null;
@@ -1428,12 +1428,12 @@ define([
                         if (_ElementUtilities.hasClass(element, "win-flyout")
                          && element !== element.winControl._previousFocus) {
                             var flyoutControl = element.winControl;
-                            // If _previousFocus was in a light dismissable AppBar, then this Flyout is considered of an extension of it and that AppBar will not close.
-                            // Hook up a 'focusout' listener to this Flyout element to make sure that light dismiss AppBars close if focus moves anywhere other than back to an AppBar.
+                            // If _previousFocus was in a light dismissable AppBar, then this Flyout is considered of an extension of it and that AppBar should not hide.
+                            // Hook up a 'focusout' listener to this Flyout element to make sure that light dismiss AppBars hide if focus moves anywhere other than back to an AppBar.
                             var appBarElement = _Overlay._isAppBarOrChild(flyoutControl._previousFocus);
                             if (appBarElement) {
                                 _ElementUtilities._addEventListener(flyoutControl.element, 'focusout', function focusOut(event) {
-                                    // Hides any open AppBars if the new activeElement is not in an AppBar.
+                                    // Hides any shown AppBars if the new activeElement is not in an AppBar.
                                     _Overlay._hideIfAllAppBarsLostFocus();
                                     _ElementUtilities._removeEventListener(flyoutControl.element, 'focusout', focusOut, false);
                                 }, false);
@@ -1441,116 +1441,116 @@ define([
                             return appBarElement;
                         }
 
-                    element = element.parentNode;
-                }
+                        element = element.parentNode;
+                    }
 
-                return null;
+                    return null;
                 },
 
-            // Global keyboard hiding offset
+                // Global keyboard hiding offset
                 _keyboardInfo: {
-                // Determine if the keyboard is visible or not.
-                get _visible() {
-                    try {
-                            return (_BaseUtils.hasWinRT && Windows.UI.ViewManagement.InputPane.getForCurrentView().occludedRect.height > 0);
-                    } catch (e) {
-                        return false;
-                    }
-                },
-
-                // See if we have to reserve extra space for the IHM
-                get _extraOccluded() {
-                    var occluded;
-                        if (_BaseUtils.hasWinRT) {
+                    // Determine if the keyboard is visible or not.
+                    get _visible() {
                         try {
-                            occluded = Windows.UI.ViewManagement.InputPane.getForCurrentView().occludedRect.height;
+                            return (_BaseUtils.hasWinRT && Windows.UI.ViewManagement.InputPane.getForCurrentView().occludedRect.height > 0);
                         } catch (e) {
+                            return false;
                         }
-                    }
+                    },
 
-                    // Nothing occluded if not visible.
-                    if (occluded && !_Overlay._keyboardInfo._isResized) {
-                        // View hasn't been resized, need to return occluded height.
-                        return occluded;
-                    }
+                    // See if we have to reserve extra space for the IHM
+                    get _extraOccluded() {
+                        var occluded;
+                        if (_BaseUtils.hasWinRT) {
+                            try {
+                                occluded = Windows.UI.ViewManagement.InputPane.getForCurrentView().occludedRect.height;
+                            } catch (e) {
+                            }
+                        }
 
-                    // View already has space for keyboard or there's no keyboard
-                    return 0;
-                },
+                        // Nothing occluded if not visible.
+                        if (occluded && !_Overlay._keyboardInfo._isResized) {
+                            // View hasn't been resized, need to return occluded height.
+                            return occluded;
+                        }
 
-                // See if the view has been resized to fit a keyboard
-                get _isResized() {
-                    // Compare ratios.  Very different includes IHM space.
-                    var heightRatio = document.documentElement.clientHeight / window.innerHeight,
-                        widthRatio = document.documentElement.clientWidth / window.innerWidth;
-
-                    // If they're nearly identical, then the view hasn't been resized for the IHM
-                    // Only check one bound because we know the IHM will make it shorter, not skinnier.
-                    return (widthRatio / heightRatio < 0.99);
-                },
-
-                // Get the top of our visible area in terms of its absolute distance from the top of document.documentElement. 
-                // Normalizes any offsets which have have occured between the visual viewport and the layout viewport due to resizing the viewport to fit the IHM and/or optical zoom.
-                get _visibleDocTop() {
-                    return window.pageYOffset - document.documentElement.scrollTop;
-                },
-
-                // Get the bottom of our visible area.
-                get _visibleDocBottom() {
-                    return _Overlay._keyboardInfo._visibleDocTop + _Overlay._keyboardInfo._visibleDocHeight;
-                },
-
-                // Get the height of the visible document, e.g. the height of the visual viewport minus any IHM occlusion.
-                get _visibleDocHeight() {
-                    return _Overlay._keyboardInfo._visualViewportHeight - _Overlay._keyboardInfo._extraOccluded;
-                },
-
-                // Get the visual viewport height. window.innerHeight doesn't return floating point values which are present with high DPI.
-                get _visualViewportHeight() {
-                    var boundingRect = _Overlay._keyboardInfo._visualViewportSpace;
-                    return boundingRect.bottom - boundingRect.top;
-                },
-
-                // Get the visual viewport width. window.innerHeight doesn't return floating point values which are present with high DPI.
-                get _visualViewportWidth() {
-                    var boundingRect = _Overlay._keyboardInfo._visualViewportSpace;
-                    return boundingRect.right - boundingRect.left;
-                },
-
-                get _visualViewportSpace() {
-                        var className = "win-visualviewport-space";
-                    var visualViewportSpace = document.body.querySelector("." + className);
-                    if (!visualViewportSpace) {
-                        visualViewportSpace = document.createElement("DIV");
-                        visualViewportSpace.className = className;
-                        document.body.appendChild(visualViewportSpace);
-                    }
-
-                    return visualViewportSpace.getBoundingClientRect();
-                },
-
-                // Get offset of visible window from bottom.
-                get _visibleDocBottomOffset() {
-                    // If the view resizes we can return 0 and rely on appbar's -ms-device-fixed css positioning. 
-                    return (_Overlay._keyboardInfo._isResized) ? 0 : _Overlay._keyboardInfo._extraOccluded;
-                },
-
-                // Get total length of the IHM showPanel animation
-                get _animationShowLength() {
-                        if (!_BaseUtils.hasWinRT) {
+                        // View already has space for keyboard or there's no keyboard
                         return 0;
-                    }
+                    },
 
-                    var a = Windows.UI.Core.AnimationMetrics,
-                        animationDescription = new a.AnimationDescription(a.AnimationEffect.showPanel, a.AnimationEffectTarget.primary);
-                    var animations = animationDescription.animations;
-                    var max = 0;
-                    for (var i = 0; i < animations.size; i++) {
-                        var animation = animations[i];
-                        max = Math.max(max, animation.delay + animation.duration);
+                    // See if the view has been resized to fit a keyboard
+                    get _isResized() {
+                        // Compare ratios.  Very different includes IHM space.
+                        var heightRatio = document.documentElement.clientHeight / window.innerHeight,
+                            widthRatio = document.documentElement.clientWidth / window.innerWidth;
+
+                        // If they're nearly identical, then the view hasn't been resized for the IHM
+                        // Only check one bound because we know the IHM will make it shorter, not skinnier.
+                        return (widthRatio / heightRatio < 0.99);
+                    },
+
+                    // Get the top of our visible area in terms of its absolute distance from the top of document.documentElement. 
+                    // Normalizes any offsets which have have occured between the visual viewport and the layout viewport due to resizing the viewport to fit the IHM and/or optical zoom.
+                    get _visibleDocTop() {
+                        return window.pageYOffset - document.documentElement.scrollTop;
+                    },
+
+                    // Get the bottom of our visible area.
+                    get _visibleDocBottom() {
+                        return _Overlay._keyboardInfo._visibleDocTop + _Overlay._keyboardInfo._visibleDocHeight;
+                    },
+
+                    // Get the height of the visible document, e.g. the height of the visual viewport minus any IHM occlusion.
+                    get _visibleDocHeight() {
+                        return _Overlay._keyboardInfo._visualViewportHeight - _Overlay._keyboardInfo._extraOccluded;
+                    },
+
+                    // Get the visual viewport height. window.innerHeight doesn't return floating point values which are present with high DPI.
+                    get _visualViewportHeight() {
+                        var boundingRect = _Overlay._keyboardInfo._visualViewportSpace;
+                        return boundingRect.bottom - boundingRect.top;
+                    },
+
+                    // Get the visual viewport width. window.innerHeight doesn't return floating point values which are present with high DPI.
+                    get _visualViewportWidth() {
+                        var boundingRect = _Overlay._keyboardInfo._visualViewportSpace;
+                        return boundingRect.right - boundingRect.left;
+                    },
+
+                    get _visualViewportSpace() {
+                        var className = "win-visualviewport-space";
+                        var visualViewportSpace = document.body.querySelector("." + className);
+                        if (!visualViewportSpace) {
+                            visualViewportSpace = document.createElement("DIV");
+                            visualViewportSpace.className = className;
+                            document.body.appendChild(visualViewportSpace);
+                        }
+
+                        return visualViewportSpace.getBoundingClientRect();
+                    },
+
+                    // Get offset of visible window from bottom.
+                    get _visibleDocBottomOffset() {
+                        // If the view resizes we can return 0 and rely on appbar's -ms-device-fixed css positioning. 
+                        return (_Overlay._keyboardInfo._isResized) ? 0 : _Overlay._keyboardInfo._extraOccluded;
+                    },
+
+                    // Get total length of the IHM showPanel animation
+                    get _animationShowLength() {
+                        if (!_BaseUtils.hasWinRT) {
+                            return 0;
+                        }
+
+                        var a = Windows.UI.Core.AnimationMetrics,
+                            animationDescription = new a.AnimationDescription(a.AnimationEffect.showPanel, a.AnimationEffectTarget.primary);
+                        var animations = animationDescription.animations;
+                        var max = 0;
+                        for (var i = 0; i < animations.size; i++) {
+                            var animation = animations[i];
+                            max = Math.max(max, animation.delay + animation.duration);
+                        }
+                        return max;
                     }
-                    return max;
-                }
                 },
 
                 _ElementWithFocusPreviousToAppBar: null,
@@ -1559,10 +1559,10 @@ define([
                 _clickEatingAppBarClass: _Constants._clickEatingAppBarClass,
                 _clickEatingFlyoutClass: _Constants._clickEatingFlyoutClass,
 
-            // Padding for IHM timer to allow for first scroll event
+                // Padding for IHM timer to allow for first scroll event
                 _scrollTimeout: 150,
 
-            // Events
+                // Events
                 beforeShow: BEFORESHOW,
                 beforeHide: BEFOREHIDE,
                 afterShow: AFTERSHOW,
