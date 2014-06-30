@@ -1,9 +1,13 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function selectInit(WinJS, undefined) {
+define([
+    'exports',
+    '../Core/_Base',
+    './_SafeHtml'
+    ], function selectInit(exports, _Base, _SafeHtml) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
-        _Select: WinJS.Namespace._lazy(function () {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        _Select: _Base.Namespace._lazy(function () {
             var encodeHtmlRegEx = /[&<>'"]/g;
             var encodeHtmlEscapeMap = {
                 "&": "&amp;",
@@ -25,16 +29,16 @@
             function stockGetLength() { return this.length; }
             function fixDataSource(dataSource) {
                 if (!dataSource.getValue) {
-                    dataSource.getValue = stockGetValue
+                    dataSource.getValue = stockGetValue;
                 }
 
                 if (!dataSource.getLength) {
-                    dataSource.getLength = stockGetLength
+                    dataSource.getLength = stockGetLength;
                 }
                 return dataSource;
             }
 
-            return WinJS.Class.define(function _Select_ctor(element, options) {
+            return _Base.Class.define(function _Select_ctor(element, options) {
                 // This is an implementation detail of the TimePicker and DatePicker, designed
                 // to provide a primitive "data bound" select control. This is not designed to
                 // be used outside of the TimePicker and DatePicker controls.
@@ -97,7 +101,7 @@
                         var stripped = stripDirectionMarker(escaped);
                         text += "<option value='" + stripped + "'>" + escaped + "</option>";
                     }
-                    WinJS.Utilities.setInnerHTMLUnsafe(this._domElement, text);
+                    _SafeHtml.setInnerHTMLUnsafe(this._domElement, text);
                     this._domElement.selectedIndex = this._index;
                 },
 
@@ -124,5 +128,5 @@
                 }
             });
         })
-    })
-})(WinJS);
+    });
+});

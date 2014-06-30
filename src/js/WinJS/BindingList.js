@@ -2,13 +2,21 @@
 
 // WinJS.Binding.List
 //
-define(['./BindingList/_BindingListDataSource'], function() {
-(function listInit(global, undefined) {
+define([
+    'exports',
+    './Core/_Base',
+    './Core/_BaseUtils',
+    './Core/_ErrorFromName',
+    './Core/_Events',
+    './Core/_Resources',
+    './Binding/_Data',
+    './BindingList/_BindingListDataSource'
+    ], function listInit(exports, _Base, _BaseUtils, _ErrorFromName, _Events, _Resources, _Data, _BindingListDataSource) {
     "use strict";
 
     var strings = {
-        get sparseArrayNotSupported() { return WinJS.Resources._getWinJSString("base/sparseArrayNotSupported").value; },
-        get illegalListLength() { return WinJS.Resources._getWinJSString("base/illegalListLength").value; },
+        get sparseArrayNotSupported() { return _Resources._getWinJSString("base/sparseArrayNotSupported").value; },
+        get illegalListLength() { return _Resources._getWinJSString("base/illegalListLength").value; },
     };
 
     function copyargs(args) {
@@ -31,7 +39,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
         return n === undefined ? undefined : +n;
     }
 
-    var createEvent = WinJS.Utilities._createEventProperty;
+    var createEvent = _Events._createEventProperty;
 
     var emptyOptions = {};
 
@@ -69,9 +77,9 @@ define(['./BindingList/_BindingListDataSource'], function() {
     }
 
     // Private namespace used for local lazily init'd classes
-    var ns = WinJS.Namespace.defineWithParent(null, null, {
-        ListBase: WinJS.Namespace._lazy(function () {
-            var ListBase = WinJS.Class.define(null, {
+    var ns = _Base.Namespace.defineWithParent(null, null, {
+        ListBase: _Base.Namespace._lazy(function () {
+            var ListBase = _Base.Class.define(null, {
                 _annotateWithIndex: function (item, index) {
                     var result = cloneItem(item);
                     result.index = index;
@@ -420,20 +428,20 @@ define(['./BindingList/_BindingListDataSource'], function() {
 
                 dataSource: {
                     get: function () {
-                        return (this._dataSource = this._dataSource || new WinJS.Binding._BindingListDataSource(this));
+                        return (this._dataSource = this._dataSource || new _BindingListDataSource._BindingListDataSource(this));
                     }
                 },
 
             }, {
                 supportedForProcessing: false,
-            })
-            WinJS.Class.mix(ListBase, WinJS.Binding.observableMixin);
-            WinJS.Class.mix(ListBase, WinJS.Utilities.eventMixin);
+            });
+            _Base.Class.mix(ListBase, _Data.observableMixin);
+            _Base.Class.mix(ListBase, _Events.eventMixin);
             return ListBase;
         }),
 
-        ListBaseWithMutators: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(ns.ListBase, null, {
+        ListBaseWithMutators: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(ns.ListBase, null, {
                 // ABSTRACT: setAt(index, value)
 
                 // Normal list modifying operations
@@ -499,11 +507,11 @@ define(['./BindingList/_BindingListDataSource'], function() {
                 // ABSTRACT: _spliceFromKey(key, howMany, values...)
             }, {
                 supportedForProcessing: false,
-            })
+            });
         }),
 
-        ListProjection: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(ns.ListBaseWithMutators, null, {
+        ListProjection: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(ns.ListBaseWithMutators, null, {
                 _list: null,
                 _myListeners: null,
 
@@ -534,7 +542,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
 
                     // Set this to an empty list and tell everyone that they need to reload to avoid
                     //  consumers null-refing on an empty list.
-                    this._list = new WinJS.Binding.List();
+                    this._list = new exports.List();
                     this._listReload();
                 },
 
@@ -600,11 +608,11 @@ define(['./BindingList/_BindingListDataSource'], function() {
 
             }, {
                 supportedForProcessing: false,
-            })
+            });
         }),
 
-        FilteredListProjection: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(ns.ListProjection, function (list, filter) {
+        FilteredListProjection: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(ns.ListProjection, function (list, filter) {
                 this._list = list;
                 this._addListListener("itemchanged", this._listItemChanged);
                 this._addListListener("iteminserted", this._listItemInserted);
@@ -735,7 +743,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                                 this.splice(value, current - value);
                             }
                         } else {
-                            throw new WinJS.ErrorFromName("WinJS.Binding.List.IllegalLength", strings.illegalListLength);
+                            throw new _ErrorFromName("WinJS.Binding.List.IllegalLength", strings.illegalListLength);
                         }
                     }
                 },
@@ -814,11 +822,11 @@ define(['./BindingList/_BindingListDataSource'], function() {
                 }
             }, {
                 supportedForProcessing: false,
-            })
+            });
         }),
 
-        SortedListProjection: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(ns.ListProjection, function (list, sortFunction) {
+        SortedListProjection: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(ns.ListProjection, function (list, sortFunction) {
                 this._list = list;
                 this._addListListener("itemchanged", this._listItemChanged);
                 this._addListListener("iteminserted", this._listItemInserted);
@@ -1029,7 +1037,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                                 this.splice(value, current - value);
                             }
                         } else {
-                            throw new WinJS.ErrorFromName("WinJS.Binding.List.IllegalLength", strings.illegalListLength);
+                            throw new _ErrorFromName("WinJS.Binding.List.IllegalLength", strings.illegalListLength);
                         }
                     }
                 },
@@ -1107,7 +1115,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                 }
             }, {
                 supportedForProcessing: false,
-            })
+            });
         }),
 
         // This projection sorts the underlying list by group key and within a group
@@ -1115,8 +1123,8 @@ define(['./BindingList/_BindingListDataSource'], function() {
         //  of the SortedListProjection and has an intimate contract with
         //  GroupsListProjection.
         //
-        GroupedSortedListProjection: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(ns.SortedListProjection, function (list, groupKeyOf, groupDataOf, groupSorter) {
+        GroupedSortedListProjection: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(ns.SortedListProjection, function (list, groupKeyOf, groupDataOf, groupSorter) {
                 this._list = list;
                 this._addListListener("itemchanged", this._listGroupedItemChanged);
                 this._addListListener("iteminserted", this._listGroupedItemInserted);
@@ -1269,14 +1277,14 @@ define(['./BindingList/_BindingListDataSource'], function() {
                 }
             }, {
                 supportedForProcessing: false,
-            })
+            });
         }),
 
         // This is really an implementation detail of GroupedSortedListProjection and takes a
         // dependency on its internals and implementation details.
         //
-        GroupsListProjection: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(ns.ListBase, function (list, groupKeyOf, groupDataOf) {
+        GroupsListProjection: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(ns.ListBase, function (list, groupKeyOf, groupDataOf) {
                 this._list = list;
                 this._addListListener("itemchanged", this._listItemChanged);
                 this._addListListener("iteminserted", this._listItemInserted);
@@ -1534,13 +1542,13 @@ define(['./BindingList/_BindingListDataSource'], function() {
                 }
             }, {
                 supportedForProcessing: false,
-            })
+            });
         }),
     });
 
-    WinJS.Namespace.define("WinJS.Binding", {
-        List: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(ns.ListBaseWithMutators, function (list, options) {
+    _Base.Namespace._moduleDefine(exports, "WinJS.Binding", {
+        List: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(ns.ListBaseWithMutators, function (list, options) {
                 /// <signature helpKeyword="WinJS.Binding.List.List">
                 /// <summary locid="WinJS.Binding.List.constructor">
                 /// Creates a WinJS.Binding.List object.
@@ -1563,7 +1571,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                 this._binding = options.binding;
                 if (this._proxy) {
                     if (Object.keys(list).length !== list.length) {
-                        throw new WinJS.ErrorFromName("WinJS.Binding.List.NotSupported", strings.sparseArrayNotSupported);
+                        throw new _ErrorFromName("WinJS.Binding.List.NotSupported", strings.sparseArrayNotSupported);
                     }
                     this._data = list;
                     this._currentKey = list.length;
@@ -1574,7 +1582,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                         if (i in list) {
                             var item = list[i];
                             if (this._binding) {
-                                item = WinJS.Binding.as(item);
+                                item = _Data.as(item);
                             }
                             var key = pos.toString();
                             pos++;
@@ -1614,7 +1622,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                                 if (!(key in keyMap)) {
                                     var item = data[i];
                                     if (this._binding) {
-                                        item = WinJS.Binding.as(item);
+                                        item = _Data.as(item);
                                     }
                                     keyMap[key] = { handle: key, key: key, data: item };
                                 }
@@ -1634,7 +1642,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                     if (this._data && index in this._data) {
                         var item = this._data[index];
                         if (this._binding) {
-                            item = WinJS.Binding.as(item);
+                            item = _Data.as(item);
                         }
                         var key = index.toString();
                         var entry = { handle: key, key: key, data: item };
@@ -1684,7 +1692,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                                 this._keys.length = value;
                             }
                         } else {
-                            throw new WinJS.ErrorFromName("WinJS.Binding.List.IllegalLength", strings.illegalListLength);
+                            throw new _ErrorFromName("WinJS.Binding.List.IllegalLength", strings.illegalListLength);
                         }
                     }
                 },
@@ -1811,7 +1819,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                             }
                         }
                         if (this._binding) {
-                            newValue = WinJS.Binding.as(newValue);
+                            newValue = _Data.as(newValue);
                         }
                         if (index in this._keys) {
                             var key = this._keys[index];
@@ -1926,14 +1934,14 @@ define(['./BindingList/_BindingListDataSource'], function() {
                     for (var i = 0; i < length; i++) {
                         var item = arguments[i];
                         if (this._binding) {
-                            item = WinJS.Binding.as(item);
+                            item = _Data.as(item);
                         }
                         var key = this._assignKey();
                         this._keys.push(key);
                         if (this._data) {
                             this._modifyingData++;
                             try {
-                                this._data.push(arguments[i])
+                                this._data.push(arguments[i]);
                             } finally {
                                 this._modifyingData--;
                             }
@@ -1985,14 +1993,14 @@ define(['./BindingList/_BindingListDataSource'], function() {
                     for (var i = length - 1; i >= 0; i--) {
                         var item = arguments[i];
                         if (this._binding) {
-                            item = WinJS.Binding.as(item);
+                            item = _Data.as(item);
                         }
                         var key = this._assignKey();
                         this._keys.unshift(key);
                         if (this._data) {
                             this._modifyingData++;
                             try {
-                                this._data.unshift(arguments[i])
+                                this._data.unshift(arguments[i]);
                             } finally {
                                 this._modifyingData--;
                             }
@@ -2040,7 +2048,7 @@ define(['./BindingList/_BindingListDataSource'], function() {
                         for (var i = 2, len = arguments.length; i < len; i++) {
                             var additionalItem = arguments[i];
                             if (this._binding) {
-                                additionalItem = WinJS.Binding.as(additionalItem);
+                                additionalItem = _Data.as(additionalItem);
                             }
                             var pos = Math.min(index + i - 2, this.length);
                             var newKey = this._assignKey();
@@ -2072,6 +2080,4 @@ define(['./BindingList/_BindingListDataSource'], function() {
         })
     });
 
-
-}(this));
 });

@@ -1,13 +1,25 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function fragmentLoaderInit(global, WinJS, undefined) {
+define([
+    'exports',
+    './Core/_Global',
+    './Core/_Base',
+    './Core/_BaseUtils',
+    './Core/_ErrorFromName',
+    './Core/_Resources',
+    './Core/_WriteProfilerMark',
+    './Promise',
+    './Utilities/_ElementUtilities',
+    './Utilities/_SafeHtml',
+    './Utilities/_Xhr'
+    ], function fragmentLoaderInit(exports, _Global, _Base, _BaseUtils, _ErrorFromName, _Resources, _WriteProfilerMark, Promise, _ElementUtilities, _SafeHtml, _Xhr) {
     "use strict";
 
     var strings = {
-        get invalidFragmentUri() { return WinJS.Resources._getWinJSString("base/invalidFragmentUri").value; },
+        get invalidFragmentUri() { return _Resources._getWinJSString("base/invalidFragmentUri").value; },
     };
 
     // not supported in WebWorker
-    if (!global.document) {
+    if (!_Global.document) {
         return;
     }
 
@@ -57,9 +69,8 @@
                 }).then(null, function () {
                     // eat error
                 });
-            }
-            else {
-                promise = new WinJS.Promise(function (c) {
+            } else {
+                promise = new Promise(function (c) {
                     n.onload = n.onerror = function () {
                         c();
                     };
@@ -100,37 +111,37 @@
     function getStateRecord(href, removeFromCache) {
         if (typeof href === "string") {
             return loadFromCache(href, removeFromCache);
-        }
-        else {
+        } else {
             var state = {
-                docfrag: WinJS.Utilities.data(href).docFragment
+                docfrag: _ElementUtilities.data(href).docFragment
             };
             if (!state.docfrag) {
                 var fragment = document.createDocumentFragment();
                 while (href.childNodes.length > 0) {
                     fragment.appendChild(href.childNodes[0]);
                 }
-                state.docfrag = WinJS.Utilities.data(href).docFragment = fragment;
+                state.docfrag = _ElementUtilities.data(href).docFragment = fragment;
                 href.setAttribute("data-win-hasfragment", "");
             }
             if (removeFromCache) {
                 clearCache(href);
             }
-            return WinJS.Promise.as(state);
+            return Promise.as(state);
         }
     }
     function createEntry(state, href) {
-        return WinJS.UI.Fragments._populateDocument(state, href).
+        return populateDocument(state, href).
             then(function () {
                 if (state.document) {
                     return processDocument(href, state);
-                }
-                else {
+                } else {
                     return state;
                 }
             }).
-            then(WinJS.UI.Fragments._cleanupDocument).
             then(function () {
+                if (state.document) {
+                    delete state.document;
+                }
                 return state;
             });
     }
@@ -145,12 +156,10 @@
             }
             if (state.promise) {
                 return state.promise;
+            } else {
+                return Promise.as(state);
             }
-            else {
-                return WinJS.Promise.as(state);
-            }
-        }
-        else {
+        } else {
             state = {};
             if (!removeFromCache) {
                 cacheStore[fragmentId] = state;
@@ -194,7 +203,7 @@
         //     thus assuring that the in-line script will run before the next
         //     trailing out-of-line script.
         //
-        var lastNonInlineScriptPromise = WinJS.Promise.as();
+        var lastNonInlineScriptPromise = Promise.as();
         forEach(cd.getElementsByTagName('script'), function (e, i) {
             var result = addScript(e, href, i, lastNonInlineScriptPromise);
             if (result) {
@@ -211,7 +220,7 @@
             //
             if (e.href !== "") {
                 var href = e.getAttribute("href");
-                if (href && href[0] != "#") {
+                if (href && href[0] !== "#") {
                     e.href = e.href;
                 }
             }
@@ -226,7 +235,7 @@
             s.parentNode.removeChild(s);
         }
 
-        return WinJS.Promise.join(sp).then(function () {
+        return Promise.join(sp).then(function () {
             // Create the docfrag which is just the body children
             //
             var fragment = document.createDocumentFragment();
@@ -277,8 +286,8 @@
     }
 
     function renderImpl(href, target, copy) {
-        var profilerMarkIdentifier = (href instanceof HTMLElement ? WinJS.Utilities._getProfilerMarkIdentifier(href) : " href='" + href + "'") + "[" + (++uniqueId) + "]";
-        WinJS.Utilities._writeProfilerMark("WinJS.UI.Fragments:render" + profilerMarkIdentifier + ",StartTM");
+        var profilerMarkIdentifier = (href instanceof HTMLElement ? _BaseUtils._getProfilerMarkIdentifier(href) : " href='" + href + "'") + "[" + (++uniqueId) + "]";
+        _WriteProfilerMark("WinJS.UI.Fragments:render" + profilerMarkIdentifier + ",StartTM");
     
         initialize();
         return getStateRecord(href, !copy).then(function (state) {
@@ -299,11 +308,10 @@
             if (target) {
                 target.appendChild(frag);
                 retVal = target;
-            }
-            else {
+            } else {
                 retVal = frag;
             }
-            WinJS.Utilities._writeProfilerMark("WinJS.UI.Fragments:render" + profilerMarkIdentifier + ",StopTM");
+            _WriteProfilerMark("WinJS.UI.Fragments:render" + profilerMarkIdentifier + ",StopTM");
             return retVal;
         });
     }
@@ -359,18 +367,16 @@
 
         if (!href) {
             cacheStore = {};
-        }
-        else if (typeof (href) == "string") {
+        } else if (typeof (href) === "string") {
             delete cacheStore[href.toLowerCase()];
-        }
-        else {
-            delete WinJS.Utilities.data(href).docFragment;
+        } else {
+            delete _ElementUtilities.data(href).docFragment;
             href.removeAttribute("data-win-hasfragment");
         }
     }
 
     function forceLocal(uri) {
-        if (WinJS.Utilities.hasWinRT) {
+        if (_BaseUtils.hasWinRT) {
             // we force the URI to be cannonicalized and made absolute by IE
             //
             var a = document.createElement("a");
@@ -389,7 +395,7 @@
             var scheme = wuri.schemeName;
             if (scheme !== "ms-appx") {
 
-                throw new WinJS.ErrorFromName("WinJS.UI.Fragments.InvalidUri", strings.invalidFragmentUri);
+                throw new _ErrorFromName("WinJS.UI.Fragments.InvalidUri", strings.invalidFragmentUri);
             }
 
             return absolute;
@@ -397,72 +403,12 @@
         return uri;
     }
 
-    WinJS.Namespace.define("WinJS.UI.Fragments", {
-        renderCopy: renderCopy,
-        render: render,
-        cache: cache,
-        clearCache: clearCache,
-        _cacheStore: { get: function () { return cacheStore; } },
-        _forceLocal: forceLocal
-    });
-})(this, WinJS);
-
-(function fragmentLoader2Init(global) {
-    "use strict";
-
-    // not supported in WebWorker
-    if (!global.document) {
-        return;
-    }
-
-    function cleanupDocumentIFrame(state) {
-        // This is to work around a weird bug where removing the
-        // IFrame from the DOM triggers DOMContentLoaded a second time.
-        var temp = state.iframe;
-        if (temp) {
-            temp.contentDocument.removeEventListener("DOMContentLoaded", state.domContentLoaded, false);
-            temp.parentNode.removeChild(temp);
-            delete state.document;
-            delete state.iframe;
-            delete state.domContentLoaded;
-        }
-    }
-
-    function populateDocumentIFrame(state, href) {
-        return new WinJS.Promise(function (c, e, p) {
-            var temp = document.createElement('iframe');
-            temp.src = href;
-            temp.style.display = 'none';
-
-            state.domContentLoaded = function () {
-                state.document = temp.contentDocument;
-                state.iframe = temp;
-                c();
-            };
-
-            document.body.appendChild(temp);
-            temp.contentWindow.onerror = function (e) {
-                // It's OK to swallow these as they will occur in the main document
-                //
-                return true;
-            };
-            temp.contentDocument.addEventListener("DOMContentLoaded", state.domContentLoaded, false);
-        });
-    }
-
-    function cleanupDocumentXHR(state) {
-        if (state.document) {
-            delete state.document;
-        }
-        return WinJS.Promise.as();
-    }
-
-    function populateDocumentXHR(state, href) {
+    function populateDocument(state, href) {
         // Because we later use "setInnerHTMLUnsafe" ("Unsafe" is the magic word here), we 
         // want to force the href to only support local package content when running
         // in the local context. When running in the web context, this will be a no-op.
         //
-        href = WinJS.UI.Fragments._forceLocal(href);
+        href = forceLocal(href);
     
         var htmlDoc = document.implementation.createHTMLDocument("frag");
         var base = htmlDoc.createElement("base");
@@ -474,22 +420,34 @@
         base.href = anchor.href; // Update the base URL to be the resolved absolute path
         // 'anchor' is no longer needed at this point and will be removed by the innerHTML call
         state.document = htmlDoc;
-        return WinJS.xhr({ url: href }).then(function (req) {
-            WinJS.Utilities.setInnerHTMLUnsafe(htmlDoc.documentElement, req.responseText);
+        return getFragmentContents(href).then(function (text) {
+            _SafeHtml.setInnerHTMLUnsafe(htmlDoc.documentElement, text);
             htmlDoc.head.appendChild(base);
         });
     }
-        
-    if (global.document && document.implementation.createHTMLDocument && document.location.protocol !== "file:") {
-        WinJS.Namespace.define("WinJS.UI.Fragments", {
-            _populateDocument: populateDocumentXHR,
-            _cleanupDocument: cleanupDocumentXHR
+
+    var getFragmentContents = getFragmentContentsXHR;
+
+    function getFragmentContentsXHR(href) {
+        return _Xhr({ url: href }).then(function (req) {
+            return req.responseText;
         });
-    }
-    else {
-        WinJS.Namespace.define("WinJS.UI.Fragments", {
-            _populateDocument: populateDocumentIFrame,
-            _cleanupDocument: cleanupDocumentIFrame
-        });
-    }
-})(this);
+    } 
+
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI.Fragments", {
+        renderCopy: renderCopy,
+        render: render,
+        cache: cache,
+        clearCache: clearCache,
+        _cacheStore: { get: function () { return cacheStore; } },
+        _forceLocal: forceLocal,
+        _getFragmentContents: {
+            get: function() {
+                return getFragmentContents;
+            },
+            set: function(value) {
+                getFragmentContents = value;
+            }
+        }
+    });
+});

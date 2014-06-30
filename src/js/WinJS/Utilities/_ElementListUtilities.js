@@ -1,14 +1,22 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function elementListUtilities(global, WinJS, undefined) {
+define([
+    'exports',
+    '../Core/_Global',
+    '../Core/_Base',
+    '../ControlProcessor',
+    '../Promise',
+    '../Utilities/_Control',
+    '../Utilities/_ElementUtilities'
+    ], function elementListUtilities(exports, _Global, _Base, ControlProcessor, Promise, _Control, _ElementUtilities) {
     "use strict";
 
     // not supported in WebWorker
-    if (!global.document) {
+    if (!_Global.document) {
         return;
     }
 
-    WinJS.Namespace.define("WinJS.Utilities", {
-        QueryCollection: WinJS.Class.derive(Array, function (items) {
+    _Base.Namespace._moduleDefine(exports, "WinJS.Utilities", {
+        QueryCollection: _Base.Class.derive(Array, function (items) {
             /// <signature helpKeyword="WinJS.Utilities.QueryCollection">
             /// <summary locid="WinJS.Utilities.QueryCollection">
             /// Represents the result of a query selector, and provides
@@ -104,7 +112,7 @@
                 /// </returns>
                 /// </signature>
                 this.forEach(function (item) {
-                    WinJS.Utilities.addClass(item, name);
+                    _ElementUtilities.addClass(item, name);
                 });
                 return this;
             },
@@ -121,7 +129,7 @@
                 /// </returns>
                 /// </signature>
                 if (this.length > 0) {
-                    return WinJS.Utilities.hasClass(this[0], name);
+                    return _ElementUtilities.hasClass(this[0], name);
                 }
                 return false;
             },
@@ -138,7 +146,7 @@
                 /// </returns>
                 /// </signature>
                 this.forEach(function (item) {
-                    WinJS.Utilities.removeClass(item, name);
+                    _ElementUtilities.removeClass(item, name);
                 });
                 return this;
             },
@@ -156,7 +164,7 @@
                 /// </returns>
                 /// </signature>
                 this.forEach(function (item) {
-                    WinJS.Utilities.toggleClass(item, name);
+                    _ElementUtilities.toggleClass(item, name);
                 });
                 return this;
             },
@@ -257,7 +265,7 @@
                 /// executing the query on all the elements in the collection.
                 /// </returns>
                 /// </signature>
-                var newCollection = new WinJS.Utilities.QueryCollection();
+                var newCollection = new exports.QueryCollection();
                 this.forEach(function (item) {
                     newCollection.include(item.querySelectorAll(query));
                 });
@@ -317,11 +325,59 @@
                 } else {
                     options = Ctor;
                     this.forEach(function (element) {
-                        WinJS.UI.process(element).done(function (control) {
-                            control && WinJS.UI.setOptions(control, options);
-                        })
+                        ControlProcessor.process(element).done(function (control) {
+                            control && _Control.setOptions(control, options);
+                        });
                     });
                 }
+                return this;
+            },
+            template: function (templateElement, data, renderDonePromiseCallback) {
+                /// <signature helpKeyword="WinJS.Utilities.QueryCollection.template">
+                /// <summary locid="WinJS.Utilities.QueryCollection.template">
+                /// Renders a template that is bound to the given data
+                /// and parented to the elements included in the QueryCollection.
+                /// If the QueryCollection contains multiple elements, the template
+                /// is rendered multiple times, once at each element in the QueryCollection
+                /// per item of data passed.
+                /// </summary>
+                /// <param name="templateElement" type="DOMElement" locid="WinJS.Utilities.QueryCollection.template_p:templateElement">
+                /// The DOM element to which the template control is attached to.
+                /// </param>
+                /// <param name="data" type="Object" locid="WinJS.Utilities.QueryCollection.template_p:data">
+                /// The data to render. If the data is an array (or any other object
+                /// that has a forEach method) then the template is rendered
+                /// multiple times, once for each item in the collection.
+                /// </param>
+                /// <param name="renderDonePromiseCallback" type="Function" locid="WinJS.Utilities.QueryCollection.template_p:renderDonePromiseCallback">
+                /// If supplied, this function is called
+                /// each time the template gets rendered, and is passed a promise
+                /// that is fulfilled when the template rendering is complete.
+                /// </param>
+                /// <returns type="WinJS.Utilities.QueryCollection" locid="WinJS.Utilities.QueryCollection.template_returnValue">
+                /// The QueryCollection.
+                /// </returns>
+                /// </signature>
+                if (templateElement instanceof exports.QueryCollection) {
+                    templateElement = templateElement[0];
+                }
+                var template = templateElement.winControl;
+
+                if (data === null || data === undefined || !data.forEach) {
+                    data = [data];
+                }
+
+                renderDonePromiseCallback = renderDonePromiseCallback || function () { };
+
+                var that = this;
+                var donePromises = [];
+                data.forEach(function (datum) {
+                    that.forEach(function (element) {
+                        donePromises.push(template.render(datum, element));
+                    });
+                });
+                renderDonePromiseCallback(Promise.join(donePromises));
+
                 return this;
             }
         }, {
@@ -344,7 +400,7 @@
             /// The QueryCollection that contains the results of the query.
             /// </returns>
             /// </signature>
-            return new WinJS.Utilities.QueryCollection((element || document).querySelectorAll(query));
+            return new exports.QueryCollection((element || document).querySelectorAll(query));
         },
 
         id: function (id) {
@@ -360,7 +416,7 @@
             /// </returns>
             /// </signature>
             var e = document.getElementById(id);
-            return new WinJS.Utilities.QueryCollection(e ? [e] : []);
+            return new exports.QueryCollection(e ? [e] : []);
         },
 
         children: function (element) {
@@ -375,8 +431,7 @@
             /// The QueryCollection that contains the children of the element.
             /// </returns>
             /// </signature>
-            return new WinJS.Utilities.QueryCollection(element.children);
+            return new exports.QueryCollection(element.children);
         }
     });
-
-})(this, WinJS);
+});

@@ -1,20 +1,52 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function resourcesInit(global, WinJS, undefined) {
+define([
+    'exports',
+    './_Global',
+    './_BaseCoreUtils',
+    './_Base',
+    './_Events'
+    ], function resourcesInit(exports, _Global, _BaseCoreUtils, _Base, _Events) {
     "use strict";
+
+    var appxVersion = "$(TARGET_DESTINATION)";
+    var developerPrefix = "Developer.";
+    if (appxVersion.indexOf(developerPrefix) === 0) {
+        appxVersion = appxVersion.substring(developerPrefix.length);
+    }
+
+    function _getWinJSString(id) {
+        return getString("ms-resource://" + appxVersion + "/" + id);
+    }
 
     var resourceMap;
     var mrtEventHook = false;
     var contextChangedET = "contextchanged";
     var resourceContext;
 
-    var ListenerType = WinJS.Class.mix(WinJS.Class.define(null, { /* empty */ }, { supportedForProcessing: false }), WinJS.Utilities.eventMixin);
+    var ListenerType = _Base.Class.mix(_Base.Class.define(null, { /* empty */ }, { supportedForProcessing: false }), _Events.eventMixin);
     var listeners = new ListenerType();
+    var createEvent = _Events._createEventProperty;
 
     var strings = {
-        get malformedFormatStringInput() { return WinJS.Resources._getWinJSString("base/malformedFormatStringInput").value; },
+        get malformedFormatStringInput() { return _getWinJSString("base/malformedFormatStringInput").value; },
     };
 
-    WinJS.Namespace.define("WinJS.Resources", {
+    _Base.Namespace.define("WinJS.Resources", {
+        _getWinJSString: _getWinJSString
+    });
+
+    function formatString(string) {
+        var args = arguments;
+        if (args.length > 1) {
+            string = string.replace(/({{)|(}})|{(\d+)}|({)|(})/g, function (unused, left, right, index, illegalLeft, illegalRight) {
+                if (illegalLeft || illegalRight) { throw formatString(strings.malformedFormatStringInput, illegalLeft || illegalRight); }
+                return (left && "{") || (right && "}") || args[(index | 0) + 1];
+            });
+        }
+        return string;
+    }
+
+    _Base.Namespace._moduleDefine(exports, "WinJS.Resources", {
         addEventListener: function (type, listener, useCapture) {
             /// <signature helpKeyword="WinJS.Resources.addEventListener">
             /// <summary locid="WinJS.Resources.addEventListener">
@@ -30,19 +62,19 @@
             /// Set to true to register the event handler for the capturing phase; set to false to register for the bubbling phase.
             /// </param>
             /// </signature>
-            if (WinJS.Utilities.hasWinRT && !mrtEventHook) {
+            if (_BaseCoreUtils.hasWinRT && !mrtEventHook) {
                 if (type === contextChangedET) {
                     try {
-                        var resContext = WinJS.Resources._getResourceContext();
+                        var resContext = exports._getResourceContext();
                         if (resContext) {
                             resContext.qualifierValues.addEventListener("mapchanged", function (e) {
-                                WinJS.Resources.dispatchEvent(contextChangedET, { qualifier: e.key, changed: e.target[e.key] });
+                                exports.dispatchEvent(contextChangedET, { qualifier: e.key, changed: e.target[e.key] });
                             }, false);
 
                         } else {
                             // The API can be called in the Background thread (web worker).
                             Windows.ApplicationModel.Resources.Core.ResourceManager.current.defaultContext.qualifierValues.addEventListener("mapchanged", function (e) {
-                                WinJS.Resources.dispatchEvent(contextChangedET, { qualifier: e.key, changed: e.target[e.key] });
+                                exports.dispatchEvent(contextChangedET, { qualifier: e.key, changed: e.target[e.key] });
                             }, false);
                         }
                         mrtEventHook = true;
@@ -55,16 +87,7 @@
         removeEventListener: listeners.removeEventListener.bind(listeners),
         dispatchEvent: listeners.dispatchEvent.bind(listeners),
 
-        _formatString: function (string) {
-            var args = arguments;
-            if (args.length > 1) {
-                string = string.replace(/({{)|(}})|{(\d+)}|({)|(})/g, function (unused, left, right, index, illegalLeft, illegalRight) {
-                    if (illegalLeft || illegalRight) { throw WinJS.Resources._formatString(strings.malformedFormatStringInput, illegalLeft || illegalRight); }
-                    return (left && "{") || (right && "}") || args[(index | 0) + 1];
-                });
-            }
-            return string;
-        },
+        _formatString: formatString,
 
         _getStringWinRT: function (resourceId) {
             if (!resourceMap) {
@@ -83,7 +106,7 @@
             var langValue;
             var resCandidate;
             try {
-                var resContext = WinJS.Resources._getResourceContext();
+                var resContext = exports._getResourceContext();
                 if (resContext) {
                     resCandidate = resourceMap.getValue(resourceId, resContext);
                 } else {
@@ -114,7 +137,7 @@
         },
 
         _getStringJS: function (resourceId) {
-            var str = global.strings && global.strings[resourceId];
+            var str = _Global.strings && _Global.strings[resourceId];
             if (typeof str === "string") {
                 str = { value: str };
             }
@@ -122,21 +145,21 @@
         },
 
         _getResourceContext: function () {
-            if (global.document) {
+            if (_Global.document) {
                 if (!resourceContext) {
                     resourceContext = Windows.ApplicationModel.Resources.Core.ResourceContext.getForCurrentView();
                 }
             }
             return resourceContext;
-        }
+        },
+
+        oncontextchanged: createEvent(contextChangedET)
         
     });
 
-    Object.defineProperties(WinJS.Resources, WinJS.Utilities.createEventProperties(contextChangedET));
+    var getStringImpl = _BaseCoreUtils.hasWinRT ? exports._getStringWinRT : exports._getStringJS;
 
-    var getStringImpl;
-
-    WinJS.Resources.getString = function (resourceId) {
+    var getString = function (resourceId) {
         /// <signature helpKeyword="WinJS.Resources.getString">
         /// <summary locid='WinJS.Resources.getString'>
         /// Retrieves the resource string that has the specified resource id.
@@ -160,16 +183,25 @@
         /// for multi-language resources.
         /// 
         /// </returns>
-        /// </signature>
-        getStringImpl =
-            getStringImpl ||
-                (WinJS.Utilities.hasWinRT
-                    ? WinJS.Resources._getStringWinRT
-                    : WinJS.Resources._getStringJS);
+        /// </signature>          
 
         return getStringImpl(resourceId);
     };
 
+    _Base.Namespace._moduleDefine(exports, null, {
+        _formatString: formatString,
+        _getWinJSString: _getWinJSString
+    });
 
-})(this, WinJS);
+    _Base.Namespace._moduleDefine(exports, "WinJS.Resources", {
+        getString: {
+            get: function() {
+                return getString;
+            },
+            set: function(value) {
+                getString = value;
+            }
+        }
+    });
 
+});

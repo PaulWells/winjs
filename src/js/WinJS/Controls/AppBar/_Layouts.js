@@ -1,34 +1,32 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-/// <dictionary>animatable,appbar,appbars,divs,Flyout,Flyouts,iframe,Statics,unfocus,unselectable</dictionary>
-(function appBarLayoutsInit(WinJS) {
+define([
+    'exports',
+    '../../Core/_Base',
+    '../../Core/_ErrorFromName',
+    '../../Core/_Resources',
+    '../../Scheduler',
+    '../../Utilities/_Control',
+    '../../Utilities/_Dispose',
+    '../../Utilities/_ElementUtilities',
+    './_Command',
+    './_Constants'
+    ], function appBarLayoutsInit(exports, _Base, _ErrorFromName, _Resources, Scheduler, _Control, _Dispose, _ElementUtilities, _Command, _Constants) {
     "use strict";
 
-    // Common Class Names
-    var primaryCommandsClass = "win-primarygroup",
-        secondaryCommandsClass = "win-secondarygroup",
-        appBarCommandClass = "win-command",
-        reducedClass = "win-reduced";
-
-    // Constants for AppBarCommands
-    var typeSeparator = "separator",
-        typeContent = "content",
-        fullSizeSeparatorWidth = 60,
-        fullSizeButtonWidth = 100;
-
-    // AppBat "custom" layout uses this and AppBar 'commands' layout inherits from this.
-    WinJS.Namespace.define("WinJS.UI", {
-        _AppBarBaseLayout: WinJS.Namespace._lazy(function () {
+    // AppBar will use this when AppBar.layout property is set to "custom"
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        _AppBarBaseLayout: _Base.Namespace._lazy(function () {
             var baseType = "custom";
 
             var strings = {
-                get nullCommand() { return WinJS.Resources._getWinJSString("ui/nullCommand").value; },
+                get nullCommand() { return _Resources._getWinJSString("ui/nullCommand").value; }
             };
 
-            var _AppBarBaseLayout = WinJS.Class.define(function _AppBarBaseLayout_ctor(appBarEl, options) {
+            var _AppBarBaseLayout = _Base.Class.define(function _AppBarBaseLayout_ctor(appBarEl, options) {
                 this._disposed = false;
 
                 options = options || {};
-                WinJS.UI.setOptions(this, options);
+                _Control.setOptions(this, options);
 
                 if (appBarEl) {
                     this.connect(appBarEl);
@@ -48,7 +46,7 @@
                 commandsInOrder: {
                     get: function _AppBarBaseLayout_get_commandsInOrder() {
                         // Gets a DOM ordered Array of the AppBarCommand elements in the AppBar.                        
-                        var commands = this.appBarEl.querySelectorAll("." + appBarCommandClass);
+                        var commands = this.appBarEl.querySelectorAll("." + _Constants.appBarCommandClass);
 
                         // Needs to be an array, in case these are getting passed to a new layout.
                         // The new layout will invoke the AppBar._layoutCommands, and it expects an 
@@ -58,13 +56,13 @@
                 },
                 connect: function _AppBarBaseLayout_connect(appBarEl) {
                     if (this.className) {
-                        WinJS.Utilities.addClass(appBarEl, this.className);
+                        _ElementUtilities.addClass(appBarEl, this.className);
                     }
                     this.appBarEl = appBarEl;
                 },
                 disconnect: function _AppBarBaseLayout_disconnect() {
                     if (this.className) {
-                        WinJS.Utilities.removeClass(this.appBarEl, this.className);
+                        _ElementUtilities.removeClass(this.appBarEl, this.className);
                     }
                     this.appBarEl = null;
                     this.dispose();
@@ -79,13 +77,13 @@
                 },
                 sanitizeCommand: function _AppBarBaseLayout_sanitizeCommand(command) {
                     if (!command) {
-                        throw new WinJS.ErrorFromName("WinJS.UI._AppBarBaseLayout.NullCommand", strings.nullCommand);
+                        throw new _ErrorFromName("WinJS.UI.AppBar.NullCommand", strings.nullCommand);
                     }
                     // See if it's a command already
                     command = command.winControl || command;
                     if (!command._element) {
                         // Not a command, so assume it is options for the command's constructor.
-                        command = new WinJS.UI.AppBarCommand(null, command);
+                        command = new _Command.AppBarCommand(null, command);
                     }
                     // If we were attached somewhere else, detach us
                     if (command._element.parentElement) {
@@ -98,9 +96,9 @@
                     this._disposed = true;
                 },
                 disposeChildren: function _AppBarBaseLayout_disposeChildren() {
-                    var appBarFirstDiv = this.appBarEl.querySelectorAll("." + firstDivClass);
+                    var appBarFirstDiv = this.appBarEl.querySelectorAll("." + _Constants.firstDivClass);
                     appBarFirstDiv = appBarFirstDiv.length >= 1 ? appBarFirstDiv[0] : null;
-                    var appBarFinalDiv = this.appBarEl.querySelectorAll("." + finalDivClass);
+                    var appBarFinalDiv = this.appBarEl.querySelectorAll("." + _Constants.finalDivClass);
                     appBarFinalDiv = appBarFinalDiv.length >= 1 ? appBarFinalDiv[0] : null;
 
                     var children = this.appBarEl.children;
@@ -110,7 +108,7 @@
                         if (element === appBarFirstDiv || element === appBarFinalDiv) {
                             continue;
                         } else {
-                            WinJS.Utilities.disposeSubTree(element);
+                            _Dispose.disposeSubTree(element);
                         }
                     }
                 },
@@ -136,20 +134,20 @@
                 },
                 resize: function _AppBarBaseLayout_resize(event) {
                     // NOP
-                },
+                },                
             });
             return _AppBarBaseLayout;
         }),
     });
 
-    // AppBar "commands" layout uses this.
-    WinJS.Namespace.define("WinJS.UI", {
-        _AppBarCommandsLayout: WinJS.Namespace._lazy(function () {
+    // AppBar will use this when AppBar.layout property is set to "commands"
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        _AppBarCommandsLayout: _Base.Namespace._lazy(function () {
             var layoutClassName = "win-commandlayout";
             var layoutType = "commands";
 
-            var _AppBarCommandsLayout = WinJS.Class.derive(WinJS.UI._AppBarBaseLayout, function _AppBarCommandsLayout_ctor(appBarEl) {
-                WinJS.UI._AppBarBaseLayout.call(this, appBarEl, { _className: layoutClassName, _type: layoutType })
+            var _AppBarCommandsLayout = _Base.Class.derive(exports._AppBarBaseLayout, function _AppBarCommandsLayout_ctor(appBarEl) {
+                exports._AppBarBaseLayout.call(this, appBarEl, {_className: layoutClassName, _type: layoutType});
                 this._commandLayoutsInit(appBarEl);
             }, {
                 _getWidthOfFullSizeCommands: function _AppBarCommandsLayout_getWidthOfFullSizeCommands(commands) {
@@ -172,9 +170,9 @@
                         var command;
                         for (var i = 0, len = commands.length; i < len; i++) {
                             command = commands[i].winControl || commands[i];
-                            if (command._type === typeSeparator) {
-                                separatorsCount++
-                            } else if (command._type !== typeContent) {
+                            if (command._type === _Constants.typeSeparator) {
+                                separatorsCount++;
+                            } else if (command._type !== _Constants.typeContent) {
                                 // button, toggle, and flyout types all have the same width.
                                 buttonsCount++;
                             } else {
@@ -182,7 +180,7 @@
                             }
                         }
                     }
-                    return accumulatedWidth += (separatorsCount * fullSizeSeparatorWidth) + (buttonsCount * fullSizeButtonWidth);
+                    return accumulatedWidth += (separatorsCount * _Constants.separatorWidth) + (buttonsCount * _Constants.buttonWidth);
                 },
                 _getFocusableCommandsInLogicalOrder: function _AppBarCommandsLayout_getCommandsInLogicalOrder(globalCommandHasFocus) {
                     // Function returns an array of all the contained AppBarCommands which are reachable by left/right arrows.
@@ -195,7 +193,7 @@
                         var focusableCommands = [];
                         for (var i = 0, len = commandsInReach.length; i < len; i++) {
                             var element = commandsInReach[i];
-                            if (WinJS.Utilities.hasClass(element, appBarCommandClass) && element.winControl) {
+                            if (_ElementUtilities.hasClass(element, _Constants.appBarCommandClass) && element.winControl) {
                                 var containsFocus = element.contains(document.activeElement);
                                 // With the inclusion of content type commands, it may be possible to tab to elements in AppBarCommands that are not reachable by arrow keys.
                                 // Regardless, when an AppBarCommand contains the element with focus, we just include the whole command so that we can determine which
@@ -209,7 +207,7 @@
                             }
                         }
                         return focusableCommands;
-                    }
+                    };
 
                     // Determines which set of commands the user could potentially reach through Home, End, and arrow keys.
                     // All commands in the commands layout AppBar, from left to right are in reach. Selection then Global.
@@ -222,7 +220,7 @@
             });
 
             // Override some our base implementations and expand our API surface with the commandLayoutsMixin object.
-            WinJS.Class.mix(_AppBarCommandsLayout, _commandLayoutsMixin);
+            _Base.Class.mix(_AppBarCommandsLayout, _commandLayoutsMixin);
             return _AppBarCommandsLayout;
         }),
     });
@@ -233,8 +231,8 @@
             // Insert commands and other layout specific DOM into the AppBar element.
 
             // Empty our tree.
-            WinJS.Utilities.empty(this._primaryCommands);
-            WinJS.Utilities.empty(this._secondaryCommands);
+            _ElementUtilities.empty(this._primaryCommands);
+            _ElementUtilities.empty(this._secondaryCommands);
 
             // Keep track of the order we receive the commands in.
             this._commandsInOriginalOrder = [];
@@ -265,11 +263,11 @@
             // In case this is called from the constructor before the AppBar element has been appended to the DOM, 
             // we schedule the initial scaling of commands, with the expectation that the element will be added 
             // synchronously, in the same block of code that called the constructor.
-            WinJS.Utilities.Scheduler.schedule(function () {
+            Scheduler.schedule(function () {
                 if (this._needToMeasureNewCommands && !this._disposed) {
                     this.scale();
                 }
-            }.bind(this), WinJS.Utilities.Scheduler.Priority.idle, this, "WinJS._commandLayoutsMixin._scaleNewCommands");
+            }.bind(this), Scheduler.Priority.idle, this, "WinJS._commandLayoutsMixin._scaleNewCommands");
 
         },
         commandsInOrder: {
@@ -281,20 +279,20 @@
             }
         },
         disposeChildren: function _commandLayoutsMixin_disposeChildren() {
-            WinJS.Utilities.disposeSubTree(this._primaryCommands);
-            WinJS.Utilities.disposeSubTree(this._secondaryCommands);
+            _Dispose.disposeSubTree(this._primaryCommands);
+            _Dispose.disposeSubTree(this._secondaryCommands);
         },
         handleKeyDown: function _commandLayoutsMixin_handleKeyDown(event) {
-            var Key = WinJS.Utilities.Key;
+            var Key = _ElementUtilities.Key;
 
-            if (WinJS.Utilities._matchesSelector(event.target, ".win-interactive, .win-interactive *")) {
+            if (_ElementUtilities._matchesSelector(event.target, ".win-interactive, .win-interactive *")) {
                 return; // Ignore left, right, home & end keys if focused element has win-interactive class.
             }
             var rtl = getComputedStyle(this.appBarEl).direction === "rtl";
             var leftKey = rtl ? Key.rightArrow : Key.leftArrow;
             var rightKey = rtl ? Key.leftArrow : Key.rightArrow;
 
-            if (event.keyCode === leftKey || event.keyCode == rightKey || event.keyCode === Key.home || event.keyCode === Key.end) {
+            if (event.keyCode === leftKey || event.keyCode === rightKey || event.keyCode === Key.home || event.keyCode === Key.end) {
 
                 var globalCommandHasFocus = this._primaryCommands.contains(document.activeElement);
                 var focusableCommands = this._getFocusableCommandsInLogicalOrder(globalCommandHasFocus);
@@ -383,10 +381,10 @@
 
             if (fullSizeWidthOfVisibleContent <= this._appBarTotalKnownWidth) {
                 // Full size commands
-                WinJS.Utilities.removeClass(this.appBarEl, reducedClass);
+                _ElementUtilities.removeClass(this.appBarEl, _Constants.reducedClass);
             } else {
                 // Reduced size commands
-                WinJS.Utilities.addClass(this.appBarEl, reducedClass);
+                _ElementUtilities.addClass(this.appBarEl, _Constants.reducedClass);
             }
         },
         resize: function _commandLayoutsMixin_resize(event) {
@@ -402,8 +400,8 @@
             // Create layout infrastructure
             this._primaryCommands = document.createElement("DIV");
             this._secondaryCommands = document.createElement("DIV");
-            WinJS.Utilities.addClass(this._primaryCommands, primaryCommandsClass);
-            WinJS.Utilities.addClass(this._secondaryCommands, secondaryCommandsClass);
+            _ElementUtilities.addClass(this._primaryCommands, _Constants.primaryCommandsClass);
+            _ElementUtilities.addClass(this._secondaryCommands, _Constants.secondaryCommandsClass);
         },
         _scaleHelper: function _commandLayoutsMixin_scaleHelper() {
             // This exists as a single line function so that unit tests can 
@@ -423,9 +421,9 @@
             if (document.body.contains(this.appBarEl)) {
                 this._needToMeasureNewCommands = false;
 
-                // Remove the reduced class and the hidden class from AppBar to ensure fullsize measurements
-                var hadReducedClass = WinJS.Utilities.hasClass(this.appBarEl, reducedClass);
-                WinJS.Utilities.removeClass(this.appBarEl, reducedClass);
+                // Remove the reducedClass from AppBar to ensure fullsize measurements
+                var hadReducedClass = _ElementUtilities.hasClass(this.appBarEl, _Constants.reducedClass);
+                _ElementUtilities.removeClass(this.appBarEl, _Constants.reducedClass);
 
                 var hadHiddenClass = WinJS.Utilities.hasClass(this.appBarEl, "win-hidden");
                 WinJS.Utilities.removeClass(this.appBarEl, "win-hidden");
@@ -435,15 +433,15 @@
                 this.appBarEl.style.display = "";
                 var prevCommandDisplay;
 
-                var contentElements = this.appBarEl.querySelectorAll("div." + appBarCommandClass);
+                var contentElements = this.appBarEl.querySelectorAll("div." + _Constants.appBarCommandClass);
                 var element;
                 for (var i = 0, len = contentElements.length; i < len; i++) {
                     element = contentElements[i];
-                    if (element.winControl && element.winControl._type === typeContent) {
+                    if (element.winControl && element.winControl._type === _Constants.typeContent) {
                         // Make sure command has width dimensions before we measure.
                         prevCommandDisplay = element.style.display;
                         element.style.display = "";
-                        element.winControl._fullSizeWidth = WinJS.Utilities.getTotalWidth(element) || 0;
+                        element.winControl._fullSizeWidth = _ElementUtilities.getTotalWidth(element) || 0;
                         element.style.display = prevCommandDisplay;
                     }
                 }
@@ -451,7 +449,7 @@
                 // Restore state to AppBar.
                 this.appBarEl.style.display = prevAppBarDisplay;
                 if (hadReducedClass) {
-                    WinJS.Utilities.addClass(this.appBarEl, reducedClass);
+                    _ElementUtilities.addClass(this.appBarEl, _Constants.reducedClass);
                 }
                 if (hadHiddenClass) {
                     WinJS.Utilities.addClass(this.appBarEl, "win-hidden");
@@ -460,6 +458,5 @@
                 this.commandsUpdated();
             }
         },
-    }
-})(WinJS);
-
+    };
+});

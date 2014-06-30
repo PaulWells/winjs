@@ -1,7 +1,11 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 // Glyph Enumeration
 /// <dictionary>Segoe</dictionary>
-(function appBarIconInit(WinJS) {
+define([
+     'exports',
+     '../../Core/_Base',
+     '../../Core/_Resources'
+     ], function appBarIconInit(exports, _Base, _Resources) {
     "use strict";
 
     var glyphs = ["previous",
@@ -205,9 +209,10 @@
     /// <summary locid="WinJS.UI.AppBarIcon">
     /// The AppBarIcon enumeration provides a set of glyphs for use with the AppBarCommand icon property.
     /// </summary>
-    WinJS.Namespace.define("WinJS.UI.AppBarIcon",
-        glyphs.reduce(function (fixedIcons, item) {
-            fixedIcons[item] = { get: function () { return WinJS.Resources._getWinJSString("ui/appBarIcons/" + item).value; } };
-            return fixedIcons;
-        }, {}));
-})(WinJS);
+    var icons = glyphs.reduce(function (fixedIcons, item) {
+       fixedIcons[item] = { get: function () { return _Resources._getWinJSString("ui/appBarIcons/" + item).value; } };
+       return fixedIcons;
+     }, {});
+
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI.AppBarIcon", icons);
+});

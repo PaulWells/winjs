@@ -1,11 +1,15 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function itemsContainerInit(global, WinJS, undefined) {
+define([
+    'exports',
+    '../../Core/_Base',
+    '../../Promise',
+    '../../Utilities/_ElementUtilities',
+    '../ItemContainer/_Constants'
+    ], function itemsContainerInit(exports, _Base, Promise, _ElementUtilities, _Constants) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
-        _ItemsContainer: WinJS.Namespace._lazy(function () {
-            var utilities = WinJS.Utilities,
-                Promise = WinJS.Promise;
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        _ItemsContainer: _Base.Namespace._lazy(function () {
 
             var _ItemsContainer = function (site) {
                 this.site = site;
@@ -84,7 +88,7 @@
                 },
 
                 itemBoxFrom: function ItemsContainer_containerFrom(element) {
-                    while (element && !utilities.hasClass(element, WinJS.UI._itemBoxClass)) {
+                    while (element && !_ElementUtilities.hasClass(element, _Constants._itemBoxClass)) {
                         element = element.parentNode;
                     }
 
@@ -92,7 +96,7 @@
                 },
 
                 containerFrom: function ItemsContainer_containerFrom(element) {
-                    while (element && !utilities.hasClass(element, WinJS.UI._containerClass)) {
+                    while (element && !_ElementUtilities.hasClass(element, _Constants._containerClass)) {
                         element = element.parentNode;
                     }
 
@@ -109,7 +113,7 @@
                         }
                     }
 
-                    return WinJS.UI._INVALID_INDEX;
+                    return _Constants._INVALID_INDEX;
                 },
 
                 each: function ItemsContainer_each(callback) {
@@ -137,4 +141,4 @@
         })
     });
 
-})(this, WinJS);
+});

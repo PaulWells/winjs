@@ -1,8 +1,21 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function pivotItemInit(global, WinJS, undefined) {
+define([
+    'exports',
+    '../../Core/_Base',
+    '../../Core/_BaseUtils',
+    '../../Core/_ErrorFromName',
+    '../../Core/_Resources',
+    '../../ControlProcessor',
+    '../../Promise',
+    '../../Scheduler',
+    '../../Utilities/_Control',
+    '../../Utilities/_Dispose',
+    '../../Utilities/_ElementUtilities',
+    './_Constants'
+    ], function pivotItemInit(exports, _Base, _BaseUtils, _ErrorFromName, _Resources, ControlProcessor, Promise, Scheduler, _Control, _Dispose, _ElementUtilities, _Constants) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
         /// <field>
         /// <summary locid="WinJS.UI.PivotItem">
         /// Defines a Item of a Pivot control. 
@@ -17,12 +30,12 @@
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/base.js" shared="true" />
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/ui.js" shared="true" />
         /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
-        PivotItem: WinJS.Namespace._lazy(function () {
+        PivotItem: _Base.Namespace._lazy(function () {
             var strings = {
-                get duplicateConstruction() { return WinJS.Resources._getWinJSString("ui/duplicateConstruction").value; }
+                get duplicateConstruction() { return _Resources._getWinJSString("ui/duplicateConstruction").value; }
             };
 
-            return WinJS.Class.define(function PivotItem_ctor(element, options) {
+            var PivotItem = _Base.Class.define(function PivotItem_ctor(element, options) {
                 /// <signature helpKeyword="WinJS.UI.PivotItem.PivotItem">
                 /// <summary locid="WinJS.UI.PivotItem.constructor">
                 /// Creates a new PivotItem.
@@ -43,18 +56,18 @@
                 options = options || {};
 
                 if (element.winControl) {
-                    throw new WinJS.ErrorFromName("WinJS.UI.PivotItem.DuplicateConstruction", strings.duplicateConstruction);
+                    throw new _ErrorFromName("WinJS.UI.PivotItem.DuplicateConstruction", strings.duplicateConstruction);
                 }
 
                 // Attaching JS control to DOM element
                 element.winControl = this;
                 this._element = element;
-                WinJS.Utilities.addClass(this.element, WinJS.UI.PivotItem._ClassName.pivotItem);
-                WinJS.Utilities.addClass(this.element, "win-disposable");
+                _ElementUtilities.addClass(this.element, PivotItem._ClassName.pivotItem);
+                _ElementUtilities.addClass(this.element, "win-disposable");
                 this._element.setAttribute('role', 'tabpanel');
 
                 this._contentElement = document.createElement("DIV");
-                this._contentElement.className = WinJS.UI.PivotItem._ClassName.pivotItemContent;
+                this._contentElement.className = PivotItem._ClassName.pivotItemContent;
                 element.appendChild(this._contentElement);
 
                 // Reparent any existing elements inside the new pivot item content element.
@@ -65,9 +78,9 @@
                     elementToMove = nextElement;
                 }
 
-                this._processors = [WinJS.UI.processAll];
+                this._processors = [ControlProcessor.processAll];
 
-                WinJS.UI.setOptions(this, options);
+                _Control.setOptions(this, options);
             }, {
                 /// <field type="HTMLElement" domElement="true" hidden="true" locid="WinJS.UI.PivotItem.element" helpKeyword="WinJS.UI.PivotItem.element">
                 /// Gets the DOM element that hosts the PivotItem.
@@ -104,7 +117,7 @@
                 _parentPivot: {
                     get: function () {
                         var el = this._element;
-                        while (el && !WinJS.Utilities.hasClass(el, WinJS.UI.Pivot._ClassName.pivot)) {
+                        while (el && !_ElementUtilities.hasClass(el, _Constants._ClassName.pivot)) {
                             el = el.parentNode;
                         }
                         return el && el.winControl;
@@ -115,7 +128,7 @@
 
                     if (this._processors) {
                         this._processors.push(function () {
-                            return WinJS.Utilities.Scheduler.schedulePromiseAboveNormal();
+                            return Scheduler.schedulePromiseAboveNormal();
                         });
                     }
 
@@ -123,7 +136,7 @@
                         return promise.then(function () {
                             return processor(that.contentElement);
                         });
-                    }, this._processed || WinJS.Promise.as());
+                    }, this._processed || Promise.as());
                     this._processors = null;
 
                     return this._processed;
@@ -141,7 +154,7 @@
                     this._disposed = true;
                     this._processors = null;
 
-                    WinJS.Utilities.disposeSubTree(this.contentElement);
+                    _Dispose.disposeSubTree(this.contentElement);
                 }
             }, {
                 // Names of classes used by the PivotItem.
@@ -149,8 +162,8 @@
                     pivotItem: "win-pivot-item",
                     pivotItemContent: "win-pivot-item-content"
                 },
-                isDeclarativeControlContainer: WinJS.Utilities.markSupportedForProcessing(function (item, callback) {
-                    if (callback === WinJS.UI.processAll) {
+                isDeclarativeControlContainer: _BaseUtils.markSupportedForProcessing(function (item, callback) {
+                    if (callback === ControlProcessor.processAll) {
                         return;
                     }
 
@@ -163,7 +176,9 @@
                     }
                 })
             });
+
+            return PivotItem;
         })
     });
 
-})(this, WinJS);
+});

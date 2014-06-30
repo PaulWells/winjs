@@ -1,12 +1,18 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function elementUtilities(global, WinJS, undefined) {
+define([
+    'exports',
+    '../Core/_Global',
+    '../Core/_Base',
+    '../Core/_BaseUtils',
+    '../Scheduler'
+    ], function elementUtilities(exports, _Global, _Base, _BaseUtils, Scheduler) {
     "use strict";
 
     // not supported in WebWorker
-    if (!global.document) {
+    if (!_Global.document) {
         return;
     }
-    
+
     var zoomToDuration = 167;
 
     function removeEmpties(arr) {
@@ -22,7 +28,7 @@
 
     function getClassName(e) {
         var name = e.className || "";
-        if (typeof (name) == "string") {
+        if (typeof (name) === "string") {
             return name;
         }
         else {
@@ -34,7 +40,7 @@
         // so this logic makes the comparison a bit more compact.
         //
         var name = e.className || "";
-        if (typeof (name) == "string") {
+        if (typeof (name) === "string") {
             e.className = value;
         }
         else {
@@ -42,11 +48,241 @@
         }
         return e;
     }
-    function getDimension(element, property) {
-        return WinJS.Utilities.convertToPixels(element, window.getComputedStyle(element, null)[property]);
+    function addClass(e, name) {
+        /// <signature helpKeyword="WinJS.Utilities.addClass">
+        /// <summary locid="WinJS.Utilities.addClass">
+        /// Adds the specified class(es) to the specified element. Multiple classes can be added using space delimited names.
+        /// </summary>
+        /// <param name="e" type="HTMLElement" locid="WinJS.Utilities.addClass_p:e">
+        /// The element to which to add the class.
+        /// </param>
+        /// <param name="name" type="String" locid="WinJS.Utilities.addClass_p:name">
+        /// The name of the class to add, multiple classes can be added using space delimited names
+        /// </param>
+        /// <returns type="HTMLElement" locid="WinJS.Utilities.addClass_returnValue">
+        /// The element.
+        /// </returns>
+        /// </signature>
+        if(e.classList) {
+            // Fastpath: adding a single class, no need to string split the argument
+            if(name.indexOf(" ") < 0) {
+                e.classList.add(name);
+            } else {
+                var namesToAdd = name.split(" ");
+                removeEmpties(namesToAdd);
+
+                for (var i = 0, len = namesToAdd.length; i < len; i++) {
+                    e.classList.add(namesToAdd[i]);
+                }
+            }
+            return e;
+        } else {
+            var className = getClassName(e);
+            var names = className.split(" ");
+            var l = removeEmpties(names);
+            var toAdd;
+
+            // we have a fast path for the common case of a single name in the class name
+            //
+            if (name.indexOf(" ") >= 0) {
+                var namesToAdd = name.split(" ");
+                removeEmpties(namesToAdd);
+                for (var i = 0; i < l; i++) {
+                    var found = namesToAdd.indexOf(names[i]);
+                    if (found >= 0) {
+                        namesToAdd.splice(found, 1);
+                    }
+                }
+                if (namesToAdd.length > 0) {
+                    toAdd = namesToAdd.join(" ");
+                }
+            }
+            else {
+                var saw = false;
+                for (var i = 0; i < l; i++) {
+                    if (names[i] === name) {
+                        saw = true;
+                        break;
+                    }
+                }
+                if (!saw) { toAdd = name; }
+
+            }
+            if (toAdd) {
+                if (l > 0 && names[0].length > 0) {
+                    setClassName(e, className + " " + toAdd);
+                }
+                else {
+                    setClassName(e, toAdd);
+                }
+            }
+            return e;
+        }
+    }
+    function removeClass(e, name) {
+        /// <signature helpKeyword="WinJS.Utilities.removeClass">
+        /// <summary locid="WinJS.Utilities.removeClass">
+        /// Removes the specified class from the specified element.
+        /// </summary>
+        /// <param name="e" type="HTMLElement" locid="WinJS.Utilities.removeClass_p:e">
+        /// The element from which to remove the class.
+        /// </param>
+        /// <param name="name" type="String" locid="WinJS.Utilities.removeClass_p:name">
+        /// The name of the class to remove.
+        /// </param>
+        /// <returns type="HTMLElement" locid="WinJS.Utilities.removeClass_returnValue">
+        /// The element.
+        /// </returns>
+        /// </signature>
+        if(e.classList) {
+
+            // Fastpath: Nothing to remove
+            if(e.classList.length === 0) {
+                return e;
+            }
+            var namesToRemove = name.split(" ");
+            removeEmpties(namesToRemove);
+
+            for (var i = 0, len = namesToRemove.length; i < len; i++) {
+                e.classList.remove(namesToRemove[i]);
+            }
+            return e;
+        } else {
+            var original = getClassName(e);
+            var namesToRemove;
+            var namesToRemoveLen;
+
+            if (name.indexOf(" ") >= 0) {
+                namesToRemove = name.split(" ");
+                namesToRemoveLen = removeEmpties(namesToRemove);
+            }
+            else {
+                // early out for the case where you ask to remove a single
+                // name and that name isn't found.
+                //
+                if (original.indexOf(name) < 0) {
+                    return e;
+                }
+                namesToRemove = [name];
+                namesToRemoveLen = 1;
+            }
+            var removed;
+            var names = original.split(" ");
+            var namesLen = removeEmpties(names);
+
+            for (var i = namesLen - 1; i >= 0; i--) {
+                if (namesToRemove.indexOf(names[i]) >= 0) {
+                    names.splice(i, 1);
+                    removed = true;
+                }
+            }
+
+            if (removed) {
+                setClassName(e, names.join(" "));
+            }
+            return e;
+        }
+    }
+    function toggleClass(e, name) {
+        /// <signature helpKeyword="WinJS.Utilities.toggleClass">
+        /// <summary locid="WinJS.Utilities.toggleClass">
+        /// Toggles (adds or removes) the specified class on the specified element.
+        /// If the class is present, it is removed; if it is absent, it is added.
+        /// </summary>
+        /// <param name="e" type="HTMLElement" locid="WinJS.Utilities.toggleClass_p:e">
+        /// The element on which to toggle the class.
+        /// </param>
+        /// <param name="name" type="String" locid="WinJS.Utilities.toggleClass_p:name">
+        /// The name of the class to toggle.
+        /// </param>
+        /// <returns type="HTMLElement" locid="WinJS.Utilities.toggleClass_returnValue">
+        /// The element.
+        /// </returns>
+        /// </signature>
+        if(e.classList) {
+            e.classList.toggle(name);
+            return e;
+        } else {
+            var className = getClassName(e);
+            var names = className.trim().split(" ");
+            var l = names.length;
+            var found = false;
+            for (var i = 0; i < l; i++) {
+                if (names[i] === name) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                if (l > 0 && names[0].length > 0) {
+                    setClassName(e, className + " " + name);
+                }
+                else {
+                    setClassName(e, className + name);
+                }
+            }
+            else {
+                setClassName(e, names.reduce(function (r, e) {
+                    if (e === name) {
+                        return r;
+                    }
+                    else if (r && r.length > 0) {
+                        return r + " " + e;
+                    }
+                    else {
+                        return e;
+                    }
+                }, ""));
+            }
+            return e;
+        }
     }
 
-    var _MSGestureEvent = global.MSGestureEvent || {
+    // Only set the attribute if its value has changed
+    function setAttribute(element, attribute, value) {
+        if (element.getAttribute(attribute) !== "" + value) {
+            element.setAttribute(attribute, value);
+        }
+    }
+
+    function _clamp(value, lowerBound, upperBound, defaultValue) {
+        var n = Math.max(lowerBound, Math.min(upperBound, +value));
+        return n === 0 ? 0 : n || Math.max(lowerBound, Math.min(upperBound, defaultValue));
+    }
+    var _pixelsRE = /^-?\d+\.?\d*(px)?$/i;
+    var _numberRE = /^-?\d+/i;
+    function convertToPixels(element, value) {
+        /// <signature helpKeyword="WinJS.Utilities.convertToPixels">
+        /// <summary locid="WinJS.Utilities.convertToPixels">
+        /// Converts a CSS positioning string for the specified element to pixels.
+        /// </summary>
+        /// <param name="element" type="HTMLElement" locid="WinJS.Utilities.convertToPixels_p:element">
+        /// The element.
+        /// </param>
+        /// <param name="value" type="String" locid="WinJS.Utilities.convertToPixels_p:value">
+        /// The CSS positioning string.
+        /// </param>
+        /// <returns type="Number" locid="WinJS.Utilities.convertToPixels_returnValue">
+        /// The number of pixels.
+        /// </returns>
+        /// </signature>
+        if (!_pixelsRE.test(value) && _numberRE.test(value)) {
+            var previousValue = element.style.left;
+
+            element.style.left = value;
+            value = element.style.pixelLeft;
+
+            element.style.left = previousValue;
+
+            return value;
+        } else {
+            return Math.round(parseFloat(value)) || 0;
+        }
+    }
+    function getDimension(element, property) {
+        return convertToPixels(element, _Global.getComputedStyle(element, null)[property]);
+    }
+
+    var _MSGestureEvent = _Global.MSGestureEvent || {
         MSGESTURE_FLAG_BEGIN: 1,
         MSGESTURE_FLAG_CANCEL: 4,
         MSGESTURE_FLAG_END: 2,
@@ -54,7 +290,7 @@
         MSGESTURE_FLAG_NONE: 0
     };
 
-    var _MSManipulationEvent = global.MSManipulationEvent || {
+    var _MSManipulationEvent = _Global.MSManipulationEvent || {
         MS_MANIPULATION_STATE_ACTIVE: 1,
         MS_MANIPULATION_STATE_CANCELLED: 6,
         MS_MANIPULATION_STATE_COMMITTED: 7,
@@ -65,7 +301,7 @@
         MS_MANIPULATION_STATE_STOPPED: 0
     };
 
-    var _MSPointerEvent = global.MSPointerEvent || {
+    var _MSPointerEvent = _Global.MSPointerEvent || {
         MSPOINTER_TYPE_TOUCH: "touch",
         MSPOINTER_TYPE_PEN: "pen",
         MSPOINTER_TYPE_MOUSE: "mouse",
@@ -137,7 +373,7 @@
     }
 
     var activeElement = null;
-    global.addEventListener("blur", function (eventObject) {
+    _Global.addEventListener("blur", function (eventObject) {
         // Fires focusout when focus move to another window or into an iframe.
         var previousActiveElement = activeElement;
         if (previousActiveElement) {
@@ -184,6 +420,13 @@
         var changedTouches = eventObject.changedTouches,
             retVal = null;
 
+        // Event object properties are not writable and Firefox throws
+        // exceptions when we try to set these properties. We can make them
+        // writable using defineProperty
+        Object.defineProperty(eventObject, "screenX", {writable: true});
+        Object.defineProperty(eventObject, "screenY", {writable: true});
+        Object.defineProperty(eventObject, "clientX", {writable: true});
+        Object.defineProperty(eventObject, "clientY", {writable: true});
         for (var i = 0, len = changedTouches.length; i < len; i++) {
             var touchObject = changedTouches[i];
             eventObject.pointerType = _MSPointerEvent.MSPOINTER_TYPE_TOUCH;
@@ -192,8 +435,6 @@
             eventObject.screenY = touchObject.screenY;
             eventObject.clientX = touchObject.clientX;
             eventObject.clientY = touchObject.clientY;
-            eventObject.pageX = touchObject.pageX;
-            eventObject.pageY = touchObject.pageY;
             eventObject.radiusX = touchObject.radiusX;
             eventObject.radiusY = touchObject.radiusY;
             eventObject.rotationAngle = touchObject.rotationAngle;
@@ -265,8 +506,8 @@
         var touchHandled;
 
         // If we are in IE10, we should use MSPointer as it provides a better interface than touch events
-        if (global.MSPointerEvent) {
-            mspointerWrapper = function(eventObject) {
+        if (_Global.MSPointerEvent) {
+                mspointerWrapper = function (eventObject) {
                 eventObject._normalizedType = eventNameLowercase;
                 touchHandled = true;
                 return mspointerEventTranslator(callback, eventObject);
@@ -281,7 +522,7 @@
                         return mouseEventTranslator(callback, eventObject);
                     }
                     touchHandled = false;
-                }
+                };
                 element.addEventListener(translations.mouse, mouseWrapper, capture);
             }
             if (translations.touch) {
@@ -289,7 +530,7 @@
                     eventObject._normalizedType = eventNameLowercase;
                     touchHandled = true;
                     return touchEventTranslator(callback, eventObject);
-                }
+                };
                 element.addEventListener(translations.touch, touchWrapper, capture);
             }
         }
@@ -332,7 +573,7 @@
             unregister: removeListenerFromEventMap
         }
     };
-    if (!global.PointerEvent) {
+    if (!_Global.PointerEvent) {
         var pointerEventEntry = {
             register: registerPointerEvent,
             unregister: unregisterPointerEvent
@@ -350,7 +591,7 @@
     // The MutationObserverShim only supports the following configuration:
     //  attributes
     //  attributeFilter
-    var MutationObserverShim = WinJS.Class.define(
+    var MutationObserverShim = _Base.Class.define(
         function MutationObserverShim_ctor(callback) {
             this._callback = callback;
             this._toDispose = [];
@@ -363,27 +604,27 @@
         },
         {
             observe: function MutationObserverShim_observe(element, configuration) {
-                if(this._targetElements.indexOf(element) === -1) {
+                    if (this._targetElements.indexOf(element) === -1) {
                     this._targetElements.push(element);
                 }
                 this._observerCount++;
-                if(configuration.attributes) {
+                    if (configuration.attributes) {
                     this._addRemovableListener(element, "DOMAttrModified", this._handleCallback);
                 }
-                if(configuration.attributeFilter) {
+                    if (configuration.attributeFilter) {
                     this._attributeFilter = configuration.attributeFilter;
                 }
             },
             disconnect: function MutationObserverShim_disconnect() {
                 this._observerCount = 0;
                 this._targetElements = [];
-                this._toDispose.forEach(function(disposeFunc) {
+                    this._toDispose.forEach(function (disposeFunc) {
                     disposeFunc();
                 });
             },
             _addRemovableListener: function MutationObserverShim_addRemovableListener(target, event, listener) {
                 target.addEventListener(event, listener);
-                this._toDispose.push(function() {
+                    this._toDispose.push(function () {
                     target.removeEventListener(event, listener);
                 });
             },
@@ -392,19 +633,19 @@
                 // prevent multiple events from firing when nesting observers
                 evt.stopPropagation();
 
-                if(this._attributeFilter.length && this._attributeFilter.indexOf(evt.attrName) === -1) {
+                    if (this._attributeFilter.length && this._attributeFilter.indexOf(evt.attrName) === -1) {
                     return;
                 }
 
                 // subtree:true is not currently supported
-                if(this._targetElements.indexOf(evt.target) === -1) {
+                    if (this._targetElements.indexOf(evt.target) === -1) {
                     return;
                 }
 
                 var attrName = evt.attrName;
 
                 // DOM mutation events use different naming for this attribute
-                if(attrName === 'tabindex') {
+                    if (attrName === 'tabindex') {
                     attrName = 'tabIndex';
                 }
 
@@ -414,11 +655,11 @@
                     attributeName: attrName
                 });
 
-                if(this._observerCount === 1) {
+                    if (this._observerCount === 1) {
                     this._dispatchEvent();
-                } else if(this._scheduled === false) {
+                    } else if (this._scheduled === false) {
                     this._scheduled = true;
-                    WinJS.Utilities._setImmediate(this._dispatchEvent.bind(this));
+                    _BaseUtils._setImmediate(this._dispatchEvent.bind(this));
                 }
 
             },
@@ -437,7 +678,7 @@
         }
     );
 
-    var _MutationObserver = global.MutationObserver || MutationObserverShim;
+    var _MutationObserver = _Global.MutationObserver || MutationObserverShim;
 
     // Lazily init singleton on first access.
     var _resizeNotifier = null;
@@ -445,30 +686,30 @@
     // Class to provide a global listener for window.onresize events.
     // This keeps individual elements from having to listen to window.onresize
     // and having to dispose themselves to avoid leaks.
-    var ResizeNotifier = WinJS.Class.define(
+    var ResizeNotifier = _Base.Class.define(
         function ElementResizer_ctor() {
-            global.addEventListener("resize", this._handleResize.bind(this));
+            _Global.addEventListener("resize", this._handleResize.bind(this));
         },
         {
             subscribe: function ElementResizer_subscribe(element, handler) {
                 element.addEventListener(this._resizeEvent, handler);
-                WinJS.Utilities.addClass(element, this._resizeClass);
+                addClass(element, this._resizeClass);
             },
             unsubscribe: function ElementResizer_unsubscribe(element, handler) {
-                WinJS.Utilities.removeClass(element, this._resizeClass);
+                removeClass(element, this._resizeClass);
                 element.removeEventListener(this._resizeEvent, handler);
             },
             _handleResize: function ElementResizer_handleResize() {
                 var resizables = document.querySelectorAll('.' + this._resizeClass);
                 var length = resizables.length;
-                for(var i = 0; i < length; i++) {
+                    for (var i = 0; i < length; i++) {
                     var event = document.createEvent("Event");
                     event.initEvent(this._resizeEvent, false, true);
                     resizables[i].dispatchEvent(event);
                 }
             },
-            _resizeClass: { get: function() { return 'win-element-resize' }},
-            _resizeEvent: { get: function() { return 'WinJSElementResize' }}
+                _resizeClass: { get: function () { return 'win-element-resize' } },
+                _resizeEvent: { get: function () { return 'WinJSElementResize' } }
         }
     );
 
@@ -536,23 +777,130 @@
         }
     }
 
-    var uniqueElementIDCounter = 0;
-    WinJS.Namespace.define("WinJS.Utilities", {
-        _dataKey: "_msDataKey",
-        _pixelsRE: /^-?\d+\.?\d*(px)?$/i,
-        _numberRE: /^-?\d+/i,
+    function getScrollPosition(element) {
+        /// <signature helpKeyword="WinJS.Utilities.getScrollPosition">
+        /// <summary locid="WinJS.Utilities.getScrollPosition">
+        /// Gets the scrollLeft and scrollTop of the specified element, adjusting the scrollLeft to change from browser specific coordinates to logical coordinates when in RTL.
+        /// </summary>
+        /// <param name="element" type="HTMLElement" domElement="true" locid="WinJS.Utilities.getScrollPosition_p:element">
+        /// The element.
+        /// </param>
+        /// <returns type="Object" locid="WinJS.Utilities.getScrollPosition_returnValue">
+        /// An object with two properties: scrollLeft and scrollTop
+        /// </returns>
+        /// </signature>
+        return getAdjustedScrollPosition(element);
+    }
 
-        _uniqueID: function (e) {
-            if (!(e.uniqueID || e._uniqueID)) {
-                e._uniqueID = "element__" + (++uniqueElementIDCounter);
+    function setScrollPosition(element, position) {
+        /// <signature helpKeyword="WinJS.Utilities.setScrollPosition">
+        /// <summary locid="WinJS.Utilities.setScrollPosition">
+        /// Sets the scrollLeft and scrollTop of the specified element, changing the scrollLeft from logical coordinates to browser-specific coordinates when in RTL.
+        /// </summary>
+        /// <param name="element" type="HTMLElement" domElement="true" locid="WinJS.Utilities.setScrollPosition_p:element">
+        /// The element.
+        /// </param>
+        /// <param name="position" type="Object" domElement="true" locid="WinJS.Utilities.setScrollPosition_p:position">
+        /// The element.
+        /// </param>
+        /// </signature>
+        position = position || {};
+        setAdjustedScrollPosition(element, position.scrollLeft, position.scrollTop);
+    }
+
+    var supportsZoomTo = !!HTMLElement.prototype.msZoomTo;
+    var supportsTouchDetection = !!(window.MSPointerEvent || window.TouchEvent);
+
+    // Snap point feature detection is special - On most platforms it is enough to check if 'scroll-snap-type'
+    // is a valid style, however, IE10 and WP IE claim that they are valid styles but don't support them.
+    var supportsSnapPoints = false;
+    var snapTypeStyle = _BaseUtils._browserStyleEquivalents["scroll-snap-type"];
+    if (snapTypeStyle) {
+        if (snapTypeStyle.cssName.indexOf("-ms-") === 0) {
+            // We are on a Microsoft platform, if zoomTo isn't supported then we know we are on IE10 and WP IE.
+            if (supportsZoomTo) {
+                supportsSnapPoints = true;
             }
+        } else {
+            // We are on a non-Microsoft platform, we assume that if the style is valid, it is supported.
+            supportsSnapPoints = true;
+        }
+    }
 
-            return e.uniqueID || e._uniqueID;
-        },
+    var uniqueElementIDCounter = 0;
+
+    function uniqueID(e) {
+        if (!(e.uniqueID || e._uniqueID)) {
+            e._uniqueID = "element__" + (++uniqueElementIDCounter);
+        }
+
+        return e.uniqueID || e._uniqueID;
+    }
+
+    function ensureId(element) {
+        if (!element.id) {
+            element.id = uniqueID(element);
+        }
+    }
+
+    function _getCursorPos(eventObject) {
+        var docElement = document.documentElement;
+        var docScrollPos = getScrollPosition(docElement);
+
+        return {
+            left: eventObject.clientX + (document.body.dir === "rtl" ? -docScrollPos.scrollLeft : docScrollPos.scrollLeft),
+            top: eventObject.clientY + docElement.scrollTop
+        };
+    }
+
+    function _getElementsByClasses(parent, classes) {
+        var retVal = [];
+
+        for (var i = 0, len = classes.length; i < len; i++) {
+            var element = parent.querySelector("." + classes[i]);
+            if (element) {
+                retVal.push(element);
+            }
+        }
+        return retVal;
+    }
+
+    var _selectionPartsSelector = ".win-selectionborder, .win-selectionbackground, .win-selectioncheckmark, .win-selectioncheckmarkbackground";
+    var _dataKey = "_msDataKey";
+    _Base.Namespace._moduleDefine(exports, "WinJS.Utilities", {
+        _dataKey: _dataKey,
+
+            _supportsSnapPoints: {
+                get: function () {
+                    return supportsSnapPoints;
+                }
+            },
+
+            _supportsTouchDetection: {
+                get: function () {
+                    return supportsTouchDetection;
+                }
+            },
+
+            _supportsZoomTo: {
+                get: function () {
+                    return supportsZoomTo;
+                }
+            },
+
+        _uniqueID: uniqueID,
+
+        _ensureId: ensureId,
+
+        _clamp: _clamp,
+
+        _getCursorPos: _getCursorPos,
+
+        _getElementsByClasses : _getElementsByClasses,
 
         _createGestureRecognizer: function () {
-            if (global.MSGesture) {
-                return new MSGesture();
+            if (_Global.MSGesture) {
+                return new _Global.MSGesture();
             }
 
             var doNothing = function () {
@@ -568,11 +916,12 @@
         _MSGestureEvent: _MSGestureEvent,
         _MSManipulationEvent: _MSManipulationEvent,
 
-        _elementsFromPoint: function(x, y) {
+            _elementsFromPoint: function (x, y) {
             if (document.msElementsFromPoint) {
                 return document.msElementsFromPoint(x, y);
             } else {
-                return [document.elementFromPoint(x, y)];
+                var element = document.elementFromPoint(x, y);
+                return element ? [element] : null;
             }
         },
 
@@ -582,6 +931,13 @@
                     || element.mozMatchesSelector
                     || element.webkitMatchesSelector;
             return matchesSelector.call(element, selectorString);
+        },
+
+        _selectionPartsSelector: _selectionPartsSelector,
+
+        _isSelectionRendered: function _isSelectionRendered(itemBox) {
+            // The tree is changed at pointerDown but _selectedClass is added only when the user drags an item below the selection threshold so checking for _selectedClass is not reliable.
+            return itemBox.querySelectorAll(_selectionPartsSelector).length > 0;
         },
 
         _addEventListener: function _addEventListener(element, type, listener, useCapture) {
@@ -624,7 +980,7 @@
         _initMouseEvent: function (event, type) {
             this._initEventImpl.apply(this, ["Mouse", event].concat(Array.prototype.slice.call(arguments, 1)));
         },
-        
+
         _initPointerEvent: function (event, type) {
             this._initEventImpl.apply(this, ["Pointer", event].concat(Array.prototype.slice.call(arguments, 1)));
         },
@@ -652,40 +1008,40 @@
                 // Schedule to ensure that we're not running from within an event handler. For example, if running
                 // within a focus handler triggered by WinJS.Utilities._setActive, scroll position will not yet be
                 // restored.
-                WinJS.Utilities.Scheduler.schedule(function () {
+                Scheduler.schedule(function () {
                     var initialPos = getAdjustedScrollPosition(element);
                     var effectiveScrollLeft = (typeof element._zoomToDestX === "number" ? element._zoomToDestX : initialPos.scrollLeft);
                     var effectiveScrollTop = (typeof element._zoomToDestY === "number" ? element._zoomToDestY : initialPos.scrollTop);
                     var cs = getComputedStyle(element);
                     var scrollLimitX = element.scrollWidth - parseInt(cs.width, 10) - parseInt(cs.paddingLeft, 10) - parseInt(cs.paddingRight, 10);
                     var scrollLimitY = element.scrollHeight - parseInt(cs.height, 10) - parseInt(cs.paddingTop, 10) - parseInt(cs.paddingBottom, 10);
-                    
+
                     if (typeof args.contentX !== "number") {
                         args.contentX = effectiveScrollLeft;
                     }
                     if (typeof args.contentY !== "number") {
                         args.contentY = effectiveScrollTop;
                     }
-                    
-                    var zoomToDestX = WinJS.Utilities._clamp(args.contentX, 0, scrollLimitX);
-                    var zoomToDestY = WinJS.Utilities._clamp(args.contentY, 0, scrollLimitY);
+
+                    var zoomToDestX = _clamp(args.contentX, 0, scrollLimitX);
+                    var zoomToDestY = _clamp(args.contentY, 0, scrollLimitY);
                     if (zoomToDestX === effectiveScrollLeft && zoomToDestY === effectiveScrollTop) {
                         // Scroll position is already in the proper state. This zoomTo is a no-op.
                         return;
                     }
-                    
+
                     element._zoomToId = element._zoomToId || 0;
                     element._zoomToId++;
                     element._zoomToDestX = zoomToDestX;
                     element._zoomToDestY = zoomToDestY;
-                    
+
                     var thisZoomToId = element._zoomToId;
-                    var start = WinJS.Utilities._now();
+                    var start = _BaseUtils._now();
                     var xFactor = (element._zoomToDestX - initialPos.scrollLeft) / zoomToDuration;
                     var yFactor = (element._zoomToDestY - initialPos.scrollTop) / zoomToDuration;
-                    
+
                     var update = function () {
-                        var t = WinJS.Utilities._now() - start;
+                        var t = _BaseUtils._now() - start;
                         if (element._zoomToId !== thisZoomToId) {
                             return;
                         } else if (t > zoomToDuration) {
@@ -697,16 +1053,16 @@
                             requestAnimationFrame(update);
                         }
                     };
-                    
+
                     requestAnimationFrame(update);
-                }, WinJS.Utilities.Scheduler.Priority.high, null, "WinJS.Utilities._zoomTo");
+                }, Scheduler.Priority.high, null, "WinJS.Utilities._zoomTo");
             }
         },
 
         _setActive: function _setActive(element, scroller) {
             var success = true;
             try {
-                if (global.HTMLElement && HTMLElement.prototype.setActive) {
+                if (_Global.HTMLElement && HTMLElement.prototype.setActive) {
                     element.setActive();
                 } else {
                     // We are aware the unlike setActive(), focus() will scroll to the element that gets focus. However, this is
@@ -715,10 +1071,10 @@
                     // This _setActive polyfill does have limited support for preventing scrolling: via the scroller parameter, it
                     // can prevent one scroller from scrolling. This functionality is necessary in some scenarios. For example, when using
                     // _zoomTo and _setActive together.
-                    
+
                     var scrollLeft,
                         scrollTop;
-                    
+
                     if (scroller) {
                         scrollLeft = scroller.scrollLeft;
                         scrollTop = scroller.scrollTop;
@@ -737,14 +1093,33 @@
             return success;
         },
 
-        _MutationObserver : _MutationObserver,
+        _MutationObserver: _MutationObserver,
 
-        _resizeNotifier : {
-            get: function() {
-                if(!_resizeNotifier) {
+        _resizeNotifier: {
+            get: function () {
+                if (!_resizeNotifier) {
                     _resizeNotifier = new ResizeNotifier();
                 }
                 return _resizeNotifier;
+            }
+        },
+
+        // Browser agnostic method to set element flex style
+        // Param is an object in the form {grow: flex-grow, shrink: flex-shrink, basis: flex-basis}
+        // All fields optional
+        _setFlexStyle: function (element, flexParams) {
+            var styleObject = element.style;
+            if (typeof flexParams.grow !== "undefined") {
+                styleObject.msFlexPositive = flexParams.grow;
+                styleObject.flexGrow = flexParams.grow;
+            }
+            if (typeof flexParams.shrink !== "undefined") {
+                styleObject.msFlexNegative = flexParams.shrink;
+                styleObject.flexShrink = flexParams.shrink;
+            }
+            if (typeof flexParams.basis !== "undefined") {
+                styleObject.msFlexPreferredSize = flexParams.basis;
+                styleObject.flexBasis = flexParams.basis;
             }
         },
 
@@ -1275,10 +1650,10 @@
             /// The value associated with the element.
             /// </returns>
             /// </signature>
-            if (!element[WinJS.Utilities._dataKey]) {
-                element[WinJS.Utilities._dataKey] = {};
+            if (!element[_dataKey]) {
+                element[_dataKey] = {};
             }
-            return element[WinJS.Utilities._dataKey];
+            return element[_dataKey];
         },
 
         hasClass: function (e, name) {
@@ -1297,14 +1672,14 @@
             /// </returns>
             /// </signature>
 
-            if(e.classList) {
+                if (e.classList) {
                 return e.classList.contains(name);
             } else {
                 var className = getClassName(e);
                 var names = className.trim().split(" ");
                 var l = names.length;
                 for (var i = 0; i < l; i++) {
-                    if (names[i] == name) {
+                    if (names[i] === name) {
                         return true;
                     }
                 }
@@ -1312,196 +1687,13 @@
             }
         },
 
-        addClass: function (e, name) {
-            /// <signature helpKeyword="WinJS.Utilities.addClass">
-            /// <summary locid="WinJS.Utilities.addClass">
-            /// Adds the specified class(es) to the specified element. Multiple classes can be added using space delimited names.
-            /// </summary>
-            /// <param name="e" type="HTMLElement" locid="WinJS.Utilities.addClass_p:e">
-            /// The element to which to add the class.
-            /// </param>
-            /// <param name="name" type="String" locid="WinJS.Utilities.addClass_p:name">
-            /// The name of the class to add, multiple classes can be added using space delimited names
-            /// </param>
-            /// <returns type="HTMLElement" locid="WinJS.Utilities.addClass_returnValue">
-            /// The element.
-            /// </returns>
-            /// </signature>
-            if(e.classList) {
-                // Fastpath: adding a single class, no need to string split the argument
-                if(name.indexOf(" ") < 0) {
-                    e.classList.add(name);
-                } else {
-                    var namesToAdd = name.split(" ");
-                    removeEmpties(namesToAdd);
+        addClass: addClass,
 
-                    for (var i = 0, len = namesToAdd.length; i < len; i++) {
-                        e.classList.add(namesToAdd[i]);
-                    }
-                }
-                return e;
-            } else {
-                var className = getClassName(e);
-                var names = className.split(" ");
-                var l = removeEmpties(names);
-                var toAdd;
+        removeClass: removeClass,
 
-                // we have a fast path for the common case of a single name in the class name
-                //
-                if (name.indexOf(" ") >= 0) {
-                    var namesToAdd = name.split(" ");
-                    removeEmpties(namesToAdd);
-                    for (var i = 0; i < l; i++) {
-                        var found = namesToAdd.indexOf(names[i])
-                        if (found >= 0) {
-                            namesToAdd.splice(found, 1);
-                        }
-                    }
-                    if (namesToAdd.length > 0) {
-                        toAdd = namesToAdd.join(" ");
-                    }
-                }
-                else {
-                    var saw = false;
-                    for (var i = 0; i < l; i++) {
-                        if (names[i] === name) {
-                            saw = true;
-                            break;
-                        }
-                    }
-                    if (!saw) { toAdd = name; }
+        toggleClass: toggleClass,
 
-                }
-                if (toAdd) {
-                    if (l > 0 && names[0].length > 0) {
-                        setClassName(e, className + " " + toAdd);
-                    }
-                    else {
-                        setClassName(e, toAdd);
-                    }
-                }
-                return e;
-            }
-        },
-
-        removeClass: function (e, name) {
-            /// <signature helpKeyword="WinJS.Utilities.removeClass">
-            /// <summary locid="WinJS.Utilities.removeClass">
-            /// Removes the specified class from the specified element.
-            /// </summary>
-            /// <param name="e" type="HTMLElement" locid="WinJS.Utilities.removeClass_p:e">
-            /// The element from which to remove the class.
-            /// </param>
-            /// <param name="name" type="String" locid="WinJS.Utilities.removeClass_p:name">
-            /// The name of the class to remove.
-            /// </param>
-            /// <returns type="HTMLElement" locid="WinJS.Utilities.removeClass_returnValue">
-            /// The element.
-            /// </returns>
-            /// </signature>
-            if(e.classList) {
-
-                // Fastpath: Nothing to remove
-                if(e.classList.length === 0) {
-                    return e;
-                }
-                var namesToRemove = name.split(" ");
-                removeEmpties(namesToRemove);
-
-                for (var i = 0, len = namesToRemove.length; i < len; i++) {
-                    e.classList.remove(namesToRemove[i]);
-                }
-                return e;
-            } else {
-                var original = getClassName(e);
-                var namesToRemove;
-                var namesToRemoveLen;
-
-                if (name.indexOf(" ") >= 0) {
-                    namesToRemove = name.split(" ");
-                    namesToRemoveLen = removeEmpties(namesToRemove);
-                }
-                else {
-                    // early out for the case where you ask to remove a single
-                    // name and that name isn't found.
-                    //
-                    if (original.indexOf(name) < 0) {
-                        return e;
-                    }
-                    namesToRemove = [name];
-                    namesToRemoveLen = 1;
-                }
-                var removed;
-                var names = original.split(" ");
-                var namesLen = removeEmpties(names);
-
-                for (var i = namesLen - 1; i >= 0; i--) {
-                    if (namesToRemove.indexOf(names[i]) >= 0) {
-                        names.splice(i, 1);
-                        removed = true;
-                    }
-                }
-
-                if (removed) {
-                    setClassName(e, names.join(" "));
-                }
-                return e;
-            }
-        },
-
-        toggleClass: function (e, name) {
-            /// <signature helpKeyword="WinJS.Utilities.toggleClass">
-            /// <summary locid="WinJS.Utilities.toggleClass">
-            /// Toggles (adds or removes) the specified class on the specified element.
-            /// If the class is present, it is removed; if it is absent, it is added.
-            /// </summary>
-            /// <param name="e" type="HTMLElement" locid="WinJS.Utilities.toggleClass_p:e">
-            /// The element on which to toggle the class.
-            /// </param>
-            /// <param name="name" type="String" locid="WinJS.Utilities.toggleClass_p:name">
-            /// The name of the class to toggle.
-            /// </param>
-            /// <returns type="HTMLElement" locid="WinJS.Utilities.toggleClass_returnValue">
-            /// The element.
-            /// </returns>
-            /// </signature>
-            if(e.classList) {
-                e.classList.toggle(name);
-                return e;
-            } else {
-                var className = getClassName(e);
-                var names = className.trim().split(" ");
-                var l = names.length;
-                var found = false;
-                for (var i = 0; i < l; i++) {
-                    if (names[i] == name) {
-                        found = true;
-                    }
-                }
-                if (!found) {
-                    if (l > 0 && names[0].length > 0) {
-                        setClassName(e, className + " " + name);
-                    }
-                    else {
-                        setClassName(e, className + name);
-                    }
-                }
-                else {
-                    setClassName(e, names.reduce(function (r, e) {
-                        if (e == name) {
-                            return r;
-                        }
-                        else if (r && r.length > 0) {
-                            return r + " " + e;
-                        }
-                        else {
-                            return e;
-                        }
-                    }, ""));
-                }
-                return e;
-            }
-        },
+        _setAttribute: setAttribute,
 
         getRelativeLeft: function (element, parent) {
             /// <signature helpKeyword="WinJS.Utilities.getRelativeLeft">
@@ -1527,8 +1719,9 @@
             while (e) {
                 left -= e.offsetLeft;
 
-                if (e === parent)
+                if (e === parent) {
                     break;
+                }
                 e = e.parentNode;
             }
 
@@ -1559,44 +1752,18 @@
             while (e) {
                 top -= e.offsetTop;
 
-                if (e === parent)
+                if (e === parent) {
                     break;
+                }
                 e = e.parentNode;
             }
 
             return top;
         },
 
-        getScrollPosition: function (element) {
-            /// <signature helpKeyword="WinJS.Utilities.getScrollPosition">
-            /// <summary locid="WinJS.Utilities.getScrollPosition">
-            /// Gets the scrollLeft and scrollTop of the specified element, adjusting the scrollLeft to change from browser specific coordinates to logical coordinates when in RTL.
-            /// </summary>
-            /// <param name="element" type="HTMLElement" domElement="true" locid="WinJS.Utilities.getScrollPosition_p:element">
-            /// The element.
-            /// </param>
-            /// <returns type="Object" locid="WinJS.Utilities.getScrollPosition_returnValue">
-            /// An object with two properties: scrollLeft and scrollTop
-            /// </returns>
-            /// </signature>
-            return getAdjustedScrollPosition(element);
-        },
+        getScrollPosition: getScrollPosition,
 
-        setScrollPosition: function (element, position) {
-            /// <signature helpKeyword="WinJS.Utilities.setScrollPosition">
-            /// <summary locid="WinJS.Utilities.setScrollPosition">
-            /// Sets the scrollLeft and scrollTop of the specified element, changing the scrollLeft from logical coordinates to browser-specific coordinates when in RTL.
-            /// </summary>
-            /// <param name="element" type="HTMLElement" domElement="true" locid="WinJS.Utilities.setScrollPosition_p:element">
-            /// The element.
-            /// </param>
-            /// <param name="position" type="Object" domElement="true" locid="WinJS.Utilities.setScrollPosition_p:position">
-            /// The element.
-            /// </param>
-            /// </signature>
-            position = position || {};
-            setAdjustedScrollPosition(element, position.scrollLeft, position.scrollTop);
-        },
+        setScrollPosition: setScrollPosition,
 
         empty: function (element) {
             /// <signature helpKeyword="WinJS.Utilities.empty">
@@ -1760,34 +1927,7 @@
             return parseInt(tabIndex, 10);
         },
 
-        convertToPixels: function (element, value) {
-            /// <signature helpKeyword="WinJS.Utilities.convertToPixels">
-            /// <summary locid="WinJS.Utilities.convertToPixels">
-            /// Converts a CSS positioning string for the specified element to pixels.
-            /// </summary>
-            /// <param name="element" type="HTMLElement" locid="WinJS.Utilities.convertToPixels_p:element">
-            /// The element.
-            /// </param>
-            /// <param name="value" type="String" locid="WinJS.Utilities.convertToPixels_p:value">
-            /// The CSS positioning string.
-            /// </param>
-            /// <returns type="Number" locid="WinJS.Utilities.convertToPixels_returnValue">
-            /// The number of pixels.
-            /// </returns>
-            /// </signature>
-            if (!this._pixelsRE.test(value) && this._numberRE.test(value)) {
-                var previousValue = element.style.left;
-
-                element.style.left = value;
-                value = element.style.pixelLeft;
-
-                element.style.left = previousValue;
-
-                return value;
-            } else {
-                return Math.round(parseFloat(value, 10)) || 0;
-            }
-        },
+        convertToPixels: convertToPixels,
 
         eventWithinElement: function (element, event) {
             /// <signature helpKeyword="WinJS.Utilities.eventWithinElement">
@@ -1812,4 +1952,4 @@
             return false;
         }
     });
-})(this, WinJS);
+});

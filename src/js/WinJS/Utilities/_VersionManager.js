@@ -1,11 +1,15 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function versionManagerInit(global) {
+define([
+    'exports',
+    '../Core/_Base',
+    '../_Signal'
+    ], function versionManagerInit(exports, _Base, _Signal) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
-        _VersionManager: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.define(function _VersionManager_ctor() {
-                this._unlocked = new WinJS._Signal();
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        _VersionManager: _Base.Namespace._lazy(function () {
+            return _Base.Class.define(function _VersionManager_ctor() {
+                this._unlocked = new _Signal();
                 this._unlocked.complete();
             }, {
                 _cancelCount: 0,
@@ -50,7 +54,7 @@
                 _checkLocked: function () {
                     if (!this.locked) {
                         this._dispose();
-                        this._unlocked = new WinJS._Signal();
+                        this._unlocked = new _Signal();
                     }
                 },
                 _checkUnlocked: function () {
@@ -85,5 +89,5 @@
         })
     });
 
-})();
+});
 

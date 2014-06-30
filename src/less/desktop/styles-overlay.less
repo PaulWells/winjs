@@ -63,11 +63,6 @@ button.win-command:focus {
     outline: none;
 }
 
-button.win-command::-moz-focus-inner {
-    padding: 0px;
-    border: 0px;
-}
-
 
 /*
 Command button icons.
@@ -259,7 +254,7 @@ AppBar
     &.win-hiding .win-ellipsis, 
     &.win-hidden .win-ellipsis {
         width: 100%;
-    }
+}
 
     .win-ellipsis {
         width: 40px;
@@ -318,28 +313,28 @@ AppBar commands layout
     #flex > .align-items(flex-start);
 
     .win-primarygroup {
-        #flex > .order(2);
-        #flex > .display-inline-flex();
-        #flex > .flex(1; 1; auto);
-        #flex > .flex-direction(row);
-        #flex > .flex-wrap(wrap);
-        #flex > .justify-content(flex-end);
-        #flex > .align-items(flex-start);
-    }
+    #flex > .order(2);
+    #flex > .display-inline-flex();
+    #flex > .flex(1; 1; auto);
+    #flex > .flex-direction(row);
+    #flex > .flex-wrap(wrap);
+    #flex > .justify-content(flex-end);
+    #flex > .align-items(flex-start);
+}
 
     .win-secondarygroup {
-        #flex > .order(1);
-        #flex > .display-inline-flex();
-        #flex > .flex(1; 1; auto);
-        #flex > .flex-direction(row);
-        #flex > .flex-wrap(wrap);
-        #flex > .justify-content(flex-start);
-        #flex > .align-items(flex-start);
-    }
+    #flex > .order(1);
+    #flex > .display-inline-flex();
+    #flex > .flex(1; 1; auto);
+    #flex > .flex-direction(row);
+    #flex > .flex-wrap(wrap);
+    #flex > .justify-content(flex-start);
+    #flex > .align-items(flex-start);
+}
 
     .win-command {
-        #flex > .flex(0; 0; auto);
-    }
+    #flex > .flex(0; 0; auto);
+}
 }
 
 /* CommandsLayout RTL */
@@ -347,12 +342,12 @@ AppBar commands layout
     #flex > .flex-direction(row-reverse);
 
     .win-primarygroup {
-        #flex > .flex-direction(row-reverse);
-    }
+    #flex > .flex-direction(row-reverse);
+}
 
     .win-secondarygroup {
-        #flex > .flex-direction(row-reverse);
-    }
+    #flex > .flex-direction(row-reverse);
+}
 }
 
 /* Narrow buttons and no labels */
@@ -375,7 +370,7 @@ AppBar commands layout
     margin-right: 9px;
 }
 
-.win-reduced hr.win-command:-ms-lang(@{rtl}) {
+    .win-reduced hr.win-command:-ms-lang(@{rtl}) {
     margin-left: 9px;
     margin-right: 10px;
 }

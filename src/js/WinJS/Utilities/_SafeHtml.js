@@ -1,5 +1,11 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function safeHTMLInit(global, undefined) {
+define([
+    'exports',
+    '../Core/_Global',
+    '../Core/_Base',
+    '../Core/_ErrorFromName',
+    '../Core/_Resources'
+    ], function safeHTMLInit(exports, _Global, _Base, _ErrorFromName, _Resources) {
     "use strict";
 
 
@@ -11,7 +17,7 @@
         insertAdjacentHTMLUnsafe;
 
     var strings = {
-        get nonStaticHTML() { return WinJS.Resources._getWinJSString("base/nonStaticHTML").value; },
+        get nonStaticHTML() { return _Resources._getWinJSString("base/nonStaticHTML").value; },
     };
 
     setInnerHTML = setInnerHTMLUnsafe = function (element, text) {
@@ -60,7 +66,7 @@
         element.insertAdjacentHTML(position, text);
     };
 
-    var msApp = global.MSApp;
+    var msApp = _Global.MSApp;
     if (msApp) {
         setInnerHTMLUnsafe = function (element, text) {
             /// <signature helpKeyword="WinJS.Utilities.setInnerHTMLUnsafe">
@@ -116,12 +122,12 @@
             });
         };
     }
-    else if (global.msIsStaticHTML) {
+    else if (_Global.msIsStaticHTML) {
         var check = function (str) {
-            if (!global.msIsStaticHTML(str)) {
-                throw new WinJS.ErrorFromName("WinJS.Utitilies.NonStaticHTML", strings.nonStaticHTML);
+            if (!_Global.msIsStaticHTML(str)) {
+                throw new _ErrorFromName("WinJS.Utitilies.NonStaticHTML", strings.nonStaticHTML);
             }
-        }
+        };
         // If we ever get isStaticHTML we can attempt to recreate the behavior we have in the local
         // compartment, in the mean-time all we can do is sanitize the input.
         //
@@ -178,7 +184,7 @@
         };
     }
 
-    WinJS.Namespace.define("WinJS.Utilities", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.Utilities", {
         setInnerHTML: setInnerHTML,
         setInnerHTMLUnsafe: setInnerHTMLUnsafe,
         setOuterHTML: setOuterHTML,
@@ -187,4 +193,4 @@
         insertAdjacentHTMLUnsafe: insertAdjacentHTMLUnsafe
     });
 
-}(this));
+});

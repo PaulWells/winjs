@@ -1,23 +1,30 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function navigationInit(WinJS, undefined) {
+define([
+    'exports',
+    './Core/_Base',
+    './Core/_Events',
+    './Core/_WriteProfilerMark',
+    './Promise'
+    ], function navigationInit(exports, _Base, _Events, _WriteProfilerMark, Promise) {
     "use strict";
 
     var navigatedEventName = "navigated";
     var navigatingEventName = "navigating";
     var beforenavigateEventName = "beforenavigate";
-    var ListenerType = WinJS.Class.mix(WinJS.Class.define(null, { /* empty */ }, { supportedForProcessing: false }), WinJS.Utilities.eventMixin);
+    var ListenerType = _Base.Class.mix(_Base.Class.define(null, { /* empty */ }, { supportedForProcessing: false }), _Events.eventMixin);
     var listeners = new ListenerType();
     var history = {
         backStack: [],
         current: { location: "", initialPlaceholder: true },
         forwardStack: []
     };
+    var createEvent = _Events._createEventProperty;
 
     var raiseBeforeNavigate = function (proposed) {
-        WinJS.Utilities._writeProfilerMark("WinJS.Navigation:navigation,StartTM");
-        return WinJS.Promise.as().
+        _WriteProfilerMark("WinJS.Navigation:navigation,StartTM");
+        return Promise.as().
             then(function () {
-                var waitForPromise = WinJS.Promise.as();
+                var waitForPromise = Promise.as();
                 var defaultPrevented = listeners.dispatchEvent(beforenavigateEventName, {
                     setPromise: function (promise) { 
                         /// <signature helpKeyword="WinJS.Navigation.beforenavigate.setPromise">
@@ -41,9 +48,9 @@
             });
     };
     var raiseNavigating = function (delta) {
-        return WinJS.Promise.as().
+        return Promise.as().
             then(function () {
-                var waitForPromise = WinJS.Promise.as();
+                var waitForPromise = Promise.as();
                 listeners.dispatchEvent(navigatingEventName, {
                     setPromise: function (promise) { 
                         /// <signature helpKeyword="WinJS.Navigation.navigating.setPromise">
@@ -66,8 +73,8 @@
             });
     };
     var raiseNavigated = function (value, err) {
-        WinJS.Utilities._writeProfilerMark("WinJS.Navigation:navigation,StopTM");
-        var waitForPromise = WinJS.Promise.as();
+        _WriteProfilerMark("WinJS.Navigation:navigation,StopTM");
+        var waitForPromise = Promise.as();
         var detail = {
             value: value,
             location: history.current.location,
@@ -117,10 +124,10 @@
                     }
                 });
         }
-        return WinJS.Promise.wrap(false);
-    }
+        return Promise.wrap(false);
+    };
 
-    WinJS.Namespace.define("WinJS.Navigation", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.Navigation", {
         /// <field name="canGoForward" type="Boolean" locid="WinJS.Navigation.canGoForward" helpKeyword="WinJS.Navigation.canGoForward">
         /// Determines whether it is possible to navigate forwards.
         /// </field>
@@ -281,8 +288,18 @@
             /// </param>
             /// </signature>
             listeners.removeEventListener(eventType, listener, capture);
-        }
+        },
+        /// <field type="Function" locid="WinJS.Navigation.onnavigated" helpKeyword="WinJS.Navigation.onnavigated">
+        /// A page navigation event that occurs after onbeforenavigate and onnavigating. This event can be used to perform other actions after navigation is complete.
+        /// </field>
+        onnavigated: createEvent(navigatedEventName),
+        /// <field type="Function" locid="WinJS.Navigation.onnavigating" helpKeyword="WinJS.Navigation.onnavigating">
+        /// A page navigation event that occurs after onbeforenavigate and before onnavigated. This event can be used to perform other actions during navigation.
+        /// </field>
+        onnavigating: createEvent(navigatingEventName),
+        /// <field type="Function" locid="WinJS.Navigation.onbeforenavigate" helpKeyword="WinJS.Navigation.onbeforenavigate">
+        /// A page navigation event that occurs before onnavigating and onnavigated. This event can be used to cancel navigation or perform other actions prior to navigation.
+        /// </field>
+        onbeforenavigate: createEvent(beforenavigateEventName)
     });
-
-    Object.defineProperties(WinJS.Navigation, WinJS.Utilities.createEventProperties(navigatedEventName, navigatingEventName, beforenavigateEventName));
-})(WinJS);
+});

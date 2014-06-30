@@ -1,67 +1,90 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-/*jshint -W079*/
+/*jshint ignore:start */
 var require;
-/*jshint +W079*/
 var define;
+/*jshint ignore:end */
 
 (function() {
     "use strict";
 
     var defined = {};
-    /*jshint -W020*/
     define = function(id, dependencies, factory) {
         if(!Array.isArray(dependencies)) {
             factory = dependencies;
             dependencies = [];
         }
 
-        defined[id] = {
+        var mod = {
             dependencies: normalize(id, dependencies),
             factory: factory
         };
-    }
-    /*jshint +W020*/
+
+        if(dependencies.indexOf('exports') !== -1) {
+            mod.exports = {};
+        }
+
+        defined[id] = mod;
+    };
 
     // WinJS/Core depends on ./Core/_Base
     // should return WinJS/Core/_Base
     function normalize(id, dependencies) {
-        var parts = id.split('/');
-        var parent = "";
-        if(parts.length > 1) {
-            parent = parts.slice(0, -1).join('/');
-        }
+        var parent = id.split('/');
+        parent.pop();
         return dependencies.map(function(dep) {
-            // no support for .. yet
-            var start = dep.substr(0, 2);
-            if(start === "./" ) {
-                return parent + dep.substr(1);
+            if(dep[0] === '.') {
+                var parts = dep.split('/');
+                var current = parent.slice(0);
+                parts.forEach(function(part) {
+                    if(part === '..') {
+                        current.pop();
+                    } else if(part !== '.') {
+                        current.push(part);
+                    }
+                });
+                return current.join('/');
+            } else {
+                return dep;
             }
-            return dep;
         });
     }
 
-    function resolve(dependencies) {
+    function resolve(dependencies, exports) {
         return dependencies.map(function(depName) {
+            if(depName === 'exports') {
+                return exports;
+            }
             var dep = defined[depName];
             if(!dep) {
                 throw new Error("Undefined dependency: " + depName);
             }
-            return load(dep.dependencies, dep.factory);
+
+            if(!dep.resolved) {
+                dep.resolved = load(dep.dependencies, dep.factory, dep.exports);
+                // exports shadows whatever the module factory returns
+                if(dep.exports) {
+                    dep.resolved = dep.exports;
+                }
+            }
+            
+            return dep.resolved;
         });
     }
 
-    function load(dependencies, factory) {
-        var deps = resolve(dependencies);
+    function load(dependencies, factory, exports) {
+        var deps = resolve(dependencies, exports);
         if(factory && factory.apply) {
             return factory.apply(null, deps);
+        } else {
+            return factory;
         }
     }
-    require = function(dependencies, factory) {
+    require = function(dependencies, factory) { //jshint ignore:line
         if(!Array.isArray(dependencies)) {
             dependencies = [dependencies];
         }
         load(dependencies, factory);
-    }
+    };
 
 
 })();

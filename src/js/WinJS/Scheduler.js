@@ -1,5 +1,15 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function linkedListMixinInit(global, undefined) {
+define([
+    'exports',
+    './Core/_Global',
+    './Core/_Base',
+    './Core/_ErrorFromName',
+    './Core/_Log',
+    './Core/_Resources',
+    './Core/_Trace',
+    './Core/_WriteProfilerMark',
+    './Promise'
+    ], function schedulerInit(exports, _Global, _Base, _ErrorFromName, _Log, _Resources, _Trace, _WriteProfilerMark, Promise) {
     "use strict";
 
     function linkedListMixin(name) {
@@ -49,22 +59,14 @@
         return mixin;
     }
 
-    WinJS.Namespace.define("WinJS.Utilities", {
+    _Base.Namespace.define("WinJS.Utilities", {
 
         _linkedListMixin: linkedListMixin
 
     });
 
-}(this));
-
-(function schedulerInit(global, undefined) {
-    "use strict";
-
-    var Promise = WinJS.Promise;
-    var linkedListMixin = WinJS.Utilities._linkedListMixin;
-
     var strings = {
-        get jobInfoIsNoLongerValid() { return WinJS.Resources._getWinJSString("base/jobInfoIsNoLongerValid").value; }
+        get jobInfoIsNoLongerValid() { return _Resources._getWinJSString("base/jobInfoIsNoLongerValid").value; }
     };
 
     //
@@ -86,7 +88,7 @@
     }
 
     function schedulerProfilerMark(operation, markerType, arg0, arg1) {
-        WinJS.Utilities._writeProfilerMark(
+        _WriteProfilerMark(
             "WinJS.Scheduler:" + operation +
             profilerMarkArgs(arg0, arg1) +
             "," + markerType
@@ -96,7 +98,7 @@
     function jobProfilerMark(job, operation, markerType, arg0, arg1) {
         var argProvided = job.name || arg0 !== undefined || arg1 !== undefined;
 
-        WinJS.Utilities._writeProfilerMark(
+        _WriteProfilerMark(
             "WinJS.Scheduler:" + operation + ":" + job.id +
             (argProvided ? profilerMarkArgs(job.name, arg0, arg1) : "") +
             "," + markerType
@@ -108,7 +110,7 @@
     //  schedule method. Its public interface is what is used when interacting with a job.
     //
 
-    var JobNode = WinJS.Class.define(function (id, work, priority, context, name, asyncOpID) {
+    var JobNode = _Base.Class.define(function (id, work, priority, context, name, asyncOpID) {
         this._id = id;
         this._work = work;
         this._context = context;
@@ -209,14 +211,14 @@
 
         _setState: function (state, arg0, arg1) {
             if (this._state) {
-                WinJS.log && WinJS.log("Transitioning job (" + this.id + ") from: " + this._state.name + " to: " + state.name, "winjs scheduler", "log");
+                _Log.log && _Log.log("Transitioning job (" + this.id + ") from: " + this._state.name + " to: " + state.name, "winjs scheduler", "log");
             }
             this._state = state;
             this._state.enter(this, arg0, arg1);
         },
 
     });
-    WinJS.Class.mix(JobNode, linkedListMixin("Job"));
+    _Base.Class.mix(JobNode, linkedListMixin("Job"));
 
     var YieldPolicy = {
         complete: 1,
@@ -232,7 +234,7 @@
     //  jobs easily block on async work.
     //
 
-    var JobInfo = WinJS.Class.define(function (shouldYield, job) {
+    var JobInfo = _Base.Class.define(function (shouldYield, job) {
         this._job = job;
         this._result = null;
         this._yieldPolicy = YieldPolicy.complete;
@@ -299,7 +301,7 @@
 
         _throwIfDisabled: function () {
             if (this._publicApiDisabled) {
-                throw new WinJS.ErrorFromName("WinJS.Utilities.Scheduler.JobInfoIsNoLongerValid", strings.jobInfoIsNoLongerValid);
+                throw new _ErrorFromName("WinJS.Utilities.Scheduler.JobInfoIsNoLongerValid", strings.jobInfoIsNoLongerValid);
             }
         }
 
@@ -310,7 +312,7 @@
     //  Allows cancelation of jobs in bulk.
     //
 
-    var OwnerToken = WinJS.Class.define(function OwnerToken_ctor() {
+    var OwnerToken = _Base.Class.define(function OwnerToken_ctor() {
         this._jobs = {};
     }, {
         cancelAll: function OwnerToken_cancelAll() {
@@ -362,7 +364,7 @@
     // The job state machine accounts for these various states and interactions.
     //
 
-    var State = WinJS.Class.define(function (name) {
+    var State = _Base.Class.define(function (name) {
         this.name = name;
         this.enter = illegal;
         this.execute = illegal;
@@ -464,7 +466,7 @@
     //
     state_canceled.enter = function (job) {
         jobProfilerMark(job, "job-canceled", "info");
-        WinJS.Utilities._traceAsyncOperationCompleted(job._asyncOpID, global.Debug && Debug.MS_ASYNC_OP_STATUS_CANCELED)
+        _Trace._traceAsyncOperationCompleted(job._asyncOpID, _Global.Debug && Debug.MS_ASYNC_OP_STATUS_CANCELED);
         job._removeJob();
         job._work = null;
         job._context = null;
@@ -494,13 +496,13 @@
 
         var jobInfo = new JobInfo(shouldYield, job);
 
-        WinJS.Utilities._traceAsyncCallbackStarting(job._asyncOpID);
+        _Trace._traceAsyncCallbackStarting(job._asyncOpID);
         try {
             MSApp.execAtPriority(function () {
                 work.call(context, jobInfo);
             }, toWwaPriority(priority));
         } finally {
-            WinJS.Utilities._traceAsyncCallbackCompleted();
+            _Trace._traceAsyncCallbackCompleted();
             jobInfo._disablePublicApi();
         }
 
@@ -727,7 +729,7 @@
     //
     state_complete.completed = true;
     state_complete.enter = function (job) {
-        WinJS.Utilities._traceAsyncOperationCompleted(job._asyncOpID, global.Debug && Debug.MS_ASYNC_OP_STATUS_SUCCESS);
+        _Trace._traceAsyncOperationCompleted(job._asyncOpID, _Global.Debug && Debug.MS_ASYNC_OP_STATUS_SUCCESS);
         job._work = null;
         job._context = null;
         job.owner = null;
@@ -748,7 +750,7 @@
     //
     // @NOTE: Dynamic markers are NYI
     //
-    var MarkerNode = WinJS.Class.define(function (priority, name) {
+    var MarkerNode = _Base.Class.define(function (priority, name) {
         this.priority = priority;
         this.name = name;
     }, {
@@ -760,7 +762,7 @@
         //},
 
     });
-    WinJS.Class.mix(MarkerNode, linkedListMixin("Job"), linkedListMixin("Marker"));
+    _Base.Class.mix(MarkerNode, linkedListMixin("Job"), linkedListMixin("Marker"));
 
     //
     // Scheduler state
@@ -829,12 +831,12 @@
 
     function dumpList(type, reverse) {
         function dumpMarker(marker, pos) {
-            WinJS.log && WinJS.log(pos + ": MARKER: " + marker.name, "winjs scheduler", "log");
+            _Log.log && _Log.log(pos + ": MARKER: " + marker.name, "winjs scheduler", "log");
         }
         function dumpJob(job, pos) {
-            WinJS.log && WinJS.log(pos + ": JOB(" + job.id + "): state: " + (job._state ? job._state.name : "") + (job.name ? ", name: " + job.name : ""), "winjs scheduler", "log");
+            _Log.log && _Log.log(pos + ": JOB(" + job.id + "): state: " + (job._state ? job._state.name : "") + (job.name ? ", name: " + job.name : ""), "winjs scheduler", "log");
         }
-        WinJS.log && WinJS.log("highWaterMark: " + highWaterMark, "winjs scheduler", "log");
+        _Log.log && _Log.log("highWaterMark: " + highWaterMark, "winjs scheduler", "log");
         var pos = 0;
         var head = reverse ? priorities[priorities.length - 1] : priorities[0];
         var current = head;
@@ -934,7 +936,7 @@
 
     // Whether we are using the WWA scheduler.
     //
-    var usingWwaScheduler = !!(global.MSApp && global.MSApp.execAtPriority);
+    var usingWwaScheduler = !!(_Global.MSApp && _Global.MSApp.execAtPriority);
 
     // Queue of drain listeners
     //
@@ -969,7 +971,7 @@
             prev._insertMarkerAfter(current);
         }
         return current;
-    })
+    });
 
     //
     // Draining mechanism
@@ -1063,7 +1065,7 @@
     // setImmediate has this guarantee built-in so we prefer that. Otherwise, we do setTimeout 16
     // which should give the host a decent amount of time to do work.
     //
-    var scheduleWithHost = global.setImmediate ? global.setImmediate.bind(global) : function (callback) {
+    var scheduleWithHost = _Global.setImmediate ? _Global.setImmediate.bind(_Global) : function (callback) {
         setTimeout(callback, 16);
     };
 
@@ -1099,7 +1101,7 @@
         IDLE: "idle"
     };
 
-    var MSApp = (usingWwaScheduler ? global.MSApp : MSAppStubs);
+    var MSApp = (usingWwaScheduler ? _Global.MSApp : MSAppStubs);
 
     function toWwaPriority(winjsPriority) {
         if (winjsPriority >= Priority.aboveNormal + 1) { return MSApp.HIGH; }
@@ -1170,7 +1172,7 @@
 
     // Performance.now is not defined in web workers.
     //
-    var now = (global.performance && performance.now.bind(performance)) || Date.now.bind(Date);
+    var now = (_Global.performance && _Global.performance.now.bind(_Global.performance)) || Date.now.bind(Date);
 
     // Main scheduler pump.
     //
@@ -1494,7 +1496,7 @@
         priority = priority || Priority.normal;
         thisArg = thisArg || null;
         var jobId = ++globalJobId;
-        var asyncOpID = WinJS.Utilities._traceAsyncOperationStarting("WinJS.Utilities.Scheduler.schedule: " + jobId + profilerMarkArgs(name));
+        var asyncOpID = _Trace._traceAsyncOperationStarting("WinJS.Utilities.Scheduler.schedule: " + jobId + profilerMarkArgs(name));
         name = name || "";
         return new JobNode(jobId, work, priority, thisArg, name, asyncOpID);
     }
@@ -1534,7 +1536,7 @@
             /// </returns>
             /// </signature>
             var job;
-            return new WinJS.Promise(
+            return new Promise(
                 function (c) {
                     job = schedule(function schedulePromise() {
                         c(promiseValue);
@@ -1547,7 +1549,7 @@
         };
     }
 
-    WinJS.Namespace.define("WinJS.Utilities.Scheduler", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.Utilities.Scheduler", {
 
         Priority: Priority,
 
@@ -1597,7 +1599,7 @@
             },
             set: function (value) {
                 usingWwaScheduler = value;
-                MSApp = (usingWwaScheduler ? global.MSApp : MSAppStubs);
+                MSApp = (usingWwaScheduler ? _Global.MSApp : MSAppStubs);
             }
         },
 
@@ -1614,4 +1616,4 @@
 
     });
 
-}(this));
+});

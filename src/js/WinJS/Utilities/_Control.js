@@ -1,9 +1,13 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function controlInit(global, WinJS, undefined) {
+define([
+    'exports',
+    '../Core/_Global',
+    '../Core/_Base'
+    ], function controlInit(exports, _Global, _Base) {
     "use strict";
 
     // not supported in WebWorker
-    if (!global.document) {
+    if (!_Global.document) {
         return;
     }
 
@@ -50,8 +54,8 @@
         }
     }
 
-    WinJS.Namespace.define("WinJS.UI", {
-        DOMEventMixin: WinJS.Namespace._lazy(function () {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        DOMEventMixin: _Base.Namespace._lazy(function () {
             return {
                 _domElement: null,
 
@@ -122,5 +126,5 @@
         _setOptions: _setOptions
     });
 
-})(this, WinJS);
+});
 

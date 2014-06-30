@@ -1,33 +1,41 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-(function flipperPageManagerInit(WinJS) {
+define([
+    'exports',
+    '../../Core/_Base',
+    '../../Core/_BaseUtils',
+    '../../Core/_ErrorFromName',
+    '../../Core/_Log',
+    '../../Core/_Resources',
+    '../../Core/_WriteProfilerMark',
+    '../../Animations',
+    '../../Promise',
+    '../../_Signal',
+    '../../Scheduler',
+    '../../Utilities/_Dispose',
+    '../../Utilities/_ElementUtilities',
+    '../../Utilities/_TabContainer',
+    './_Constants'
+    ], function flipperPageManagerInit(exports, _Base, _BaseUtils, _ErrorFromName, _Log, _Resources, _WriteProfilerMark, Animations, Promise, _Signal, Scheduler, _Dispose, _ElementUtilities, _TabContainer, _Constants) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
 
         // Definition of our private utility
-        _FlipPageManager: WinJS.Namespace._lazy(function () {
-            var thisWinUI = WinJS.UI;
-
-            // Utilities are private and global pointer will be deleted so we need to cache it locally
-            var utilities = WinJS.Utilities;
-            var uniqueID = WinJS.Utilities._uniqueID;
-            var styleEquivalents = utilities._browserStyleEquivalents;
-
-            var Scheduler = WinJS.Utilities.Scheduler;
-
-            var animations = WinJS.UI.Animation;
+        _FlipPageManager: _Base.Namespace._lazy(function () {
+            var uniqueID = _ElementUtilities._uniqueID;
+            var styleEquivalents = _BaseUtils._browserStyleEquivalents;
 
             var leftBufferAmount = 50,
                 itemSelectedEventDelay = 250;
 
             var strings = {
-                get badCurrentPage() { return WinJS.Resources._getWinJSString("ui/badCurrentPage").value; }
+                get badCurrentPage() { return _Resources._getWinJSString("ui/badCurrentPage").value; }
             };
 
             function isFlipper(element) {
                 var control = element.winControl;
-                if (control && control instanceof WinJS.UI.FlipView) {
+                if (control && control._isFlipView) {
                     return true;
                 }
 
@@ -42,12 +50,12 @@
                         element.tabIndex = -1;
                     }
                     var that = element.winControl;
-                    if (that && that instanceof WinJS.UI.FlipView) {
+                    if (that && that._isFlipView) {
                         var dirChanged = false;
                         if (record.attributeName === "dir") {
                             dirChanged = true;
                         } else if (record.attributeName === "style") {
-                            dirChanged = (that._cachedStyleDir != element.style.direction);
+                            dirChanged = (that._cachedStyleDir !== element.style.direction);
                         }
                         if (dirChanged) {
                             that._cachedStyleDir = element.style.direction;
@@ -58,7 +66,7 @@
                 });
             }
 
-            var _FlipPageManager = WinJS.Class.define(function _FlipPageManager_ctor(flipperDiv, panningDiv, panningDivContainer, itemsManager, itemSpacing, environmentSupportsTouch, buttonVisibilityHandler) {
+            var _FlipPageManager = _Base.Class.define(function _FlipPageManager_ctor(flipperDiv, panningDiv, panningDivContainer, itemsManager, itemSpacing, environmentSupportsTouch, buttonVisibilityHandler) {
                 // Construction
                 this._visibleElements = [];
                 this._flipperDiv = flipperDiv;
@@ -69,34 +77,34 @@
                 this._rtl = window.getComputedStyle(this._flipperDiv, null).direction === "rtl";
                 this._itemsManager = itemsManager;
                 this._itemSpacing = itemSpacing;
-                this._tabIndex = WinJS.Utilities.getTabIndex(flipperDiv);
+                this._tabIndex = _ElementUtilities.getTabIndex(flipperDiv);
                 if (this._tabIndex < 0) {
                     this._tabIndex = 0;
                 }
                 flipperDiv.tabIndex = -1;
-                this._tabManager = new WinJS.UI.TabContainer(this._panningDivContainer);
+                this._tabManager = new _TabContainer.TabContainer(this._panningDivContainer);
                 this._tabManager.tabIndex = this._tabIndex;
                 this._lastSelectedPage = null;
                 this._lastSelectedElement = null;
-                this._bufferSize = thisWinUI._FlipPageManager.flipPageBufferCount;
+                this._bufferSize = _FlipPageManager.flipPageBufferCount;
                 this._cachedSize = -1;
                 this._environmentSupportsTouch = environmentSupportsTouch;
 
                 var that = this;
                 this._panningDiv.addEventListener("keydown", function (event) {
-                    if (that._blockTabs && event.keyCode === utilities.Key.tab) {
+                    if (that._blockTabs && event.keyCode === _ElementUtilities.Key.tab) {
                         event.stopImmediatePropagation();
                         event.preventDefault();
                     }
                 }, true);
-                WinJS.Utilities._addEventListener(this._flipperDiv, "focusin", function (event) {
+                _ElementUtilities._addEventListener(this._flipperDiv, "focusin", function (event) {
                     if (event.target === that._flipperDiv) {
                         if (that._currentPage.element) {
-                            WinJS.Utilities._setActive(that._currentPage.element);
+                            _ElementUtilities._setActive(that._currentPage.element);
                         }
                     }
                 }, false);
-                new WinJS.Utilities._MutationObserver(flipperPropertyChanged).observe(this._flipperDiv, { attributes: true, attributeFilter: ["dir", "style", "tabindex"] });
+                new _ElementUtilities._MutationObserver(flipperPropertyChanged).observe(this._flipperDiv, { attributes: true, attributeFilter: ["dir", "style", "tabindex"] });
                 this._cachedStyleDir = this._flipperDiv.style.direction;
                 this._panningDiv.addEventListener("activate", function (event) {
                     that._hasFocus = true;
@@ -105,7 +113,7 @@
                     that._hasFocus = false;
                 }, true);
                 if (this._environmentSupportsTouch) {
-                    this._panningDivContainer.addEventListener(WinJS.Utilities._browserEventEquivalents["manipulationStateChanged"], function (event) {
+                    this._panningDivContainer.addEventListener(_BaseUtils._browserEventEquivalents["manipulationStateChanged"], function (event) {
                         that._manipulationState = event.currentState;
                         if (event.currentState === 0 && event.target === that._panningDivContainer) {
                             that._itemSettledOn();
@@ -157,7 +165,7 @@
 
                     var tmpPage = curPage;
                     do {
-                        WinJS.Utilities._disposeElement(tmpPage.element);
+                        _Dispose._disposeElement(tmpPage.element);
                         tmpPage = tmpPage.next;
                     } while (tmpPage !== curPage);
                 },
@@ -180,7 +188,7 @@
                             currStyle.left = "0px";
                             currStyle.top = "0px";
                         });
-                        WinJS.Utilities.setScrollPosition(this._panningDivContainer, { scrollLeft: 0, scrollTop: 0 });
+                        _ElementUtilities.setScrollPosition(this._panningDivContainer, { scrollLeft: 0, scrollTop: 0 });
                         var containerStyle = this._panningDivContainer.style;
                         containerStyle.overflowX = "hidden";
                         containerStyle.overflowY = "hidden";
@@ -199,15 +207,15 @@
                     this._writeProfilerMark("WinJS.UI.FlipView:resetState,info");
                     if (initialIndex !== 0) {
                         var indexValid = this.jumpToIndex(initialIndex, true);
-                        if (!indexValid && WinJS.validation) {
-                            throw new WinJS.ErrorFromName("WinJS.UI.FlipView.BadCurrentPage", strings.badCurrentPage);
+                        if (!indexValid && _BaseUtils.validation) {
+                            throw new _ErrorFromName("WinJS.UI.FlipView.BadCurrentPage", strings.badCurrentPage);
                         }
                         return indexValid;
                     } else {
-                        WinJS.Utilities.disposeSubTree(this._flipperDiv);
+                        _Dispose.disposeSubTree(this._flipperDiv);
                         this._resetBuffer(null, true);
                         var that = this;
-                        var work = WinJS.Promise.wrap(true);
+                        var work = Promise.wrap(true);
                         if (this._itemsManager) {
                             work = that._itemsManager._firstItem().then(function (e) {
                                 that._currentPage.setElement(e);
@@ -340,7 +348,7 @@
                     // between the current and the new index.
                     if (!forceJump) {
                         if (!this._itemsManager || !this._currentPage.element || index < 0) {
-                            return WinJS.Promise.wrap(false);
+                            return Promise.wrap(false);
                         }
 
                         // If we have to keep our pages in memory, we need to iterate through every single item from our current position to the desired target
@@ -349,16 +357,16 @@
                             distance = Math.abs(index - currIndex);
 
                         if (distance === 0) {
-                            return WinJS.Promise.wrap(false);
+                            return Promise.wrap(false);
                         }
                     }
 
-                    var tail = WinJS.Promise.wrap(true);
+                    var tail = Promise.wrap(true);
                     var that = this;
 
                     tail = tail.then(function () {
                         var itemPromise = that._itemsManager._itemPromiseAtIndex(index);
-                        return WinJS.Promise.join({
+                        return Promise.join({
                             element: that._itemsManager._itemFromItemPromise(itemPromise),
                             item: itemPromise
                         }).then(function (v) {
@@ -399,7 +407,7 @@
                             if (this._hasFocus) {
                                 // Give focus to the panning div ONLY if anything inside the flipview control currently has
                                 // focus; otherwise, it will be lost when the current page is animated during the navigation.
-                                WinJS.Utilities._setActive(this._panningDiv);
+                                _ElementUtilities._setActive(this._panningDiv);
                             }
                             this._navigationAnimationRecord = {};
                             this._navigationAnimationRecord.goForward = goForward;
@@ -523,7 +531,7 @@
                         });
                     }
 
-                    return WinJS.Promise.wrap(null);
+                    return Promise.wrap(null);
                 },
 
                 endAnimatedJump: function (oldCurr, newCurr) {
@@ -687,7 +695,7 @@
                     this._writeProfilerMark("WinJS.UI.FlipView:removed,info");
                     var that = this;
                     var prevMarker = this._prevMarker;
-                    var work = WinJS.Promise.wrap();
+                    var work = Promise.wrap();
 
                     if (mirage) {
                         var clearNext = false;
@@ -803,7 +811,8 @@
                     this._logBuffer();
                     this._notificationsStarted = this._notificationsStarted || 0;
                     this._notificationsStarted++;
-                    this._notificationsEndedSignal = new WinJS._Signal();
+                    // _notificationsEndedSignal is also used in the FlipView unit tests for coordination in the datasource tests
+                    this._notificationsEndedSignal = new _Signal();
                     this._temporaryKeys = [];
                     this._animationRecords = {};
                     var that = this;
@@ -909,10 +918,10 @@
 
                         function joinAnimationPromises() {
                             if (animationPromises.length === 0) {
-                                animationPromises.push(WinJS.Promise.wrap());
+                                animationPromises.push(Promise.wrap());
                             }
 
-                            return WinJS.Promise.join(animationPromises);
+                            return Promise.join(animationPromises);
                         }
                         that._blockTabs = true;
                         joinAnimationPromises().then(function () {
@@ -975,7 +984,7 @@
                     if (this._lastTimeoutRequest) {
                         this._lastTimeoutRequest.cancel();
                     }
-                    this._lastTimeoutRequest = WinJS.Promise.timeout(itemSelectedEventDelay).then(function () {
+                    this._lastTimeoutRequest = Promise.timeout(itemSelectedEventDelay).then(function () {
                         that._itemSettledOn();
                     });
                 },
@@ -1018,9 +1027,9 @@
                 },
 
                 _writeProfilerMark: function(message) {
-                    WinJS.Utilities._writeProfilerMark(message);
-                    if (WinJS.UI.FlipView._enabledDebug) {
-                        WinJS.log && WinJS.log(message, null, "flipviewdebug");
+                    _WriteProfilerMark(message);
+                    if (this._flipperDiv.winControl.constructor._enabledDebug) {
+                        _Log.log && _Log.log(message, null, "flipviewdebug");
                     }
                 },
 
@@ -1067,7 +1076,7 @@
 
                 _fetchNextItems: function () {
                     this._writeProfilerMark("WinJS.UI.FlipView:_fetchNextItems,info");
-                    var tail = WinJS.Promise.wrap(this._currentPage);
+                    var tail = Promise.wrap(this._currentPage);
                     var that = this;
 
                     for (var i = 0; i < this._bufferSize; i++) {
@@ -1115,7 +1124,7 @@
                     this._writeProfilerMark("WinJS.UI.FlipView:_fetchPreviousItems,info");
                     var that = this;
 
-                    var tail = WinJS.Promise.wrap(this._currentPage);
+                    var tail = Promise.wrap(this._currentPage);
 
                     for (var i = 0; i < this._bufferSize; i++) {
                         tail = tail.then(function (curr) {
@@ -1150,7 +1159,7 @@
                     }
                     if (!nextElement) {
                         target.setElement(null);
-                        return WinJS.Promise.wrap();
+                        return Promise.wrap();
                     }
                     var that = this;
                     return this._itemsManager._previousItem(nextElement).
@@ -1206,7 +1215,7 @@
                     var that = this;
                     var currentElement = this._currentPage.element;
                     if (!currentElement) {
-                        return WinJS.Promise.wrap();
+                        return Promise.wrap();
                     }
 
                     var refreshBuffer = false;
@@ -1251,7 +1260,7 @@
                                 that._ensureCentered();
                             });
                     } else {
-                        return WinJS.Promise.wrap();
+                        return Promise.wrap();
                     }
                 },
 
@@ -1281,12 +1290,12 @@
                 },
 
                 _logBuffer: function () {
-                    if (WinJS.UI.FlipView._enabledDebug) {
-                        WinJS.log && WinJS.log(this._currentPage.next.next.next.elementUniqueID + "\t@:" + this._currentPage.next.next.next.location + (this._currentPage.next.next.next.element ? ("\t" + this._currentPage.next.next.next.element.textContent) : ""), null, "flipviewdebug");
-                        WinJS.log && WinJS.log(this._currentPage.next.next.next.next.elementUniqueID + "\t@:" + this._currentPage.next.next.next.next.location + (this._currentPage.next.next.next.next.element ? ("\t" + this._currentPage.next.next.next.next.element.textContent) : ""), null, "flipviewdebug");
-                        WinJS.log && WinJS.log("> " + this._currentPage.elementUniqueID + "\t@:" + this._currentPage.location + (this._currentPage.element ? ("\t" + this._currentPage.element.textContent) : ""), null, "flipviewdebug");
-                        WinJS.log && WinJS.log(this._currentPage.next.elementUniqueID + "\t@:" + this._currentPage.next.location + (this._currentPage.next.element ? ("\t" + this._currentPage.next.element.textContent) : ""), null, "flipviewdebug");
-                        WinJS.log && WinJS.log(this._currentPage.next.next.elementUniqueID + "\t@:" + this._currentPage.next.next.location + (this._currentPage.next.next.element ? ("\t" + this._currentPage.next.next.element.textContent) : ""), null, "flipviewdebug");
+                    if (this._flipperDiv.winControl.constructor._enabledDebug) {
+                        _Log.log && _Log.log(this._currentPage.next.next.next.elementUniqueID + "\t@:" + this._currentPage.next.next.next.location + (this._currentPage.next.next.next.element ? ("\t" + this._currentPage.next.next.next.element.textContent) : ""), null, "flipviewdebug");
+                        _Log.log && _Log.log(this._currentPage.next.next.next.next.elementUniqueID + "\t@:" + this._currentPage.next.next.next.next.location + (this._currentPage.next.next.next.next.element ? ("\t" + this._currentPage.next.next.next.next.element.textContent) : ""), null, "flipviewdebug");
+                        _Log.log && _Log.log("> " + this._currentPage.elementUniqueID + "\t@:" + this._currentPage.location + (this._currentPage.element ? ("\t" + this._currentPage.element.textContent) : ""), null, "flipviewdebug");
+                        _Log.log && _Log.log(this._currentPage.next.elementUniqueID + "\t@:" + this._currentPage.next.location + (this._currentPage.next.element ? ("\t" + this._currentPage.next.element.textContent) : ""), null, "flipviewdebug");
+                        _Log.log && _Log.log(this._currentPage.next.next.elementUniqueID + "\t@:" + this._currentPage.next.next.location + (this._currentPage.next.next.element ? ("\t" + this._currentPage.next.next.element.textContent) : ""), null, "flipviewdebug");
 
                         var keys = Object.keys(this._itemsManager._elementMap);
                         var bufferKeys = [];
@@ -1295,7 +1304,7 @@
                                 bufferKeys.push(page.elementUniqueID);
                             }
                         });
-                        WinJS.log && WinJS.log("itemsmanager  = [" + keys.join(" ") + "] flipview [" + bufferKeys.join(" ") + "]", null, "flipviewdebug");
+                        _Log.log && _Log.log("itemsmanager  = [" + keys.join(" ") + "] flipview [" + bufferKeys.join(" ") + "]", null, "flipviewdebug");
                     }
                 },
 
@@ -1371,7 +1380,7 @@
 
                         var event = document.createEvent("CustomEvent");
                         this._writeProfilerMark("WinJS.UI.FlipView:pageVisibilityChangedEvent(visible:true),info");
-                        event.initCustomEvent(thisWinUI.FlipView.pageVisibilityChangedEvent, true, false, { source: this._flipperDiv, visible: true });
+                        event.initCustomEvent(_Constants.pageVisibilityChangedEvent, true, false, { source: this._flipperDiv, visible: true });
 
                         element.dispatchEvent(event);
                     }
@@ -1391,7 +1400,7 @@
 
                         var event = document.createEvent("CustomEvent");
                         this._writeProfilerMark("WinJS.UI.FlipView:pageVisibilityChangedEvent(visible:false),info");
-                        event.initCustomEvent(thisWinUI.FlipView.pageVisibilityChangedEvent, true, false, { source: this._flipperDiv, visible: false });
+                        event.initCustomEvent(_Constants.pageVisibilityChangedEvent, true, false, { source: this._flipperDiv, visible: false });
 
                         element.dispatchEvent(event);
                         if (addedToDomForEvent) {
@@ -1486,12 +1495,12 @@
                         if (page.element) {
                             if (!isReplacement) {
                                 manager._itemsManager.releaseItem(page.element);
-                                WinJS.Utilities._disposeElement(page.element);
+                                _Dispose._disposeElement(page.element);
                             }
                         }
                         page.element = element;
                         page.elementUniqueID = (element ? uniqueID(element) : null);
-                        utilities.empty(page.elementRoot);
+                        _ElementUtilities.empty(page.elementRoot);
 
                         if (page.element) {
                             if (page === manager._currentPage) {
@@ -1507,7 +1516,7 @@
 
                                 var setFlowAttribute = function (source, target, attributeName) {
                                     source.setAttribute(attributeName, target.id);
-                                }
+                                };
 
                                 var isEnd = !page.next.element || page === manager._prevMarker.prev;
                                 if (isEnd) {
@@ -1547,9 +1556,9 @@
 
                     if (this._horizontal) {
                         if (newValue === undefined) {
-                            return WinJS.Utilities.getScrollPosition(this._panningDivContainer).scrollLeft;
+                            return _ElementUtilities.getScrollPosition(this._panningDivContainer).scrollLeft;
                         }
-                        WinJS.Utilities.setScrollPosition(this._panningDivContainer, { scrollLeft: newValue });
+                        _ElementUtilities.setScrollPosition(this._panningDivContainer, { scrollLeft: newValue });
                     } else {
                         if (newValue === undefined) {
                             return this._panningDivContainer.scrollTop;
@@ -1565,7 +1574,7 @@
                         if (this._rtl) {
                             return this._viewportStart() + this._panningDivContainerOffsetWidth;
                         } else {
-                            return WinJS.Utilities.getScrollPosition(element).scrollLeft + this._panningDivContainerOffsetWidth;
+                            return _ElementUtilities.getScrollPosition(element).scrollLeft + this._panningDivContainerOffsetWidth;
                         }
                     } else {
                         return element.scrollTop + this._panningDivContainerOffsetHeight;
@@ -1642,7 +1651,7 @@
 
                             // We started at the item before prevMarker (going backwards), so we will exit if all
                             // the pages in the buffer are empty.
-                            if (endNonEmptyPage == this._prevMarker.prev) {
+                            if (endNonEmptyPage === this._prevMarker.prev) {
                                 break;
                             }
                         }
@@ -1652,7 +1661,7 @@
 
                             // We started at prevMarker (going forward), so we will exit if all the pages in the
                             // buffer are empty.
-                            if (startNonEmptyPage == this._prevMarker) {
+                            if (startNonEmptyPage === this._prevMarker) {
                                 break;
                             }
                         }
@@ -1696,12 +1705,12 @@
 
                     var that = this;
                     // Need to yield to the host here
-                    WinJS.Utilities._setImmediate(function () {
+                    _BaseUtils._setImmediate(function () {
                         if (that._viewportOnItemStart()) {
                             that._blockTabs = false;
                             if (that._currentPage.element) {
                                 if (that._hasFocus) {
-                                    WinJS.Utilities._setActive(that._currentPage.element);
+                                    _ElementUtilities._setActive(that._currentPage.element);
                                     that._tabManager.childFocus = that._currentPage.element;
                                 }
                                 if (that._lastSelectedElement !== that._currentPage.element) {
@@ -1720,7 +1729,7 @@
                                     Scheduler.schedule(function FlipView_dispatchPageSelectedEvent() {
                                         if (that._currentPage.element) {
                                             var event = document.createEvent("CustomEvent");
-                                            event.initCustomEvent(thisWinUI.FlipView.pageSelectedEvent, true, false, { source: that._flipperDiv });
+                                            event.initCustomEvent(_Constants.pageSelectedEvent, true, false, { source: that._flipperDiv });
                                             that._writeProfilerMark("WinJS.UI.FlipView:pageSelectedEvent,info");
                                             that._currentPage.element.dispatchEvent(event);
 
@@ -1737,7 +1746,7 @@
                                                             that._currentPage.element.setAttribute("aria-posinset", that.currentIndex() + 1);
                                                             that._bufferAriaStartMarker.setAttribute("aria-flowto", that._currentPage.element.id);
                                                             event = document.createEvent("CustomEvent");
-                                                            event.initCustomEvent(thisWinUI.FlipView.pageCompletedEvent, true, false, { source: that._flipperDiv });
+                                                            event.initCustomEvent(_Constants.pageCompletedEvent, true, false, { source: that._flipperDiv });
                                                             that._writeProfilerMark("WinJS.UI.FlipView:pageCompletedEvent,info");
                                                             that._currentPage.element.dispatchEvent(event);
                                                         }
@@ -1787,15 +1796,15 @@
                     oldElement.style.left = Math.max(0, (page.pageRoot.offsetWidth - oldElement.offsetWidth) / 2) + "px";
                     oldElement.style.top = Math.max(0, (page.pageRoot.offsetHeight - oldElement.offsetHeight) / 2) + "px";
 
-                    return animations.fadeOut(oldElement).then(function () {
+                    return Animations.fadeOut(oldElement).then(function () {
                         oldElement.parentNode && oldElement.parentNode.removeChild(oldElement);
                     });
                 },
 
                 _deleteFlipPage: function (page) {
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.FlipView:_deleteFlipPage,info");
+                    _WriteProfilerMark("WinJS.UI.FlipView:_deleteFlipPage,info");
                     page.elementRoot.style.opacity = 0;
-                    var animation = animations.createDeleteFromListAnimation([page.elementRoot]);
+                    var animation = Animations.createDeleteFromListAnimation([page.elementRoot]);
 
                     var that = this;
                     return animation.execute().then(function () {
@@ -1807,9 +1816,9 @@
                 },
 
                 _insertFlipPage: function (page) {
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.FlipView:_insertFlipPage,info");
+                    _WriteProfilerMark("WinJS.UI.FlipView:_insertFlipPage,info");
                     page.elementRoot.style.opacity = 1.0;
-                    var animation = animations.createAddToListAnimation([page.elementRoot]);
+                    var animation = Animations.createAddToListAnimation([page.elementRoot]);
 
                     return animation.execute().then(function () {
                         if (page.discardable) {
@@ -1819,8 +1828,8 @@
                 },
 
                 _moveFlipPage: function (page, move) {
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.FlipView:_moveFlipPage,info");
-                    var animation = animations.createRepositionAnimation(page.pageRoot);
+                    _WriteProfilerMark("WinJS.UI.FlipView:_moveFlipPage,info");
+                    var animation = Animations.createRepositionAnimation(page.pageRoot);
 
                     move();
 
@@ -1845,4 +1854,4 @@
         })
     });
 
-})(WinJS);
+});

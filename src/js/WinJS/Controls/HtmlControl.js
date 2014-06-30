@@ -1,13 +1,18 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function htmlControlInit(global) {
+define([
+    'exports',
+    '../Core/_Global',
+    '../Core/_Base',
+    '../Pages'
+    ], function htmlControlInit(exports, _Global, _Base, Pages) {
     "use strict";
 
     // not supported in WebWorker
-    if (!global.document) {
+    if (!_Global.document) {
         return;
     }
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
         /// <field>
         /// <summary locid="WinJS.UI.HtmlControl">
         /// Enables you to include an HTML page dynamically.
@@ -19,7 +24,7 @@
         /// <htmlSnippet><![CDATA[<div data-win-control="WinJS.UI.HtmlControl" data-win-options="{ uri: 'somePage.html' }"></div>]]></htmlSnippet>
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/base.js" shared="true" />
         /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
-        HtmlControl: WinJS.Class.define(function HtmlControl_ctor(element, options, complete) {
+        HtmlControl: _Base.Class.define(function HtmlControl_ctor(element, options, complete) {
             /// <signature helpKeyword="WinJS.UI.HtmlControl.HtmlControl">
             /// <summary locid="WinJS.UI.HtmlControl.constructor">
             /// Initializes a new instance of HtmlControl to define a new page control.
@@ -32,8 +37,8 @@
             /// document for the content of the page.
             /// </param>
             /// </signature>
-            WinJS.UI.Pages.render(options.uri, element, options).
+            Pages.render(options.uri, element, options).
                 then(complete, function () { complete(); });
         })
     });
-})(this);
+});

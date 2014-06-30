@@ -1,11 +1,16 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function stateInit(global) {
+define([
+    '../Core/_Global',
+    '../Core/_Base',
+    '../Core/_BaseUtils',
+    '../Promise'
+    ], function stateInit(_Global, _Base, _BaseUtils, Promise) {
     "use strict";
 
     function initWithWinRT() {
         var local, temp, roaming;
 
-        var IOHelper = WinJS.Class.define(
+        var IOHelper = _Base.Class.define(
         function IOHelper_ctor(folder) {
             this.folder = folder;
             this._path = folder.path;
@@ -104,7 +109,7 @@
             supportedForProcessing: false,
         });
 
-        WinJS.Namespace.define("WinJS.Application", {
+        _Base.Namespace.define("WinJS.Application", {
             /// <field type="Object" helpKeyword="WinJS.Application.local" locid="WinJS.Application.local">
             /// Allows access to create files in the application local storage, which is preserved across runs
             /// of an application and does not roam.
@@ -145,7 +150,7 @@
     }
 
     function initWithStub() {
-        var InMemoryHelper = WinJS.Class.define(
+        var InMemoryHelper = _Base.Class.define(
             function InMemoryHelper_ctor() {
                 this.storage = {};
             }, {
@@ -163,7 +168,7 @@
                     /// </signature>
                     // force conversion to boolean
                     //
-                    return WinJS.Promise.as(this.storage[fileName] !== undefined);
+                    return Promise.as(this.storage[fileName] !== undefined);
                 },
                 remove: function (fileName) {
                     /// <signature helpKeyword="WinJS.Application.InMemoryHelper.remove">
@@ -178,7 +183,7 @@
                     /// </returns>
                     /// </signature>
                     delete this.storage[fileName];
-                    return WinJS.Promise.as();
+                    return Promise.as();
                 },
                 writeText: function (fileName, str) {
                     /// <signature helpKeyword="WinJS.Application.InMemoryHelper.writeText">
@@ -196,7 +201,7 @@
                     /// </returns>
                     /// </signature>
                     this.storage[fileName] = str;
-                    return WinJS.Promise.as(str.length);
+                    return Promise.as(str.length);
                 },
                 readText: function (fileName, def) {
                     /// <signature helpKeyword="WinJS.Application.InMemoryHelper.readText">
@@ -215,14 +220,14 @@
                     /// </returns>
                     /// </signature>
                     var result = this.storage[fileName];
-                    return WinJS.Promise.as(typeof result === "string" ? result : def);
+                    return Promise.as(typeof result === "string" ? result : def);
                 }
             }, {
                 supportedForProcessing: false,
             }
         );
 
-        WinJS.Namespace.define("WinJS.Application", {
+        _Base.Namespace.define("WinJS.Application", {
             /// <field type="Object" helpKeyword="WinJS.Application.local" locid="WinJS.Application.local">
             /// Allows access to create files in the application local storage, which is preserved across runs
             /// of an application and does not roam.
@@ -241,14 +246,14 @@
         });
     }
 
-    if (WinJS.Utilities.hasWinRT) {
+    if (_BaseUtils.hasWinRT) {
         initWithWinRT();
     }
     else {
         initWithStub();
     }
 
-    WinJS.Namespace.define("WinJS.Application", {
+    _Base.Namespace.define("WinJS.Application", {
         sessionState: {},
         _loadState: function (e) {
             var app = WinJS.Application;
@@ -269,11 +274,11 @@
                     });
             }
             else {
-                return WinJS.Promise.as();
+                return Promise.as();
             }
         },
         _oncheckpoint: function (e) {
-            if (global.MSApp && MSApp.getViewOpener && MSApp.getViewOpener()) {
+            if (_Global.MSApp && MSApp.getViewOpener && MSApp.getViewOpener()) {
                 // don't save state in child windows.
                 return;
             }
@@ -282,7 +287,7 @@
             if ((sessionState && Object.keys(sessionState).length > 0) || app._sessionStateLoaded) {
                 var stateString;
                 try {
-                    stateString = JSON.stringify(sessionState)
+                    stateString = JSON.stringify(sessionState);
                 } catch (e) {
                     stateString = "";
                     WinJS.Application.queueEvent({ type: "error", detail: e });
@@ -296,4 +301,4 @@
             }
         }
     });    
-})(this);
+});

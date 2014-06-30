@@ -1,9 +1,13 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function logInit() {
+define([
+    'exports',
+    './_Base',
+    ], function logInit(exports, _Base) {
     "use strict";
 
     var spaceR = /\s+/g;
     var typeR = /^(error|warn|info|log)$/;
+    var WinJSLog = null;
 
     function format(message, tag, type) {
         /// <signature helpKeyword="WinJS.Utilities.formatLog">
@@ -25,14 +29,14 @@
             m;
     }
     function defAction(message, tag, type) {
-        var m = WinJS.Utilities.formatLog(message, tag, type);
+        var m = exports.formatLog(message, tag, type);
         console[(type && typeR.test(type)) ? type : "log"](m);
     }
     function escape(s) {
         // \s (whitespace) is used as separator, so don't escape it
         return s.replace(/[-[\]{}()*+?.,\\^$|#]/g, "\\$&");
     }
-    WinJS.Namespace.define("WinJS.Utilities", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.Utilities", {
         startLog: function (options) {
             /// <signature helpKeyword="WinJS.Utilities.startLog">
             /// <summary locid="WinJS.Utilities.startLog">
@@ -63,8 +67,8 @@
             var has = options.tags && new RegExp("(^|\\s)(" + escape(options.tags).replace(spaceR, " ").split(" ").join("|") + ")(\\s|$)", "i");
             var action = options.action || defAction;
 
-            if (!el && !not && !has && !WinJS.log) {
-                WinJS.log = action;
+            if (!el && !not && !has && !exports.log) {
+                exports.log = action;
                 return;
             }
 
@@ -77,8 +81,8 @@
 
                 result.next && result.next(message, tag, type);
             };
-            result.next = WinJS.log;
-            WinJS.log = result;
+            result.next = exports.log;
+            exports.log = result;
         },
         stopLog: function () {
             /// <signature helpKeyword="WinJS.Utilities.stopLog">
@@ -86,8 +90,19 @@
             /// Removes the previously set up logger.
             /// </summary>
             /// </signature>
-            delete WinJS.log;
+            exports.log = null;
         },
         formatLog: format
     });
-})();
+
+    _Base.Namespace._moduleDefine(exports, "WinJS", {
+        log: {
+            get: function() {
+                return WinJSLog;
+            },
+            set: function(value) {
+                WinJSLog = value;
+            }
+        }
+    });
+});

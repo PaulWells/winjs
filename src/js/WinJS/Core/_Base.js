@@ -1,5 +1,10 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function baseInit(global, undefined) {
+/* global WinJS */
+define([
+    './_Global',
+    './_BaseCoreUtils',
+    './_WriteProfilerMark'
+    ], function baseInit(_Global, _BaseCoreUtils, _WriteProfilerMark) {
     "use strict";
 
     function initializeProperties(target, members, prefix) {
@@ -16,7 +21,7 @@
                         member.enumerable = enumerable;
                     }
                     if (prefix && member.setName && typeof member.setName === 'function') {
-                        member.setName(prefix + "." + key)
+                        member.setName(prefix + "." + key);
                     }
                     properties = properties || {};
                     properties[key] = member;
@@ -25,7 +30,7 @@
             }
             if (!enumerable) {
                 properties = properties || {};
-                properties[key] = { value: member, enumerable: enumerable, configurable: true, writable: true }
+                properties[key] = { value: member, enumerable: enumerable, configurable: true, writable: true };
                 continue;
             }
             target[key] = member;
@@ -38,12 +43,12 @@
     (function (rootNamespace) {
 
         // Create the rootNamespace in the global namespace
-        if (!global[rootNamespace]) {
-            global[rootNamespace] = Object.create(Object.prototype);
+        if (!_Global[rootNamespace]) {
+            _Global[rootNamespace] = Object.create(Object.prototype);
         }
 
         // Cache the rootNamespace we just created in a local variable
-        var _rootNamespace = global[rootNamespace];
+        var _rootNamespace = _Global[rootNamespace];
         if (!_rootNamespace.Namespace) {
             _rootNamespace.Namespace = Object.create(Object.prototype);
         }
@@ -103,7 +108,7 @@
             /// The newly-defined namespace.
             /// </returns>
             /// </signature>
-            return defineWithParent(global, name, members);
+            return defineWithParent(_Global, name, members);
         }
 
         var LazyStates = {
@@ -113,12 +118,6 @@
         };
 
         function lazy(f) {
-            if (typeof f === "string") {
-                var target = f;
-                f = function () {
-                    return WinJS.Utilities.getMember(target);
-                };
-            }
             var name;
             var state = LazyStates.uninitialized;
             var result;
@@ -134,10 +133,10 @@
                         case LazyStates.uninitialized:
                             state = LazyStates.working;
                             try {
-                                WinJS.Utilities._writeProfilerMark("WinJS.Namespace._lazy:" + name + ",StartTM");
+                                _WriteProfilerMark("WinJS.Namespace._lazy:" + name + ",StartTM");
                                 result = f();
                             } finally {
-                                WinJS.Utilities._writeProfilerMark("WinJS.Namespace._lazy:" + name + ",StopTM");
+                                _WriteProfilerMark("WinJS.Namespace._lazy:" + name + ",StopTM");
                                 state = LazyStates.uninitialized;
                             }
                             f = null;
@@ -164,7 +163,15 @@
                 },
                 enumerable: true,
                 configurable: true,
+            };
+        }
+
+        // helper for defining AMD module members
+        function moduleDefine(exports, name, members) {
+            if(name) {
+                define(name, members);
             }
+            return defineWithParent(exports, null, members);
         }
 
         // Establish members of the "WinJS.Namespace" namespace
@@ -175,6 +182,8 @@
             define: { value: define, writable: true, enumerable: true, configurable: true },
 
             _lazy: { value: lazy, writable: true, enumerable: true, configurable: true },
+
+            _moduleDefine: { value: moduleDefine, writable: true, enumerable: true, configurable: true }
 
         });
 
@@ -201,7 +210,7 @@
             /// </returns>
             /// </signature>
             constructor = constructor || function () { };
-            WinJS.Utilities.markSupportedForProcessing(constructor);
+            _BaseCoreUtils.markSupportedForProcessing(constructor);
             if (instanceMembers) {
                 initializeProperties(constructor.prototype, instanceMembers);
             }
@@ -236,7 +245,7 @@
                 constructor = constructor || function () { };
                 var basePrototype = baseClass.prototype;
                 constructor.prototype = Object.create(basePrototype);
-                WinJS.Utilities.markSupportedForProcessing(constructor);
+                _BaseCoreUtils.markSupportedForProcessing(constructor);
                 Object.defineProperty(constructor.prototype, "constructor", { value: constructor, writable: true, configurable: true, enumerable: true });
                 if (instanceMembers) {
                     initializeProperties(constructor.prototype, instanceMembers);
@@ -280,5 +289,9 @@
 
     })(WinJS);
 
-})(this);
+    return {
+        Namespace: WinJS.Namespace,
+        Class: WinJS.Class
+    };
 
+});

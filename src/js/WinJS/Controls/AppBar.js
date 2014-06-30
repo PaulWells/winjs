@@ -2,14 +2,29 @@
 // AppBar
 /// <dictionary>appbar,appBars,Flyout,Flyouts,iframe,Statics,unfocus,WinJS</dictionary>
 define([
+    'exports',
+    '../Core/_Base',
+    '../Core/_BaseUtils',
+    '../Core/_ErrorFromName',
+    '../Core/_Resources',
+    '../Core/_WriteProfilerMark',
+    '../Animations',
+    '../Promise',
+    '../Utilities/_Control',
+    '../Utilities/_Dispose',
+    '../Utilities/_ElementUtilities',
+    '../Utilities/_UIUtilities',
+    './AppBar/_Constants',
     './AppBar/_Layouts',
     './AppBar/_Command',
-    './AppBar/_Icon'
-], function () {
-    (function appBarInit(WinJS) {
+    './AppBar/_Icon',
+    './Flyout/_Overlay',
+    'require-style!less/desktop/controls',
+    'require-style!less/phone/controls'
+], function appBarInit(exports, _Base, _BaseUtils, _ErrorFromName, _Resources, _WriteProfilerMark, Animations, Promise, _Control, _Dispose, _ElementUtilities, _UIUtilities, _Constants, _Layouts, _Command, _Icon, _Overlay) {
         "use strict";
 
-        WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
             /// <field>
             /// <summary locid="WinJS.UI.AppBar">
             /// Represents an application toolbar for display commands. 
@@ -29,62 +44,42 @@ define([
             /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/base.js" shared="true" />
             /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/ui.js" shared="true" />
             /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
-            AppBar: WinJS.Namespace._lazy(function () {
-                var thisWinUI = WinJS.UI;
-                var Key = WinJS.Utilities.Key;
+        AppBar: _Base.Namespace._lazy(function () {
+            var Key = _ElementUtilities.Key;
 
-                // Class Names            
-                var appBarClass = "win-appbar",
-                    reducedClass = "win-reduced",
-                    settingsFlyoutClass = "win-settingsflyout",
-                    topClass = "win-top",
-                    bottomClass = "win-bottom",
-                    closingClass = "win-hiding",
-                    closedClass = "win-hidden";
+            // Enum of known constant pixel values for display modes. 
+            var knownVisibleHeights = {
+                disabled: 0,
+                none: 0,
+                hidden: 0,
+                minimal: 25,
+            }
 
-                var firstDivClass = "win-firstdiv",
-                    finalDivClass = "win-finaldiv",
-                    ellipsisClass = "win-ellipsis";
+            // Maps each notion of a display modes to the corresponding visible position
+            var displayModeVisiblePositions = {
+                disabled: "hidden",
+                none: "hidden",
+                hidden: "hidden",
+                minimal: "minimal",
+                open: "open",
+            }
 
-                // Constants for placement
-                var appBarPlacementTop = "top",
-                    appBarPlacementBottom = "bottom";
+            // Enum of closedDisplayMode constants 
+            var closedDisplayModes = {
+                none: "none",
+                minimal: "minimal",
+            }
 
-                // Constants for layout
-                var appBarLayoutCustom = "custom",
-                    appBarLayoutCommands = "commands";
+            // Constants open/closed states
+            var appbarOpenedState = "opened",
+                appbarClosedState = "closed";
+            
+            var closingClass = "win-hiding",
+                closedClass = "win-hidden";
 
-                // Enum of known constant pixel values for display modes. 
-                var knownVisibleHeights = {
-                    disabled: 0,
-                    none: 0,
-                    hidden: 0,
-                    minimal: 25,
-                }
-
-                // Maps each notion of a display modes to the corresponding visible position
-                var displayModeVisiblePositions = {
-                    disabled: "hidden",
-                    none: "hidden",
-                    hidden: "hidden",
-                    minimal: "minimal",
-                    open: "open",
-                }
-
-                // Enum of closedDisplayMode constants 
-                var closedDisplayModes = {
-                    none: "none",
-                    minimal: "minimal",
-                }
-
-                // Constants open/closed states
-                var appbarOpenedState = "opened",
-                    appbarClosedState = "closed";
-
-                // Constants for AppBarCommands
-                var typeSeparator = "separator",
-                    typeContent = "content";
-
+            var firstDivClass = "win-firstdiv",
+                finalDivClass = "win-finaldiv",
+                ellipsisClass = "win-ellipsis";
                 // Hook into event
                 var appBarCommandEvent = false;
                 var edgyHappening = null;
@@ -92,7 +87,7 @@ define([
                 // Handler for the edgy starting/completed/cancelled events
                 function _completedEdgy(e) {
                     // If we had a right click on a flyout, ignore it.
-                    if (thisWinUI._Overlay._rightMouseMightEdgy &&
+                if (_Overlay._Overlay._rightMouseMightEdgy &&
                         e.kind === Windows.UI.Input.EdgeGestureKind.mouse) {
                         return;
                     }
@@ -102,14 +97,14 @@ define([
                     } else {
                         // Edgy wasn't happening, so toggle
                         var keyboardInvoked = e.kind === Windows.UI.Input.EdgeGestureKind.keyboard;
-                        WinJS.UI.AppBar._toggleAppBarEdgy(keyboardInvoked);
+                    AppBar._toggleAppBarEdgy(keyboardInvoked);
                     }
                 }
 
                 function _startingEdgy() {
                     if (!edgyHappening) {
                         // Edgy wasn't happening, so toggle & start it
-                        edgyHappening = WinJS.UI.AppBar._toggleAppBarEdgy(false);
+                    edgyHappening = AppBar._toggleAppBarEdgy(false);
                     }
                 }
 
@@ -117,16 +112,16 @@ define([
                     // Shouldn't get here unless edgy was happening.
                     // Undo whatever we were doing.
                     var bars = _getDynamicBarsForEdgy();
-                    if (edgyHappening === "opening") {
-                        _closeAllBars(bars, false);
-                    } else if (edgyHappening === "closing") {
-                        _openAllBars(bars, false);
+                if (edgyHappening === "showing") {
+                    _Overlay._Overlay._hideAllBars(bars, false);
+                } else if (edgyHappening === "hiding") {
+                    _showAllBars(bars, false);
                     }
                     edgyHappening = null;
                 }
 
                 function _allManipulationChanged(event) {
-                    var elements = document.querySelectorAll("." + appBarClass);
+                var elements = document.querySelectorAll("." + _Constants.appBarClass);
                     if (elements) {
                         var len = elements.length;
                         for (var i = 0; i < len; i++) {
@@ -143,7 +138,7 @@ define([
                 // Returns array of AppBar objects.
                 // The array also has _closed and/or _opened set if ANY are closed or opened.
                 function _getDynamicBarsForEdgy() {
-                    var elements = document.querySelectorAll("." + appBarClass);
+                var elements = document.querySelectorAll("." + _Constants.appBarClass);
                     var len = elements.length;
                     var AppBars = [];
                     AppBars._opened = false;
@@ -159,28 +154,16 @@ define([
                             AppBars.push(AppBar);
                             if (AppBar._closed) {
                                 AppBars._closed = true;
-                            } else {
+                                } else {
                                 AppBars._opened = true;
+                                }
+                                }
                             }
-                        }
-                    }
 
                     return AppBars;
                 }
 
-                // open or close all bars
-                function _closeAllBars(bars, keyboardInvoked) {
-                    var len = bars.length;
-                    var allBarsAnimationPromises = new Array(len);
-                    for (var i = 0; i < len; i++) {
-                        bars[i]._keyboardInvoked = keyboardInvoked;
-                        bars[i].hide();
-                        allBarsAnimationPromises[i] = bars[i]._animationPromise;
-                    }
-                    return WinJS.Promise.join(allBarsAnimationPromises);
-                }
-
-                function _openAllBars(bars, keyboardInvoked) {
+            function _showAllBars(bars, keyboardInvoked) {
                     var len = bars.length;
                     var allBarsAnimationPromises = new Array(len);
                     for (var i = 0; i < len; i++) {
@@ -189,7 +172,7 @@ define([
                         bars[i]._open();
                         allBarsAnimationPromises[i] = bars[i]._animationPromise;
                     }
-                    return WinJS.Promise.join(allBarsAnimationPromises);
+                return Promise.join(allBarsAnimationPromises);
                 }
 
                 // Sets focus to the last AppBar in the provided appBars array with given placement.
@@ -213,7 +196,7 @@ define([
                 //    2) Top AppBars
                 // DOM order is respected, because an AppBar should not have a defined tabIndex
                 function _setFocusToPreviousAppBar() {
-                    var appBars = document.querySelectorAll("." + appBarClass);
+                var appBars = document.querySelectorAll("." + _Constants.appBarClass);
                     if (!appBars.length) {
                         return;
                     }
@@ -227,7 +210,7 @@ define([
                     }
 
                     var appBarControl = this.parentElement.winControl;
-                    if (appBarControl.placement === appBarPlacementBottom) {
+                    if (appBarControl.placement === _Constants.appBarPlacementBottom) {
                         // Bottom appBar: Focus order: (1)previous bottom appBars (2)top appBars (3)bottom appBars
                         if (thisAppBarIndex && _setFocusToPreviousAppBarHelper(thisAppBarIndex - 1, appBarPlacementBottom, appBars)) { return; }
                         if (_setFocusToPreviousAppBarHelper(appBars.length - 1, appBarPlacementTop, appBars)) { return; }
@@ -263,7 +246,7 @@ define([
                 //    2) Top AppBars
                 // DOM order is respected, because an AppBar should not have a defined tabIndex
                 function _setFocusToNextAppBar() {
-                    var appBars = document.querySelectorAll("." + appBarClass);
+                var appBars = document.querySelectorAll("." + _Constants.appBarClass);
 
                     var thisAppBarIndex = 0;
                     for (var i = 0; i < appBars.length; i++) {
@@ -274,7 +257,7 @@ define([
                     }
 
                     var appBarControl = this.parentElement.winControl;
-                    if (this.parentElement.winControl.placement === appBarPlacementBottom) {
+                    if (this.parentElement.winControl.placement === _Constants.appBarPlacementBottom) {
                         // Bottom appBar: Focus order: (1)next bottom appBars (2)top appBars (3)bottom appBars
                         if (_setFocusToNextAppBarHelper(thisAppBarIndex + 1, appBarPlacementBottom, appBars)) { return; }
                         if (_setFocusToNextAppBarHelper(0, appBarPlacementTop, appBars)) { return; }
@@ -301,9 +284,9 @@ define([
                     }
                 }
 
-                // Returns true if an open non-sticky (light dismiss) AppBar is found in the document
-                function _isThereOpenNonStickyBar() {
-                    var appBars = document.querySelectorAll("." + appBarClass);
+            // Returns true if a visible non-sticky (light dismiss) AppBar is found in the document
+            function _isThereVisibleNonStickyBar() {
+                var appBars = document.querySelectorAll("." + _Constants.appBarClass);
                     for (var i = 0; i < appBars.length; i++) {
                         var appBarControl = appBars[i].winControl;
                         if (appBarControl && !appBarControl.sticky &&
@@ -314,21 +297,12 @@ define([
                     return false;
                 }
 
-                // Close all light dismiss AppBars if what has focus is not part of a AppBar or flyout.
-                function _closeIfAllAppBarsLostFocus() {
-                    if (!thisWinUI.AppBar._isAppBarOrChild(document.activeElement)) {
-                        thisWinUI.AppBar._closeLightDismissAppBars(null, false);
-                        // Ensure that sticky appbars clear cached focus after light dismiss are dismissed, which moved focus.
-                        thisWinUI.AppBar._ElementWithFocusPreviousToAppBar = null;
-                    }
-                }
-
                 // If the previous focus was not a AppBar or CED, store it in the cache
                 // (_isAppBarOrChild tests CED for us).
                 function _checkStorePreviousFocus(focusEvent) {
                     if (focusEvent.relatedTarget
                      && focusEvent.relatedTarget.focus
-                     && !thisWinUI.AppBar._isAppBarOrChild(focusEvent.relatedTarget)) {
+                 && !_Overlay._Overlay._isAppBarOrChild(focusEvent.relatedTarget)) {
                         _storePreviousFocus(focusEvent.relatedTarget);
                     }
                 }
@@ -336,25 +310,27 @@ define([
                 // Cache the previous focus information
                 function _storePreviousFocus(element) {
                     if (element) {
-                        thisWinUI.AppBar._ElementWithFocusPreviousToAppBar = element;
+                    _Overlay._Overlay._ElementWithFocusPreviousToAppBar = element;
                     }
                 }
 
                 // Try to return focus to what had focus before.
                 // If successfully return focus to a textbox, restore the selection too.
                 function _restorePreviousFocus() {
-                    thisWinUI._Overlay._trySetActive(thisWinUI.AppBar._ElementWithFocusPreviousToAppBar);
+                _Overlay._Overlay._trySetActive(_Overlay._Overlay._ElementWithFocusPreviousToAppBar);
                 }
 
                 var strings = {
-                    get ariaLabel() { return WinJS.Resources._getWinJSString("ui/appBarAriaLabel").value; },
-                    get requiresCommands() { return WinJS.Resources._getWinJSString("ui/requiresCommands").value; },
-                    get cannotChangePlacementWhenVisible() { return WinJS.Resources._getWinJSString("ui/cannotChangePlacementWhenVisible").value; },
-                    get badLayout() { return WinJS.Resources._getWinJSString("ui/badLayout").value; },
-                    get cannotChangeLayoutWhenVisible() { return WinJS.Resources._getWinJSString("ui/cannotChangeLayoutWhenVisible").value; }
+                    get ariaLabel() { return _Resources._getWinJSString("ui/appBarAriaLabel").value; },
+                    get requiresCommands() { return _Resources._getWinJSString("ui/requiresCommands").value; },
+                    get cannotChangePlacementWhenVisible() { return _Resources._getWinJSString("ui/cannotChangePlacementWhenVisible").value; },
+                    get badLayout() { return _Resources._getWinJSString("ui/badLayout").value; },
+                    get cannotChangeLayoutWhenVisible() { return _Resources._getWinJSString("ui/cannotChangeLayoutWhenVisible").value; }
                 };
 
-                var AppBar = WinJS.Class.derive(WinJS.UI._Overlay, function AppBar_ctor(element, options) {
+            var appBarSynchronizationPromise = Promise.as();
+
+            var AppBar = _Base.Class.derive(_Overlay._Overlay, function AppBar_ctor(element, options) {
                     /// <signature helpKeyword="WinJS.UI.AppBar.AppBar">
                     /// <summary locid="WinJS.UI.AppBar.constructor">
                     /// Creates a new AppBar control. 
@@ -377,7 +353,7 @@ define([
 
                     // Make sure there's an element            
                     this._element = element || document.createElement("div");
-                    this._id = this._element.id || WinJS.Utilities._uniqueID(this._element);
+                this._id = this._element.id || _ElementUtilities._uniqueID(this._element);
                     this._writeProfilerMark("constructor,StartTM");
 
                     if (!this._element.hasAttribute("tabIndex")) {
@@ -385,7 +361,7 @@ define([
                     }
 
                     // Attach our css class.
-                    WinJS.Utilities.addClass(this._element, appBarClass);
+                    WinJS.Utilities.addClass(this._element, _Constants.appBarClass);
 
                     // Make sure we have an ARIA role
                     var role = this._element.getAttribute("role");
@@ -408,9 +384,9 @@ define([
                     // validate that if they didn't set commands, but want command
                     // layout that the HTML only contains commands.  Do this first
                     // so that we don't leave partial AppBars in the DOM.
-                    if (options.layout !== appBarLayoutCustom && !options.commands && this._element) {
+                if (this.layout !== _Constants.appBarLayoutCustom && !options.commands && this._element) {
                         // Shallow copy object so we can modify it.
-                        options = WinJS.Utilities._shallowCopy(options);
+                    options = _BaseUtils._shallowCopy(options);
                         options.commands = this._verifyCommandsOnly(this._element, "WinJS.UI.AppBarCommand");
                     }
 
@@ -427,23 +403,23 @@ define([
                     };
                     this._ellipsis.addEventListener("pointerdown", this._ellipsisPointerDown.bind(this), false);
                     this._ellipsis.addEventListener("click", this._ellipsisClick.bind(this), false);
-                    
+
 
                     // Run layout setter immediately. We need to know our layout in order to correctly 
                     // position any commands that may be getting set through the constructor. 
-                    this.layout = options.layout || appBarLayoutCommands;
+                    this.layout = options.layout || _Constants.appBarLayoutCommands;
                     delete options.layout;
 
                     // Need to set placement before closedDisplayMode, closedDisplayMode sets our starting position, which is dependant on placement.
-                    this.placement = options.placement || appBarPlacementBottom;
+                    this.placement = options.placement || _Constants.appBarPlacementBottom;
                     this.closedDisplayMode = options.closedDisplayMode || closedDisplayModes.none;
 
-                    WinJS.UI.setOptions(this, options);
+                    _Control.setOptions(this, options);
 
                     this._initializing = false;
 
                     // Make a click eating div
-                    thisWinUI._Overlay._createClickEatingDivAppBar();
+                    _Overlay._Overlay._createClickEatingDivAppBar();
 
                     // Handle key down (esc) and (left & right)
                     this._element.addEventListener("keydown", this._handleKeyDown.bind(this), false);
@@ -453,7 +429,7 @@ define([
                         // We'll trigger on invoking.  Could also have invoked or canceled
                         // Eventually we may want click up on invoking and drop back on invoked.
                         // Check for namespace so it'll behave in the designer.
-                        if (WinJS.Utilities.hasWinRT) {
+                    if (_BaseUtils.hasWinRT) {
                             var commandUI = Windows.UI.Input.EdgeGesture.getForCurrentView();
                             commandUI.addEventListener("starting", _startingEdgy);
                             commandUI.addEventListener("completed", _completedEdgy);
@@ -470,15 +446,15 @@ define([
                     this._addOverlayEventHandlers(false);
 
                     // Need to store what had focus before
-                    WinJS.Utilities._addEventListener(this._element, "focusin", function (event) { _checkStorePreviousFocus(event); }, false);
+                _ElementUtilities._addEventListener(this._element, "focusin", function (event) { _checkStorePreviousFocus(event); }, false);
 
-                    // Need to close ourselves if we lose focus
-                    WinJS.Utilities._addEventListener(this._element, "focusout", function (event) { _closeIfAllAppBarsLostFocus(); }, false);
+                // Need to hide ourselves if we lose focus
+                _ElementUtilities._addEventListener(this._element, "focusout", function (event) { _Overlay._Overlay._hideIfAllAppBarsLostFocus(); }, false);
 
                     // Commands layout AppBar measures and caches its content synchronously in setOptions through the .commands property setter.
                     // Remove the commands layout AppBar from the layout tree at this point so we don't cause unnecessary layout costs whenever
                     // the window resizes or when CSS changes are applied to the commands layout AppBar's parent element.
-                    if (this.layout === appBarLayoutCommands) {
+                if (this.layout === _Constants.appBarLayoutCommands) {
                         this._element.style.display = "none";
                     }
 
@@ -502,20 +478,20 @@ define([
                             }
 
                             if (!this.hidden) {
-                                throw new WinJS.ErrorFromName("WinJS.UI.AppBar.CannotChangePlacementWhenVisible", strings.cannotChangePlacementWhenVisible);
+                            throw new _ErrorFromName("WinJS.UI.AppBar.CannotChangePlacementWhenVisible", strings.cannotChangePlacementWhenVisible);
                             }
 
                             // Set placement, coerce invalid values to 'bottom'
                             this._placement = (value === appBarPlacementTop) ? appBarPlacementTop : appBarPlacementBottom;
 
                             // Clean up win-top, win-bottom styles
-                            if (this._placement === appBarPlacementTop) {
-                                WinJS.Utilities.addClass(this._element, topClass);
-                                WinJS.Utilities.removeClass(this._element, bottomClass);
-                            } else if (this._placement === appBarPlacementBottom) {
-                                WinJS.Utilities.removeClass(this._element, topClass);
-                                WinJS.Utilities.addClass(this._element, bottomClass);
-                            }
+                        if (this._placement === _Constants.appBarPlacementTop) {
+                            _ElementUtilities.addClass(this._element, _Constants.topClass);
+                            _ElementUtilities.removeClass(this._element, _Constants.bottomClass);
+                        } else if (this._placement === _Constants.appBarPlacementBottom) {
+                            _ElementUtilities.removeClass(this._element, _Constants.topClass);
+                            _ElementUtilities.addClass(this._element, _Constants.bottomClass);
+                        } 
 
                             // Open again if we closed ourselves for the designer
                             if (wasOpen) {
@@ -531,9 +507,9 @@ define([
                         get: function AppBar_get_layout() {
                             return this._layout.type;
                         },
-                        set: function AppBar_set_layout(layout) {
-                            if (layout !== appBarLayoutCommands && layout !== appBarLayoutCustom) {
-                                throw new WinJS.ErrorFromName("WinJS.UI.AppBar.BadLayout", strings.badLayout);
+                    set: function (layout) {
+                        if (layout !== _Constants.appBarLayoutCommands && layout !== _Constants.appBarLayoutCustom) {
+                            throw new _ErrorFromName("WinJS.UI.AppBar.BadLayout", strings.badLayout);
                             }
 
                             // In designer we may have to redraw it
@@ -543,8 +519,8 @@ define([
                                 wasOpen = true;
                             }
 
-                            if (!this.hidden) {
-                                throw new WinJS.ErrorFromName("WinJS.UI.AppBar.CannotChangeLayoutWhenVisible", strings.cannotChangeLayoutWhenVisible);
+                        if (!this.hidden) {
+                            throw new _ErrorFromName("WinJS.UI.AppBar.CannotChangeLayoutWhenVisible", strings.cannotChangeLayoutWhenVisible);
                             }
 
                             var commands;
@@ -557,11 +533,11 @@ define([
                             }
 
                             // Set layout
-                            if (layout === appBarLayoutCommands) {
-                                this._layout = new WinJS.UI._AppBarCommandsLayout();
+                        if (layout === _Constants.appBarLayoutCommands) {
+                            this._layout = new _Layouts._AppBarCommandsLayout();
                             } else {
                                 // Custom layout uses Base AppBar Layout class.
-                                this._layout = new WinJS.UI._AppBarBaseLayout();
+                            this._layout = new _Layouts._AppBarBaseLayout();
                             }
                             this._layout.connect(this._element);
 
@@ -609,11 +585,11 @@ define([
 
                                 // Ensure that the click eating div is in the correct state
                                 if (this._sticky) {
-                                    if (!_isThereOpenNonStickyBar()) {
-                                        thisWinUI._Overlay._hideClickEatingDivAppBar();
+                                if (!_isThereVisibleNonStickyBar()) {
+                                    _Overlay._Overlay._hideClickEatingDivAppBar();
                                     }
                                 } else {
-                                    thisWinUI._Overlay._showClickEatingDivAppBar();
+                                _Overlay._Overlay._showClickEatingDivAppBar();
 
                                     if (this._shouldStealFocus()) {
                                         _storePreviousFocus(document.activeElement);
@@ -631,7 +607,7 @@ define([
                         set: function AppBar_set_commands(commands) {
                             // Fail if trying to set when open
                             if (!this.hidden) {
-                                throw new WinJS.ErrorFromName("WinJS.UI.AppBar.CannotChangeCommandsWhenVisible", WinJS.Resources._formatString(thisWinUI._Overlay.commonstrings.cannotChangeCommandsWhenVisible, "AppBar"));
+                            throw new _ErrorFromName("WinJS.UI.AppBar.CannotChangeCommandsWhenVisible", _Resources._formatString(_Overlay._Overlay.commonstrings.cannotChangeCommandsWhenVisible, "AppBar"));
                             }
 
                             // Dispose old commands before tossing them out.
@@ -639,15 +615,15 @@ define([
                                 // AppBarCommands defined in markup don't want to be disposed during initialization.
                                 this._disposeChildren();
                             }
-                            this._layoutCommands(commands);
+                            this._layoutCommands(commands);                           
                         }
                     },
 
                     _layoutCommands: function AppBar_layoutCommands(commands) {
                         // Function precondition: AppBar must already be closed.
-
+                        
                         // Empties AppBar HTML and repopulates with passed in commands.
-                        WinJS.Utilities.empty(this._element);
+                        _ElementUtilities.empty(this._element);
                         this._element.appendChild(this._ellipsis); // Keep our Open/Close button.
 
                         // In case they had only one command to set...
@@ -751,64 +727,64 @@ define([
                         return newCommands;
                     },
 
-                    showCommands: function (commands) {
-                        /// <signature helpKeyword="WinJS.UI.AppBar.showCommands">
-                        /// <summary locid="WinJS.UI.AppBar.showCommands">
-                        /// Show the specified commands of the AppBar.
-                        /// </summary>
-                        /// <param name="commands" type="Array" locid="WinJS.UI.AppBar.showCommands_p:commands">
-                        /// An array of the commands to show. The array elements may be AppBarCommand objects, or the string identifiers (IDs) of commands.
-                        /// </param>
-                        /// </signature>
-                        if (!commands) {
-                            throw new WinJS.ErrorFromName("WinJS.UI.AppBar.RequiresCommands", strings.requiresCommands);
-                        }
+                showCommands: function (commands) {
+                    /// <signature helpKeyword="WinJS.UI.AppBar.showCommands">
+                    /// <summary locid="WinJS.UI.AppBar.showCommands">
+                    /// Show the specified commands of the AppBar.
+                    /// </summary>
+                    /// <param name="commands" type="Array" locid="WinJS.UI.AppBar.showCommands_p:commands">
+                    /// An array of the commands to show. The array elements may be AppBarCommand objects, or the string identifiers (IDs) of commands.
+                    /// </param>
+                    /// </signature>
+                    if (!commands) {
+                        throw new _ErrorFromName("WinJS.UI.AppBar.RequiresCommands", strings.requiresCommands);
+                    }
 
-                        this._showCommands(commands);
-                    },
+                    this._showCommands(commands);
+                },
 
-                    hideCommands: function (commands) {
-                        /// <signature helpKeyword="WinJS.UI.AppBar.hideCommands">
-                        /// <summary locid="WinJS.UI.AppBar.hideCommands">
-                        /// Hides the specified commands of the AppBar.
-                        /// </summary>
-                        /// <param name="commands" type="Array" locid="WinJS.UI.AppBar.hideCommands_p:commands">Required. Command or Commands to hide, either String, DOM elements, or WinJS objects.</param>
-                        /// </signature>
-                        if (!commands) {
-                            throw new WinJS.ErrorFromName("WinJS.UI.AppBar.RequiresCommands", strings.requiresCommands);
-                        }
+                hideCommands: function (commands) {
+                    /// <signature helpKeyword="WinJS.UI.AppBar.hideCommands">
+                    /// <summary locid="WinJS.UI.AppBar.hideCommands">
+                    /// Hides the specified commands of the AppBar.
+                    /// </summary>
+                    /// <param name="commands" type="Array" locid="WinJS.UI.AppBar.hideCommands_p:commands">Required. Command or Commands to hide, either String, DOM elements, or WinJS objects.</param>
+                    /// </signature>
+                    if (!commands) {
+                        throw new _ErrorFromName("WinJS.UI.AppBar.RequiresCommands", strings.requiresCommands);
+                    }
 
-                        this._hideCommands(commands);
-                    },
+                    this._hideCommands(commands);
+                },
 
-                    showOnlyCommands: function (commands) {
-                        /// <signature helpKeyword="WinJS.UI.AppBar.showOnlyCommands">
-                        /// <summary locid="WinJS.UI.AppBar.showOnlyCommands">
-                        /// Show the specified commands, hiding all of the others in the AppBar.
-                        /// </summary>
-                        /// <param name="commands" type="Array" locid="WinJS.UI.AppBar.showOnlyCommands_p:commands">
-                        /// An array of the commands to show. The array elements may be AppBarCommand objects, or the string identifiers (IDs) of commands.
-                        /// </param>
-                        /// </signature>
-                        if (!commands) {
-                            throw new WinJS.ErrorFromName("WinJS.UI.AppBar.RequiresCommands", strings.requiresCommands);
-                        }
+                showOnlyCommands: function (commands) {
+                    /// <signature helpKeyword="WinJS.UI.AppBar.showOnlyCommands">
+                    /// <summary locid="WinJS.UI.AppBar.showOnlyCommands">
+                    /// Show the specified commands, hiding all of the others in the AppBar.
+                    /// </summary>
+                    /// <param name="commands" type="Array" locid="WinJS.UI.AppBar.showOnlyCommands_p:commands">
+                    /// An array of the commands to show. The array elements may be AppBarCommand objects, or the string identifiers (IDs) of commands.
+                    /// </param>
+                    /// </signature>
+                    if (!commands) {
+                        throw new _ErrorFromName("WinJS.UI.AppBar.RequiresCommands", strings.requiresCommands);
+                    }
 
-                        this._showOnlyCommands(commands);
-                    },
+                    this._showOnlyCommands(commands);
+                },
 
-                    show: function () {
-                        /// <signature helpKeyword="WinJS.UI.AppBar.show">
-                        /// <summary locid="WinJS.UI.AppBar.show">
+                show: function () {
+                    /// <signature helpKeyword="WinJS.UI.AppBar.show">
+                    /// <summary locid="WinJS.UI.AppBar.show">
                         /// Opens the AppBar, if closed and not disabled, regardless of other state.
-                        /// </summary>
-                        /// </signature>
-                        // Just wrap the private one, turning off keyboard invoked flag
+                    /// </summary>
+                    /// </signature>
+                    // Just wrap the private one, turning off keyboard invoked flag
                         this._writeProfilerMark("show,StartTM");
-                        this._keyboardInvoked = false;
-                        this._doNotFocus = !!this.sticky;
+                    this._keyboardInvoked = false;
+                    this._doNotFocus = !!this.sticky;
                         this._open();
-                    },
+                },
 
                     _open: function AppBar_open() {
 
@@ -819,40 +795,40 @@ define([
                         this._changeVisiblePosition(toPosition, opening);
                         if (opening) {
                             // Configure open state for lightdismiss & sticky appbars.
-                            if (!this.sticky) {
-                                // Need click-eating div to be visible ASAP.
-                                thisWinUI._Overlay._showClickEatingDivAppBar();
-                            }
+                    if (!this.sticky) {
+                        // Need click-eating div to be visible ASAP.
+                        _Overlay._Overlay._showClickEatingDivAppBar();
+                    }
 
                             // Clean up tabbing behavior by making sure first and final divs are correct after opening.
                             if (!this.sticky && _isThereOpenNonStickyBar()) {
-                                _updateAllAppBarsFirstAndFinalDiv();
-                            } else {
-                                this._updateFirstAndFinalDiv();
-                            }
+                        _updateAllAppBarsFirstAndFinalDiv();
+                    } else {
+                        this._updateFirstAndFinalDiv();
+                    }
 
-                            // Check if we should steal focus
-                            if (!this._doNotFocus && this._shouldStealFocus()) {
-                                // Store what had focus if nothing currently is stored
-                                if (!thisWinUI.AppBar._ElementWithFocusPreviousToAppBar) {
-                                    _storePreviousFocus(document.activeElement);
-                                }
-
-                                this._setFocusToAppBar();
-                            }
+                    // Check if we should steal focus
+                    if (!this._doNotFocus && this._shouldStealFocus()) {
+                        // Store what had focus if nothing currently is stored
+                        if (!_Overlay._Overlay._ElementWithFocusPreviousToAppBar) {
+                            _storePreviousFocus(document.activeElement);
                         }
-                    },
 
-                    hide: function () {
-                        /// <signature helpKeyword="WinJS.UI.AppBar.hide">
-                        /// <summary locid="WinJS.UI.AppBar.hide">
+                        this._setFocusToAppBar();
+                    }
+                        }
+                },
+
+                hide: function () {
+                    /// <signature helpKeyword="WinJS.UI.AppBar.hide">
+                    /// <summary locid="WinJS.UI.AppBar.hide">
                         /// Closes the AppBar.
-                        /// </summary>
-                        /// </signature>
-                        // Just wrap the private one
+                    /// </summary>
+                    /// </signature>
+                    // Just wrap the private one
                         this._writeProfilerMark("hide,StartTM");
                         this._close();
-                    },
+                },
 
                     _close: function AppBar_close(toPosition) {
 
@@ -864,108 +840,108 @@ define([
                         if (closing) {
                             // Determine if there are any AppBars that are Open.
                             // Set the focus to the next Open AppBar.
-                            // If there are none, set the focus to the control stored in the cache, which
-                            //   is what had focus before the AppBars were given focus.
-                            var appBars = document.querySelectorAll("." + appBarClass);
-                            var areOtherAppBars = false;
-                            var areOtherNonStickyAppBars = false;
-                            var i;
-                            for (i = 0; i < appBars.length; i++) {
-                                var appBarControl = appBars[i].winControl;
-                                if (appBarControl && !appBarControl.hidden && (appBarControl !== this)) {
-                                    areOtherAppBars = true;
+                    // If there are none, set the focus to the control stored in the cache, which
+                    //   is what had focus before the AppBars were given focus.
+                    var appBars = document.querySelectorAll("." + _Constants.appBarClass);
+                    var areOtherAppBars = false;
+                    var areOtherNonStickyAppBars = false;
+                    var i;
+                    for (i = 0; i < appBars.length; i++) {
+                        var appBarControl = appBars[i].winControl;
+                        if (appBarControl && !appBarControl.hidden && (appBarControl !== this)) {
+                            areOtherAppBars = true;
 
-                                    if (!appBarControl.sticky) {
-                                        areOtherNonStickyAppBars = true;
-                                        break;
-                                    }
-                                }
+                            if (!appBarControl.sticky) {
+                                areOtherNonStickyAppBars = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    var settingsFlyouts = document.querySelectorAll("." + _Constants.settingsFlyoutClass);
+                    var areVisibleSettingsFlyouts = false;
+                    for (i = 0; i < settingsFlyouts.length; i++) {
+                        var settingsFlyoutControl = settingsFlyouts[i].winControl;
+                        if (settingsFlyoutControl && !settingsFlyoutControl.hidden) {
+                            areVisibleSettingsFlyouts = true;
+                            break;
+                        }
+                    }
+
+                    if (!areOtherNonStickyAppBars && !areVisibleSettingsFlyouts) {
+                        // Hide the click eating div because there are no other AppBars showing
+                        _Overlay._Overlay._hideClickEatingDivAppBar();
+                    }
+
+                    var that = this;
+                    if (!areOtherAppBars) {
+                        // Set focus to what had focus before showing the AppBar
+                        if (_Overlay._Overlay._ElementWithFocusPreviousToAppBar &&
+                            (!document.activeElement || _Overlay._Overlay._isAppBarOrChild(document.activeElement))) {
+                            _restorePreviousFocus();
+                        }
+                        // Always clear the previous focus (to prevent temporary leaking of element)
+                        _Overlay._Overlay._ElementWithFocusPreviousToAppBar = null;
+                    } else if (AppBar._isWithinAppBarOrChild(document.activeElement, that.element)) {
+                        // Set focus to next visible AppBar in DOM
+
+                        var foundCurrentAppBar = false;
+                        for (i = 0; i <= appBars.length; i++) {
+                            if (i === appBars.length) {
+                                i = 0;
                             }
 
-                            var settingsFlyouts = document.querySelectorAll("." + settingsFlyoutClass);
-                            var areVisibleSettingsFlyouts = false;
-                            for (i = 0; i < settingsFlyouts.length; i++) {
-                                var settingsFlyoutControl = settingsFlyouts[i].winControl;
-                                if (settingsFlyoutControl && !settingsFlyoutControl.hidden) {
-                                    areVisibleSettingsFlyouts = true;
-                                    break;
-                                }
+                            var appBar = appBars[i];
+                            if (appBar === this.element) {
+                                foundCurrentAppBar = true;
+                            } else if (foundCurrentAppBar && !appBar.winControl.hidden) {
+                                appBar.winControl._keyboardInvoked = !!this._keyboardInvoked;
+                                appBar.winControl._setFocusToAppBar();
+                                break;
                             }
-
-                            if (!areOtherNonStickyAppBars && !areVisibleSettingsFlyouts) {
-                                // Hide the click eating div because there are no other AppBars open
-                                thisWinUI._Overlay._hideClickEatingDivAppBar();
-                            }
-
-                            var that = this;
-                            if (!areOtherAppBars) {
-                                // Set focus to what had focus before the AppBar was opened.
-                                if (thisWinUI.AppBar._ElementWithFocusPreviousToAppBar &&
-                                    (!document.activeElement || thisWinUI.AppBar._isAppBarOrChild(document.activeElement))) {
-                                    _restorePreviousFocus();
-                                }
-                                // Always clear the previous focus (to prevent temporary leaking of element)
-                                thisWinUI.AppBar._ElementWithFocusPreviousToAppBar = null;
-                            } else if (thisWinUI.AppBar._isWithinAppBarOrChild(document.activeElement, that.element)) {
-                                // Set focus to next open AppBar in DOM
-
-                                var foundCurrentAppBar = false;
-                                for (i = 0; i <= appBars.length; i++) {
-                                    if (i === appBars.length) {
-                                        i = 0;
-                                    }
-
-                                    var appBar = appBars[i];
-                                    if (appBar === this.element) {
-                                        foundCurrentAppBar = true;
-                                    } else if (foundCurrentAppBar && !appBar.winControl.hidden) {
-                                        appBar.winControl._keyboardInvoked = !!this._keyboardInvoked;
-                                        appBar.winControl._setFocusToAppBar();
-                                        break;
-                                    }
-                                }
-                            }
+                        }
+                    }
 
                             // If we are closing the last lightDismiss AppBar, 
-                            //   then we need to update the tabStops of the other AppBars
+                    //   then we need to update the tabStops of the other AppBars
                             if (!this.sticky && !_isThereOpenNonStickyBar()) {
-                                _updateAllAppBarsFirstAndFinalDiv();
-                            }
+                        _updateAllAppBarsFirstAndFinalDiv();
+                    }
 
-                            // Reset these values
-                            this._keyboardInvoked = false;
-                            this._doNotFocus = false;
+                    // Reset these values
+                    this._keyboardInvoked = false;
+                    this._doNotFocus = false;
                         }
-                    },
+                },
 
-                    _dispose: function AppBar_dispose() {
-                        WinJS.Utilities.disposeSubTree(this.element);
-                        this._layout.dispose();
+                _dispose: function AppBar_dispose() {
+                    _Dispose.disposeSubTree(this.element);
+                    this._layout.dispose();
                         this.disabled = true;
+                        
+                },
 
-                    },
+                _disposeChildren: function AppBar_disposeChildren() {
+                    // Be purposeful about what we dispose.
+                    this._layout.disposeChildren();
+                },
 
-                    _disposeChildren: function AppBar_disposeChildren() {
-                        // Be purposeful about what we dispose.
-                        this._layout.disposeChildren();
-                    },
-
-                    _handleKeyDown: function AppBar_handleKeyDown(event) {
-                        // On Left/Right arrow keys, moves focus to previous/next AppbarCommand element.
+                _handleKeyDown: function AppBar_handleKeyDown(event) {
+                    // On Left/Right arrow keys, moves focus to previous/next AppbarCommand element.
                         // On "Esc" key press hide flyouts and close light dismiss AppBars.
 
-                        // Esc closes light-dismiss AppBars in all layouts but if the user has a text box with an IME 
-                        // candidate window open, we want to skip the ESC key event since it is handled by the IME.
-                        // When the IME handles a key it sets event.keyCode === Key.IME for an easy check.
-                        if (event.keyCode === Key.escape && event.keyCode !== Key.IME) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            thisWinUI._Overlay._hideAllFlyouts();
-                            thisWinUI.AppBar._closeLightDismissAppBars(null, true);
-                        }
+                    // Esc closes light-dismiss AppBars in all layouts but if the user has a text box with an IME 
+                    // candidate window open, we want to skip the ESC key event since it is handled by the IME.
+                    // When the IME handles a key it sets event.keyCode === Key.IME for an easy check.
+                    if (event.keyCode === Key.escape && event.keyCode !== Key.IME) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        _Overlay._Overlay._hideAllFlyouts();
+                        _Overlay._Overlay._hideLightDismissAppBars(null, true);
+                    }
 
-                        // Layout might want to handle additional keys
-                        this._layout.handleKeyDown(event);
+                    // Layout might want to handle additional keys
+                    this._layout.handleKeyDown(event);
                     },
                     _visiblePixels: {
                         get: function () {
@@ -1003,7 +979,7 @@ define([
                         get: function () {
                             return (this._visiblePosition !== displayModeVisiblePositions.open);
                         }
-                    },
+                },
 
                     _changeVisiblePosition: function (toPosition, newState) {
                         // Change the visible position of our AppBar.
@@ -1043,7 +1019,7 @@ define([
                                     // If we're covered by the IHM we already look hidden. 
                                     // We can skip our animation and just close.
                                     performAnimation = false;
-                                } else {
+                    } else {
                                     // Some portion of the AppBar should be visible to users after its position changes.
 
                                     // Un-obscure ourselves and become visible to the user again. 
@@ -1146,7 +1122,7 @@ define([
                             this._showAndHideFast(this._queuedToShow, this._queuedToHide);
                             this._queuedToShow = [];
                             this._queuedToHide = [];
-                        }
+                    }
 
                         WinJS.Utilities.addClass(this._element, closedClass);
                         WinJS.Utilities.removeClass(this._element, closingClass);
@@ -1154,7 +1130,7 @@ define([
                         // Send our "afterHide" event
                         this._sendEvent(WinJS.UI._Overlay.afterHide);
                         this._writeProfilerMark("hide,StopTM");
-                    },
+                },
 
 
                     _animatePositionChange: function AppBar_animatePositionChange(fromPosition, toPosition) {
@@ -1166,26 +1142,26 @@ define([
                             endingHeight = this._visiblePixels[toPosition],
                             distanceToMove = endingHeight - startingHeight;
 
-                        // Get animation direction and clear other value
-                        if (this._placement === appBarPlacementTop) {
-                            // Top Bar
+                    // Get animation direction and clear other value
+                    if (this._placement === _Constants.appBarPlacementTop) {
+                        // Top Bar
                             beginningOffset = { top: -distanceToMove + "px", left: "0px" };
-                        } else {
-                            // Bottom Bar
+                    } else {
+                        // Bottom Bar
                             beginningOffset = { top: distanceToMove + "px", left: "0px" };
-                        }
+                    }
 
                         // Animate
-                        this._element.style.opacity = 1;
-                        this._element.style.visibility = "visible";
+                    this._element.style.opacity = 1;
+                    this._element.style.visibility = "visible";
                         return WinJS.UI.Animation.showEdgeUI(this._element, beginningOffset, { mechanism: "transition" });
-                    },
+                },
 
                     _checkDoNext: function AppBar_checkDoNext() {
                         // Do nothing if we're still animating
                         if (this._animating || this._needToHandleShowingKeyboard || this._needToHandleHidingKeyboard || this._disposed) {
                             return;
-                        }
+                    }
 
                         if (this._doNext === displayModeVisiblePositions.disabled ||
                             this._doNext === displayModeVisiblePositions.hidden ||
@@ -1201,221 +1177,220 @@ define([
                             this._open();
                             this._doNext = "";
                         }
-                    },
+                },
 
-                    _isABottomAppBarInTheProcessOfOpening: function AppBar_isABottomAppBarInTheProcessOfOpening() {
-                        var appbars = document.querySelectorAll("." + appBarClass + "." + bottomClass);
-                        for (var i = 0; i < appbars.length; i++) {
+                _isABottomAppBarInTheProcessOfShowing: function AppBar_isABottomAppBarInTheProcessOfShowing() {
+                    var appbars = document.querySelectorAll("." + _Constants.appBarClass + "." + _Constants.bottomClass);
+                    for (var i = 0; i < appbars.length; i++) {
                             if (appbars[i].winAnimating === displayModeVisiblePositions.open) {
-                                return true;
-                            }
-                        }
-
-                        return false;
-                    },
-
-                    // Returns true if
-                    //   1) This is a bottom appbar
-                    //   2) No appbar has focus and a bottom appbar is not in the process of opening
-                    //   3) What currently has focus is neither a bottom appbar nor a top appbar
-                    //      AND a bottom appbar is not in the process of opening.
-                    // Otherwise Returns false
-                    _shouldStealFocus: function AppBar_shouldStealFocus() {
-                        var activeElementAppBar = thisWinUI.AppBar._isAppBarOrChild(document.activeElement);
-                        if (this._element === activeElementAppBar) {
-                            // This appbar already has focus and we don't want to move focus 
-                            // from where it currently is in this appbar.
-                            return false;
-                        }
-                        if (this._placement === appBarPlacementBottom) {
-                            // This is a bottom appbar
                             return true;
                         }
+                    }
+
+                    return false;
+                },
+
+                // Returns true if
+                //   1) This is a bottom appbar
+                    //   2) No appbar has focus and a bottom appbar is not in the process of opening
+                //   3) What currently has focus is neither a bottom appbar nor a top appbar
+                    //      AND a bottom appbar is not in the process of opening.
+                // Otherwise Returns false
+                _shouldStealFocus: function AppBar_shouldStealFocus() {
+                    var activeElementAppBar = _Overlay._Overlay._isAppBarOrChild(document.activeElement);
+                    if (this._element === activeElementAppBar) {
+                        // This appbar already has focus and we don't want to move focus 
+                        // from where it currently is in this appbar.
+                        return false;
+                    }
+                    if (this._placement === _Constants.appBarPlacementBottom) {
+                        // This is a bottom appbar
+                        return true;
+                    }
 
                         var isBottomAppBarOpening = this._isABottomAppBarInTheProcessOfOpening();
-                        if (!activeElementAppBar) {
-                            // Currently no appbar has focus.
+                    if (!activeElementAppBar) {
+                        // Currently no appbar has focus.
                             // Return true if a bottom appbar is not in the process of opening.
                             return !isBottomAppBarOpening;
-                        }
-                        if (!activeElementAppBar.winControl) {
-                            // This should not happen, but if it does we want to make sure
-                            // that an AppBar ends up with focus.
-                            return true;
-                        }
-                        if ((activeElementAppBar.winControl._placement !== appBarPlacementBottom)
-                         && (activeElementAppBar.winControl._placement !== appBarPlacementTop)
-                             && !isBottomAppBarOpening) {
-                            // What currently has focus is neither a bottom appbar nor a top appbar
-                            // -and-
+                    }
+                    if (!activeElementAppBar.winControl) {
+                        // This should not happen, but if it does we want to make sure
+                        // that an AppBar ends up with focus.
+                        return true;
+                    }
+                    if ((activeElementAppBar.winControl._placement !== _Constants.appBarPlacementBottom)
+                     && (activeElementAppBar.winControl._placement !== _Constants.appBarPlacementTop)
+                     && !isBottomAppBarShowing) {
+                        // What currently has focus is neither a bottom appbar nor a top appbar
+                        // -and-
                             // a bottom appbar is not in the process of opening.
-                            return true;
+                        return true;
+                    }
+                    return false;
+                },
+
+                // Set focus to the passed in AppBar
+                _setFocusToAppBar: function AppBar_setFocusToAppBar() {
+                    if (this._focusOnFirstFocusableElement()) {
+                        // Prevent what is gaining focus from showing that it has focus,
+                        // but only in the non-keyboard scenario.
+                        if (!this._keyboardInvoked) {
+                            _Overlay._Overlay._addHideFocusClass(document.activeElement);
                         }
-                        return false
-                    },
+                    } else {
+                        // No first element, set it to appbar itself
+                        _Overlay._Overlay._trySetActive(this._element);
+                    }
+                },
 
-                    // Set focus to the passed in AppBar
-                    _setFocusToAppBar: function AppBar_setFocusToAppBar() {
-                        if (this._focusOnFirstFocusableElement()) {
-                            // Prevent what is gaining focus from showing that it has focus,
-                            // but only in the non-keyboard scenario.
-                            if (!this._keyboardInvoked) {
-                                thisWinUI._Overlay._addHideFocusClass(document.activeElement);
-                            }
-                        } else {
-                            // No first element, set it to appbar itself
-                            thisWinUI._Overlay._trySetActive(this._element);
-                        }
-                    },
+                _commandsUpdated: function AppBar_commandsUpdated() {
+                    this._layout.commandsUpdated();
+                    this._layout.scale();
+                },
 
-                    _commandsUpdated: function AppBar_commandsUpdated() {
-                        this._layout.commandsUpdated();
-                        this._layout.scale();
-                    },
+                _beginAnimateCommands: function AppBar_beginAnimateCommands(showCommands, hideCommands, otherVisibleCommands) {
+                    // The parameters are 3 mutually exclusive arrays of win-command elements contained in this Overlay.
+                    // 1) showCommands[]: All of the HIDDEN win-command elements that ARE scheduled to show. 
+                    // 2) hideCommands[]: All of the VISIBLE win-command elements that ARE scheduled to hide.
+                    // 3) otherVisibleCommands[]: All VISIBLE win-command elements that ARE NOT scheduled to hide. 
+                    this._layout.beginAnimateCommands(showCommands, hideCommands, otherVisibleCommands);
+                },
 
-                    _beginAnimateCommands: function AppBar_beginAnimateCommands(showCommands, hideCommands, otherVisibleCommands) {
-                        // The parameters are 3 mutually exclusive arrays of win-command elements contained in this Overlay.
-                        // 1) showCommands[]: All of the HIDDEN win-command elements that ARE scheduled to show. 
-                        // 2) hideCommands[]: All of the VISIBLE win-command elements that ARE scheduled to hide.
-                        // 3) otherVisibleCommands[]: All VISIBLE win-command elements that ARE NOT scheduled to hide.                               
-                        this._layout.beginAnimateCommands(showCommands, hideCommands, otherVisibleCommands);
-                    },
+                _endAnimateCommands: function AppBar_endAnimateCommands() {
+                    this._layout.endAnimateCommands();
+                },                    
 
-                    _endAnimateCommands: function AppBar_endAnimateCommands() {
-                        this._layout.endAnimateCommands();
-                    },
+                // Get the top of the top appbars, this is always 0 because appbar uses
+                // -ms-device-fixed positioning.
+                _getTopOfVisualViewport: function AppBar_getTopOfVisualViewPort() {
+                    return 0;
+                },
 
-                    // Get the top of the top appbars, this is always 0 because appbar uses
-                    // -ms-device-fixed positioning.
-                    _getTopOfVisualViewport: function AppBar_getTopOfVisualViewPort() {
-                        return 0;
-                    },
+                // Get the bottom of the bottom appbars, Bottom is just 0, if there's no IHM.
+                // When the IHM appears, the default behavior is to resize the view. If a resize
+                // happens, we can rely on -ms-device-fixed positioning and leave the bottom
+                // at 0. However if resize doesn't happen, then the keyboard obscures the appbar
+                // and we will need to adjust the bottom of the appbar by distance of the keyboard.
+                _getAdjustedBottom: function AppBar_getAdjustedBottom() {
+                    // Need the distance the IHM moved as well.
+                    return _Overlay._Overlay._keyboardInfo._visibleDocBottomOffset;
+                },
 
-                    // Get the bottom of the bottom appbars, Bottom is just 0, if there's no IHM.
-                    // When the IHM appears, the default behavior is to resize the view. If a resize
-                    // happens, we can rely on -ms-device-fixed positioning and leave the bottom
-                    // at 0. However if resize doesn't happen, then the keyboard obscures the appbar
-                    // and we will need to adjust the bottom of the appbar by distance of the keyboard.
-                    _getAdjustedBottom: function AppBar_getAdjustedBottom() {
-                        // Need the distance the IHM moved as well.
-                        return thisWinUI._Overlay._keyboardInfo._visibleDocBottomOffset;
-                    },
-
-                    _showingKeyboard: function AppBar_showingKeyboard(event) {
-                        // Remember keyboard showing state.
-                        this._keyboardObscured = false;
+                _showingKeyboard: function AppBar_showingKeyboard(event) {
+                    // Remember keyboard showing state.
+                    this._keyboardObscured = false;
                         this._needToHandleHidingKeyboard = false;
 
-                        // If we're already moved, then ignore the whole thing
-                        if (thisWinUI._Overlay._keyboardInfo._visible && this._alreadyInPlace()) {
-                            return;
-                        }
+                    // If we're already moved, then ignore the whole thing
+                    if (_Overlay._Overlay._keyboardInfo._visible && this._alreadyInPlace()) {
+                        return;
+                    }
 
                         this._needToHandleShowingKeyboard = true;
-                        // If focus is in the appbar, don't cause scrolling.
-                        if (!this.hidden && this._element.contains(document.activeElement)) {
-                            event.ensuredFocusedElementInView = true;
-                        }
+                    // If focus is in the appbar, don't cause scrolling.
+                    if (!this.hidden && this._element.contains(document.activeElement)) {
+                        event.ensuredFocusedElementInView = true;
+                    }
 
                         // Check if appbar moves or if we're ok leaving it obscured instead.
-                        if (this._visible && this._placement !== appBarPlacementTop && thisWinUI._Overlay._isFlyoutVisible()) {
-                            // Remember that we're obscured
-                            this._keyboardObscured = true;
-                        } else {
+                    if (this._visible && this._placement !== _Constants.appBarPlacementTop && _Overlay._Overlay._isFlyoutVisible()) {
+                        // Remember that we're obscured
+                        this._keyboardObscured = true;
+                    } else {
                             // Don't be obscured, clear _scrollHappened flag to give us inference later on when to re-open ourselves.
-                            this._scrollHappened = false;
-                        }
+                        this._scrollHappened = false;
+                    }
 
-                        // Also set timeout regardless, so we can clean up our _keyboardShowing flag.
-                        var that = this;
-                        setTimeout(function (e) { that._checkKeyboardTimer(e); }, thisWinUI._Overlay._keyboardInfo._animationShowLength + thisWinUI._Overlay._scrollTimeout);
-                    },
+                    // Also set timeout regardless, so we can clean up our _keyboardShowing flag.
+                    var that = this;
+                    setTimeout(function (e) { that._checkKeyboardTimer(e); }, _Overlay._Overlay._keyboardInfo._animationShowLength + _Overlay._Overlay._scrollTimeout);
+                },
 
-                    _hidingKeyboard: function AppBar_hidingKeyboard(event) {
+                _hidingKeyboard: function AppBar_hidingKeyboard(event) {
                         // We'll either just reveal the current space under the IHM or restore the window height.
 
-                        // We won't be obscured
-                        this._keyboardObscured = false;
+                    // We won't be obscured
+                    this._keyboardObscured = false;
                         this._needToHandleShowingKeyboard = false;
                         this._needToHandleHidingKeyboard = true;
-                        
-                        if (!thisWinUI._Overlay._keyboardInfo._isResized) {
-                            // If we're not completely hidden, only fake hiding under keyboard, or already animating,
-                            // then snap us to our final position.
-                            if (this._visible || this._fakeHide || this._animating) {
-                                // Not resized, update our final position immediately
-                                this._checkScrollPosition();
-                                this._element.style.display = "";
-                                this._fakeHide = false;
-                            }
-                            this._needToHandleHidingKeyboard = false;
-                        }
-                        // Else resize should clear keyboardHiding.
-                    },
 
-                    _resize: function AppBar_resize(event) {
+                    // We'll either just reveal the current space or resize the window
+                    if (!_Overlay._Overlay._keyboardInfo._isResized) {
+                        // If we're not completely hidden, only fake hiding under keyboard, or already animating,
+                        // then snap us to our final position.
+                            if (this._visible || this._fakeHide || this._animating) {
+                            // Not resized, update our final position immediately
+                            this._checkScrollPosition();
+                            this._element.style.display = "";
+                            this._fakeHide = false;
+                        }
+                            this._needToHandleHidingKeyboard = false;
+                    }
+                    // Else resize should clear keyboardHiding.
+                },
+
+                _resize: function AppBar_resize(event) {
                         // If we're hidden by the keyboard, then close bottom appbar so it doesn't pop up twice when it scrolls
                         if (this._needToHandleShowingKeyboard) {
-                            // Top is allowed to scroll off the top, but we don't want bottom to peek up when
-                            // scrolled into view since we'll re-open it ourselves and don't want a stutter effect.
-                            if (this._visible) {
-                                if (this._placement !== appBarPlacementTop && !this._keyboardObscured) {
-                                    // If viewport doesn't match window, need to vanish momentarily so it doesn't scroll into view,
-                                    // however we don't want to toggle the visibility="hidden" hidden flag.
-                                    this._element.style.display = "none";
-                                }
+                        // Top is allowed to scroll off the top, but we don't want bottom to peek up when
+                        // scrolled into view since we'll show it ourselves and don't want a stutter effect.
+                        if (this._visible) {
+                            if (this._placement !== _Constants.appBarPlacementTop && !this._keyboardObscured) {
+                                // If viewport doesn't match window, need to vanish momentarily so it doesn't scroll into view,
+                                // however we don't want to toggle the visibility="hidden" hidden flag.
+                                this._element.style.display = "none";
                             }
-                            // else if we're top we stay, and if there's a flyout, stay obscured by the keyboard.
+                        }
+                        // else if we're top we stay, and if there's a flyout, stay obscured by the keyboard.
                         } else if (this._needToHandleHidingKeyboard) {
                             this._needToHandleHidingKeyboard = false;
                             if (this._visible || this._animating) {
-                                // Snap to final position
-                                this._checkScrollPosition();
-                                this._element.style.display = "";
-                                this._fakeHide = false;
-                            }
+                            // Snap to final position
+                            this._checkScrollPosition();
+                            this._element.style.display = "";
+                            this._fakeHide = false;
                         }
+                    }
 
-                        // Make sure everything still fits.
-                        this._layout.resize(event);
-                    },
+                    // Make sure everything still fits.
+                    this._layout.resize(event);
+                },
 
-                    _checkKeyboardTimer: function AppBar_checkKeyboardTimer() {
-                        if (!this._scrollHappened) {
-                            this._mayEdgeBackIn();
-                        }
-                    },
+                _checkKeyboardTimer: function AppBar_checkKeyboardTimer() {
+                    if (!this._scrollHappened) {
+                        this._mayEdgeBackIn();
+                    }
+                },
 
-                    _manipulationChanged: function AppBar_manipulationChanged(event) {
-                        // See if we're at the not manipulating state, and we had a scroll happen,
-                        // which is implicitly after the keyboard animated.
-                        if (event.currentState === 0 && this._scrollHappened) {
-                            this._mayEdgeBackIn();
-                        }
-                    },
+                _manipulationChanged: function AppBar_manipulationChanged(event) {
+                    // See if we're at the not manipulating state, and we had a scroll happen,
+                    // which is implicitly after the keyboard animated.
+                    if (event.currentState === 0 && this._scrollHappened) {
+                        this._mayEdgeBackIn();
+                    }
+                },
 
-                    _mayEdgeBackIn: function AppBar_mayEdgeBackIn(event) {
-                        // May need to react to IHM being resized event
+                _mayEdgeBackIn: function AppBar_mayEdgeBackIn(event) {
+                    // May need to react to IHM being resized event
                         if (this._needToHandleShowingKeyboard) {
                             // If not top appbar or viewport isn't still at top, then need to open again
                             this._needToHandleShowingKeyboard = false;
-                            // If obscured (flyout showing), don't change.
-                            // If hidden, may be because _fakeHide was set in _resize.
-                            // If bottom we have to move, or if top scrolled off screen.
-                            if (!this._keyboardObscured &&
-                                (this._placement !== appBarPlacementTop || thisWinUI._Overlay._keyboardInfo._visibleDocTop !== 0)) {
-
-                                var toPosition = this._visiblePosition;
-                                this._lastPositionVisited = displayModeVisiblePositions.hidden;
-                                this._changeVisiblePosition(toPosition, false);
-
-                            } else {
+                        // If obscured (flyout showing), don't change.
+                        // If hidden, may be because _fakeHide was set in _resize.
+                        // If bottom we have to move, or if top scrolled off screen.
+                        if (!this._keyboardObscured && (!this.hidden || this._fakeHide) &&
+                            (this._placement !== _Constants.appBarPlacementTop || _Overlay._Overlay._keyboardInfo._visibleDocTop !== 0)) {
+                            var toPosition = this._visiblePosition;
+                            this._lastPositionVisited = displayModeVisiblePositions.hidden;
+                            this._changeVisiblePosition(toPosition, false);
+                        } else {
                                 // Ensure any animations dropped during the showing keyboard are caught up.
-                                this._checkDoNext();
-                            }
+                            this._checkDoNext();
                         }
-                        this._scrollHappened = false;
-                    },
+                    }
+                    this._scrollHappened = false;
+                },
 
                     _ensurePosition: function AppBar_ensurePosition() {
                         // Position the AppBar element relative to the top or bottom edge of the visible
@@ -1432,9 +1407,9 @@ define([
                         var positionOffSet = {};
 
                         if (this._closed) {
-                            var innerEdgeOffSet = WinJS.UI._Overlay._keyboardInfo._visibleDocHeight - this._visiblePixels[this._visiblePosition];
+                            var innerEdgeOffSet = _Overlay._Overlay._keyboardInfo._visibleDocHeight - this._visiblePixels[this._visiblePosition];
 
-                            if (this._placement === appBarPlacementBottom) {
+                            if (this._placement === _Constants.appBarPlacementBottom) {
                                 positionOffSet.bottom = "";
                                 positionOffSet.top = innerEdgeOffSet + "px";
                             } else {
@@ -1442,7 +1417,7 @@ define([
                                 positionOffSet.top = "";
                             }
                         } else {
-                            if (this._placement === appBarPlacementBottom) {
+                            if (this._placement === _Constants.appBarPlacementBottom) {
                                 // If the IHM is open, the bottom of the visual viewport may or may not be obscured 
                                 // Use _getAdjustedBottom to account for the IHM if it is covering the bottom edge.
                                 positionOffSet.bottom = this._getAdjustedBottom() + "px";
@@ -1451,84 +1426,84 @@ define([
                                 positionOffSet.bottom = "";
                                 positionOffSet.top = this._getTopOfVisualViewport() + "px";
                             }
-                        }
+                    }
                         return positionOffSet;
-                    },
+                },
 
-                    _checkScrollPosition: function AppBar_checkScrollPosition(event) {
+                _checkScrollPosition: function AppBar_checkScrollPosition(event) {
                         // If IHM has appeared, then remember we may come in
                         if (this._needToHandleShowingKeyboard) {
-                            // Tag that it's OK to edge back in.
-                            this._scrollHappened = true;
-                            return;
-                        }
+                        // Tag that it's OK to edge back in.
+                        this._scrollHappened = true;
+                        return;
+                    }
 
                         // We only need to update if we're not completely hidden.
                         if (this._visible || this._animating) {
                             this._ensurePosition();
                             // Ensure any animations dropped during the showing keyboard are caught up.
-                            this._checkDoNext();
-                        }
-                    },
+                        this._checkDoNext();
+                    }
+                },
 
-                    _alreadyInPlace: function AppBar_alreadyInPlace() {
-                        // See if we're already where we're supposed to be.
+                _alreadyInPlace: function AppBar_alreadyInPlace() {
+                    // See if we're already where we're supposed to be.
                         var offSet = this._computePositionOffset();
                         return (offSet.top === this._element.style.top && offSet.bottom === this._element.style.bottom);
-                    },
+                },
 
                     // If there is an open non-sticky AppBar then it sets the firstDiv tabIndex to
-                    //   the minimum tabIndex found in the AppBars and finalDiv to the max found.
-                    // Otherwise sets their tabIndex to -1 so they are not tab stops.
-                    _updateFirstAndFinalDiv: function AppBar_updateFirstAndFinalDiv() {
-                        var appBarFirstDiv = this._element.querySelectorAll("." + firstDivClass);
-                        appBarFirstDiv = appBarFirstDiv.length >= 1 ? appBarFirstDiv[0] : null;
+                //   the minimum tabIndex found in the AppBars and finalDiv to the max found.
+                // Otherwise sets their tabIndex to -1 so they are not tab stops.
+                _updateFirstAndFinalDiv: function AppBar_updateFirstAndFinalDiv() {
+                    var appBarFirstDiv = this._element.querySelectorAll("." + _Constants.firstDivClass);
+                    appBarFirstDiv = appBarFirstDiv.length >= 1 ? appBarFirstDiv[0] : null;
 
-                        var appBarFinalDiv = this._element.querySelectorAll("." + finalDivClass);
-                        appBarFinalDiv = appBarFinalDiv.length >= 1 ? appBarFinalDiv[0] : null;
+                    var appBarFinalDiv = this._element.querySelectorAll("." + _Constants.finalDivClass);
+                    appBarFinalDiv = appBarFinalDiv.length >= 1 ? appBarFinalDiv[0] : null;
 
-                        // Remove the firstDiv & finalDiv if they are not at the appropriate locations
+                    // Remove the firstDiv & finalDiv if they are not at the appropriate locations
                         if (appBarFirstDiv && (this._element.children[0] !== appBarFirstDiv)) {
-                            appBarFirstDiv.parentNode.removeChild(appBarFirstDiv);
-                            appBarFirstDiv = null;
-                        }
+                        appBarFirstDiv.parentNode.removeChild(appBarFirstDiv);
+                        appBarFirstDiv = null;
+                    }
                         if (appBarFinalDiv && (this._element.children[this._element.children.length - 1] !== appBarFinalDiv)) {
-                            appBarFinalDiv.parentNode.removeChild(appBarFinalDiv);
-                            appBarFinalDiv = null;
-                        }
+                        appBarFinalDiv.parentNode.removeChild(appBarFinalDiv);
+                        appBarFinalDiv = null;
+                    }
 
-                        // Create and add the firstDiv & finalDiv if they don't already exist
-                        if (!appBarFirstDiv) {
-                            // Add a firstDiv that will be the first child of the appBar.
-                            // On focus set focus to the previous appBar.
+                    // Create and add the firstDiv & finalDiv if they don't already exist
+                    if (!appBarFirstDiv) {
+                        // Add a firstDiv that will be the first child of the appBar.
+                        // On focus set focus to the previous appBar.
                             // The div should only be focusable if there are open non-sticky AppBars.
-                            appBarFirstDiv = document.createElement("div");
-                            // display: inline is needed so that the div doesn't take up space and cause the page to scroll on focus
-                            appBarFirstDiv.style.display = "inline";
-                            appBarFirstDiv.className = firstDivClass;
-                            appBarFirstDiv.tabIndex = -1;
-                            appBarFirstDiv.setAttribute("aria-hidden", "true");
-                            WinJS.Utilities._addEventListener(appBarFirstDiv, "focusin", _setFocusToPreviousAppBar, false);
-                            // add to beginning
-                            if (this._element.children[0]) {
-                                this._element.insertBefore(appBarFirstDiv, this._element.children[0]);
-                            } else {
-                                this._element.appendChild(appBarFirstDiv);
-                            }
+                        appBarFirstDiv = document.createElement("div");
+                        // display: inline is needed so that the div doesn't take up space and cause the page to scroll on focus
+                        appBarFirstDiv.style.display = "inline";
+                        appBarFirstDiv.className = _Constants.firstDivClass;
+                        appBarFirstDiv.tabIndex = -1;
+                        appBarFirstDiv.setAttribute("aria-hidden", "true");
+                        _ElementUtilities._addEventListener(appBarFirstDiv, "focusin", _setFocusToPreviousAppBar, false);
+                        // add to beginning
+                        if (this._element.children[0]) {
+                            this._element.insertBefore(appBarFirstDiv, this._element.children[0]);
+                        } else {
+                            this._element.appendChild(appBarFirstDiv);
                         }
-                        if (!appBarFinalDiv) {
-                            // Add a finalDiv that will be the last child of the appBar.
-                            // On focus set focus to the next appBar.
+                    }
+                    if (!appBarFinalDiv) {
+                        // Add a finalDiv that will be the last child of the appBar.
+                        // On focus set focus to the next appBar.
                             // The div should only be focusable if there are open non-sticky AppBars.
-                            appBarFinalDiv = document.createElement("div");
-                            // display: inline is needed so that the div doesn't take up space and cause the page to scroll on focus
-                            appBarFinalDiv.style.display = "inline";
-                            appBarFinalDiv.className = finalDivClass;
-                            appBarFinalDiv.tabIndex = -1;
-                            appBarFinalDiv.setAttribute("aria-hidden", "true");
-                            WinJS.Utilities._addEventListener(appBarFinalDiv, "focusin", _setFocusToNextAppBar, false);
-                            this._element.appendChild(appBarFinalDiv);
-                        }
+                        appBarFinalDiv = document.createElement("div");
+                        // display: inline is needed so that the div doesn't take up space and cause the page to scroll on focus
+                        appBarFinalDiv.style.display = "inline";
+                        appBarFinalDiv.className = _Constants.finalDivClass;
+                        appBarFinalDiv.tabIndex = -1;
+                        appBarFinalDiv.setAttribute("aria-hidden", "true");
+                        _ElementUtilities._addEventListener(appBarFinalDiv, "focusin", _setFocusToNextAppBar, false);
+                        this._element.appendChild(appBarFinalDiv);
+                    }
 
 
                         // Ellipsis should be the second to last element in the AppBar's tab order. Second to the finalDiv.
@@ -1536,135 +1511,70 @@ define([
                             this._element.insertBefore(this._ellipsis, appBarFinalDiv);
                         }
                         var elms = this._element.getElementsByTagName("*");
-                        var highestTabIndex = WinJS.Utilities._getHighestTabIndexInList(elms);
+                        var highestTabIndex = _UIUtilities._getHighestTabIndexInList(elms);
                         this._ellipsis.tabIndex = highestTabIndex;
 
-                        // Update the tabIndex of the firstDiv & finalDiv
+                    // Update the tabIndex of the firstDiv & finalDiv
                         if (_isThereOpenNonStickyBar()) {
 
-                            if (appBarFirstDiv) {
-                                appBarFirstDiv.tabIndex = WinJS.Utilities._getLowestTabIndexInList(elms);
-                            }
-                            if (appBarFinalDiv) {
+                        if (appBarFirstDiv) {
+                            appBarFirstDiv.tabIndex = _UIUtilities._getLowestTabIndexInList(elms);
+                        }
+                        if (appBarFinalDiv) {
                                 appBarFinalDiv.tabIndex = highestTabIndex;
-                            }
-                        } else {
-                            if (appBarFirstDiv) {
-                                appBarFirstDiv.tabIndex = -1;
-                            }
-                            if (appBarFinalDiv) {
-                                appBarFinalDiv.tabIndex = -1;
-                            }
                         }
-                    },
-
-                    _writeProfilerMark: function AppBar_writeProfilerMark(text) {
-                        WinJS.Utilities._writeProfilerMark("WinJS.UI.AppBar:" + this._id + ":" + text);
-                    }
-                });
-
-                // Statics
-                AppBar._ElementWithFocusPreviousToAppBar = null;
-
-                // Returns appbar element (or CED/sentinal) if the element or what had focus before the element (if a Flyout) is either:
-                //   1) an AppBar,
-                //   2) OR in the subtree of an AppBar,
-                //   3) OR an AppBar click eating div.
-                // Returns null otherwise.
-                AppBar._isAppBarOrChild = function (element) {
-                    // If it's null, we can't do this
-                    if (!element) {
-                        return null;
-                    }
-
-                    // click eating divs and sentinals should not have children
-                    if (WinJS.Utilities.hasClass(element, thisWinUI._Overlay._clickEatingAppBarClass) ||
-                        WinJS.Utilities.hasClass(element, thisWinUI._Overlay._clickEatingFlyoutClass) ||
-                        WinJS.Utilities.hasClass(element, firstDivClass) ||
-                        WinJS.Utilities.hasClass(element, finalDivClass) ||
-                        WinJS.Utilities.hasClass(element, ellipsisClass)) {
-                        return element;
-                    }
-
-                    while (element && element !== document) {
-                        if (WinJS.Utilities.hasClass(element, appBarClass)) {
-                            return element;
+                    } else {
+                        if (appBarFirstDiv) {
+                            appBarFirstDiv.tabIndex = -1;
                         }
-                        if (WinJS.Utilities.hasClass(element, "win-flyout")
-                         && element != element.winControl._previousFocus) {
-                            var flyoutControl = element.winControl;
-                            // If _previousFocus was in a light dismissable AppBar, then this Flyout is considered of an extension of it and that AppBar will not close.
-                            // Hook up a 'focusout' listener to this Flyout element to make sure that light dismiss AppBars close if focus moves anywhere other than back to an AppBar.
-                            var appBarElement = thisWinUI.AppBar._isAppBarOrChild(flyoutControl._previousFocus);
-                            if (appBarElement) {
-                                WinJS.Utilities._addEventListener(flyoutControl.element, 'focusout', function focusOut(event) {
-                                    // Closes any open AppBars if the new activeElement is not in an AppBar.
-                                    _closeIfAllAppBarsLostFocus();
-                                    WinJS.Utilities._removeEventListener(flyoutControl.element, 'focusout', focusOut, false);
-                                }, false);
-                            }
-                            return appBarElement;
-                        }
-
-                        element = element.parentNode;
-                    }
-
-                    return null;
-                };
-
-                // Returns true if the element or what had focus before the element (if a Flyout) is either:
-                //   1) the appBar or subtree
-                //   2) OR in a flyout spawned by the appBar
-                // Returns false otherwise.
-                AppBar._isWithinAppBarOrChild = function (element, appBar) {
-                    if (!element || !appBar) {
-                        return false;
-                    }
-                    if (appBar.contains(element)) {
-                        return true;
-                    }
-                    var flyout = thisWinUI._Overlay._getParentControlUsingClassName(element, "win-flyout");
-                    return (flyout && appBar.contains(flyout._previousFocus));
-                };
-
-                // Overlay class calls this for global light dismiss events
-                AppBar._closeLightDismissAppBars = function (event, keyboardInvoked) {
-                    var elements = document.querySelectorAll("." + appBarClass);
-                    var len = elements.length;
-                    var AppBars = [];
-                    for (var i = 0; i < len; i++) {
-                        var AppBar = elements[i].winControl;
-                        if (AppBar && !AppBar.sticky && !AppBar.hidden) {
-                            AppBars.push(AppBar);
+                        if (appBarFinalDiv) {
+                            appBarFinalDiv.tabIndex = -1;
                         }
                     }
+                },
 
-                    _closeAllBars(AppBars, keyboardInvoked);
-                };
+                _writeProfilerMark: function AppBar_writeProfilerMark(text) {
+                    _WriteProfilerMark("WinJS.UI.AppBar:" + this._id + ":" + text);
+                }
+            }, {
+        // Statics
 
-                var appBarSynchronizationPromise = WinJS.Promise.as();
+        // Returns true if the element or what had focus before the element (if a Flyout) is either:
+        //   1) the appBar or subtree
+        //   2) OR in a flyout spawned by the appBar
+        // Returns false otherwise.
+                _isWithinAppBarOrChild: function (element, appBar) {
+            if (!element || !appBar) {
+                return false;
+            }
+            if (appBar.contains(element)) {
+                return true;
+            }
+                    var flyout = _Overlay._Overlay._getParentControlUsingClassName(element, _Constants.flyoutClass);
+            return (flyout && appBar.contains(flyout._previousFocus));
+                },
 
-                // Callback for AppBar Edgy Event Command   
-                AppBar._toggleAppBarEdgy = function (keyboardInvoked) {
-                    var bars = _getDynamicBarsForEdgy();
+        // Callback for AppBar Edgy Event Command   
+                _toggleAppBarEdgy: function (keyboardInvoked) {
+            var bars = _getDynamicBarsForEdgy();
 
                     // If they're all open, close them. Otherwise open them all
                     if (bars._opened && !bars._closed) {
-                        appBarSynchronizationPromise = appBarSynchronizationPromise.then(function () {
-                            return _closeAllBars(bars, keyboardInvoked);
-                        });
+                appBarSynchronizationPromise = appBarSynchronizationPromise.then(function () {
+                            return _Overlay._Overlay._hideAllBars(bars, keyboardInvoked);
+                });
                         return "closing";
-                    } else {
-                        appBarSynchronizationPromise = appBarSynchronizationPromise.then(function () {
+            } else {
+                appBarSynchronizationPromise = appBarSynchronizationPromise.then(function () {
                             return _openAllBars(bars, keyboardInvoked);
-                        });
+                });
                         return "opening";
-                    }
-                };
+            }
+                }
+            });
 
-                return AppBar;
-            })
-        });
+        return AppBar;
+    })
+});
 
-    })(WinJS);
 });

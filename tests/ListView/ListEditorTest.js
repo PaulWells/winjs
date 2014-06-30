@@ -88,11 +88,6 @@ WinJSTests.ListEditorTest = function () {
         function generateTest(that, layoutName, useBindingList, async) {
             var fullName = name + "In" + layoutName + (useBindingList ? '_BindingList' : '_VirtualDataSource') + (async ? '_Async' : '');
 
-            // issue #134
-            if (fullName === "testDeleteAllAndInsertInGridLayout_VirtualDataSource_Async") {
-                return;
-            }
-
             that[fullName] = function (complete) {
                 LiveUnit.LoggingCore.logComment("in " + fullName);
 
@@ -320,14 +315,21 @@ WinJSTests.ListEditorTest = function () {
                 LiveUnit.Assert.areEqual(0, listView.element.querySelectorAll(".listEditorTestClass").length);
                 return true;
             },
-            function () {
-                listView.itemDataSource.getCount().
-                    done(function (count) {
-                        LiveUnit.Assert.areEqual(2, count);
-                        LiveUnit.Assert.areEqual(2, listView.element.querySelectorAll(".listEditorTestClass").length);
-                        LiveUnit.Assert.areEqual(0, listView.indexOfFirstVisible);
-                        complete();
-                    });
+            function lastTestFunc() {
+                // Depending on the timing, there could be multiple scroll events before the viewport is reset to 0
+                // and each one of them will put the listview back into 'itemsLoading' and then 'complete'. This
+                // ignores all the intermediate scroll events until the final one.
+                if (listView._currentScrollPosition !== 0) {
+                    tests.push(lastTestFunc);
+                } else {
+                    listView.itemDataSource.getCount().
+                        done(function (count) {
+                            LiveUnit.Assert.areEqual(2, count);
+                            LiveUnit.Assert.areEqual(2, listView.element.querySelectorAll(".listEditorTestClass").length);
+                            LiveUnit.Assert.areEqual(0, listView.indexOfFirstVisible);
+                            complete();
+                        });
+                }
                 return true;
             }
         ];
@@ -388,7 +390,7 @@ WinJSTests.ListEditorTest = function () {
         function validateItemSelection(itemIndex, selected, context) {
             var items = listView._view.items,
                 itemBox = items.itemBoxAt(itemIndex),
-                visualRendered = WinJS.UI._isSelectionRendered(itemBox),
+                visualRendered = WinJS.Utilities._isSelectionRendered(itemBox),
                 ariaSelected = items.itemAt(itemIndex).getAttribute("aria-selected");
 
             LiveUnit.Assert.areEqual(selected, visualRendered, "Selection visual should be rendered " + context);
@@ -590,7 +592,7 @@ WinJSTests.ListEditorTest = function () {
                 LiveUnit.Assert.areEqual(selected, utilities.hasClass(wrapper.parentNode, WinJS.UI._selectedClass));
             }
             // Verify selection elements
-            LiveUnit.Assert.areEqual(selected, WinJS.UI._isSelectionRendered(wrapper));
+            LiveUnit.Assert.areEqual(selected, WinJS.Utilities._isSelectionRendered(wrapper));
         }
 
         var tests = [
@@ -1201,7 +1203,7 @@ WinJSTests.ListEditorTest = function () {
                 return WinJS.Utilities.Scheduler.requestDrain(WinJS.Utilities.Scheduler.Priority.idle);
             }).then(function () {
                 return WinJS.Promise.timeout(WinJS.UI._animationTimeAdjustment(500));
-            }).then(validateUnhandledErrorsOnIdle).               
+            }).then(validateUnhandledErrorsOnIdle).
             done(function () {
                 WinJS.Utilities.disposeSubTree(testElement);
                 document.body.removeChild(testElement);

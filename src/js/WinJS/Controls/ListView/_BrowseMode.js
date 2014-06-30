@@ -1,37 +1,24 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function browseModeInit(global, WinJS, undefined) {
+define([
+    'exports',
+    '../../Core/_Base',
+    '../../Core/_BaseUtils',
+    '../../Animations',
+    '../../Promise',
+    '../../Utilities/_ElementUtilities',
+    '../../Utilities/_UI',
+    '../ItemContainer/_Constants',
+    '../ItemContainer/_ItemEventsHandler',
+    './_SelectionManager'
+    ], function browseModeInit(exports, _Base, _BaseUtils, Animations, Promise, _ElementUtilities, _UI, _Constants, _ItemEventsHandler, _SelectionManager) {
     "use strict";
 
-    var transformName = WinJS.Utilities._browserStyleEquivalents["transform"].scriptName;
+    var transformName = _BaseUtils._browserStyleEquivalents["transform"].scriptName;
     // This component is responsible for handling input in Browse Mode. 
     // When the user clicks on an item in this mode itemInvoked event is fired.
-    WinJS.Namespace.define("WinJS.UI", {
-        _getCursorPos: function (eventObject) {
-            var docElement = document.documentElement;
-            var docScrollPos = WinJS.Utilities.getScrollPosition(docElement);
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
 
-            return {
-                left: eventObject.clientX + (document.body.dir === "rtl" ? -docScrollPos.scrollLeft : docScrollPos.scrollLeft),
-                top: eventObject.clientY + docElement.scrollTop
-            };
-        },
-
-        _getElementsByClasses: function (parent, classes) {
-            var retVal = []
-
-            for (var i = 0, len = classes.length; i < len; i++) {
-                var element = parent.querySelector("." + classes[i]);
-                if (element) {
-                    retVal.push(element);
-                }
-            }
-            return retVal;
-        },
-
-        _SelectionMode: WinJS.Namespace._lazy(function () {
-            var utilities = WinJS.Utilities,
-                Promise = WinJS.Promise,
-                Animation = WinJS.UI.Animation;
+        _SelectionMode: _Base.Namespace._lazy(function () {
 
             function clampToRange(first, last, x) {
                 return Math.max(first, Math.min(last, x));
@@ -48,17 +35,16 @@
                 return element.dispatchEvent(navigationEvent);
             }
 
-            var _SelectionMode = function (modeSite) {
+            var _SelectionMode = _Base.Class.define(function _SelectionMode_ctor(modeSite) {
                 this.inboundFocusHandled = false;
                 this._pressedContainer = null;
                 this._pressedItemBox = null;
                 this._pressedHeader = null;
-                this._pressedEntity = { type: WinJS.UI.ObjectType.item, index: WinJS.UI._INVALID_INDEX };
+                this._pressedEntity = { type: _UI.ObjectType.item, index: _Constants._INVALID_INDEX };
                 this._pressedPosition = null;
 
                 this.initialize(modeSite);
-            };
-            _SelectionMode.prototype = {
+            },{
                 _dispose: function () {
                     if (this._itemEventsHandler) {
                         this._itemEventsHandler.dispose();
@@ -76,7 +62,7 @@
 
                     var site = this.site,
                         that = this;
-                    this._itemEventsHandler = new WinJS.UI._ItemEventsHandler(Object.create({
+                    this._itemEventsHandler = new _ItemEventsHandler._ItemEventsHandler(Object.create({
                         containerFromElement: function (element) {
                             return site._view.items.containerFrom(element);
                         },
@@ -210,7 +196,7 @@
                             enumerable: true,
                             get: function () {
                                 // CSS class of the element with the aria role
-                                return WinJS.UI._itemClass;
+                                return _Constants._itemClass;
                             }
                         },
                         canvasProxy: {
@@ -265,7 +251,7 @@
                         return handler;
                     }
 
-                    var Key = utilities.Key;
+                    var Key = _ElementUtilities.Key;
                     this._keyboardNavigationHandlers[Key.upArrow] = createArrowHandler(Key.upArrow);
                     this._keyboardNavigationHandlers[Key.downArrow] = createArrowHandler(Key.downArrow);
                     this._keyboardNavigationHandlers[Key.leftArrow] = createArrowHandler(Key.leftArrow);
@@ -273,17 +259,17 @@
                     this._keyboardNavigationHandlers[Key.pageUp] = createArrowHandler(Key.pageUp, true);
                     this._keyboardNavigationHandlers[Key.pageDown] = createArrowHandler(Key.pageDown, true);
                     this._keyboardNavigationHandlers[Key.home] = function (oldFocus) {
-                        return WinJS.Promise.wrap({ type: oldFocus.type, index: 0 });
+                        return Promise.wrap({ type: oldFocus.type, index: 0 });
                     };
                     this._keyboardNavigationHandlers[Key.end] = function (oldFocus) {
-                        if (oldFocus.type === WinJS.UI.ObjectType.groupHeader) {
-                            return WinJS.Promise.wrap({ type: oldFocus.type, index: site._groups.length() - 1 });
+                        if (oldFocus.type === _UI.ObjectType.groupHeader) {
+                            return Promise.wrap({ type: oldFocus.type, index: site._groups.length() - 1 });
                         } else {
                             // Get the index of the last container
                             return that.site._view.finalItem().then(function (index) {
                                 return { type: oldFocus.type, index: index };
                             }, function (error) {
-                                return WinJS.Promise.wrapError(error);
+                                return Promise.wrapError(error);
                             });
                         }
                     };
@@ -296,11 +282,11 @@
                 },
 
                 staticMode: function SelectionMode_staticMode() {
-                    return this.site._tap === WinJS.UI.TapBehavior.none && this.site._selectionMode === WinJS.UI.SelectionMode.none;
+                    return this.site._tap === _UI.TapBehavior.none && this.site._selectionMode === _UI.SelectionMode.none;
                 },
 
                 itemUnrealized: function SelectionMode_itemUnrealized(index, itemBox) {
-                    if (this._pressedEntity.type === WinJS.UI.ObjectType.groupHeader) {
+                    if (this._pressedEntity.type === _UI.ObjectType.groupHeader) {
                         return;
                     }
 
@@ -311,7 +297,7 @@
                     if (this._itemBeingDragged(index)) {
                         for (var i = this._draggedItemBoxes.length - 1; i >= 0; i--) {
                             if (this._draggedItemBoxes[i] === itemBox) {
-                                utilities.removeClass(itemBox, WinJS.UI._dragSourceClass);
+                                _ElementUtilities.removeClass(itemBox, _Constants._dragSourceClass);
                                 this._draggedItemBoxes.splice(i, 1);
                             }
                         }
@@ -348,21 +334,21 @@
                         }
                     }
 
-                    if (entity.type === WinJS.UI.ObjectType.groupHeader) {
-                        if (this.site._groupHeaderTap === WinJS.UI.GroupHeaderTapBehavior.invoke &&
-                            entity.index !== WinJS.UI._INVALID_INDEX) {
+                    if (entity.type === _UI.ObjectType.groupHeader) {
+                        if (this.site._groupHeaderTap === _UI.GroupHeaderTapBehavior.invoke &&
+                            entity.index !== _Constants._INVALID_INDEX) {
                             fireInvokeEventImpl(this.site.groupDataSource, true);
                         }
                     }
                     else {
-                        if (this.site._tap !== WinJS.UI.TapBehavior.none && entity.index !== WinJS.UI._INVALID_INDEX) {
+                        if (this.site._tap !== _UI.TapBehavior.none && entity.index !== _Constants._INVALID_INDEX) {
                             fireInvokeEventImpl(this.site.itemDataSource, false);
                         }
                     }
                 },
 
                 _verifySelectionAllowed: function SelectionMode_verifySelectionAllowed(entity) {
-                    if (entity.type === WinJS.UI.ObjectType.groupHeader) {
+                    if (entity.type === _UI.ObjectType.groupHeader) {
                         return {
                             canSelect: false,
                             canTapSelect: false
@@ -372,7 +358,7 @@
                     var itemIndex = entity.index;
                     var site = this.site;
                     var item = this.site._view.items.itemAt(itemIndex);
-                    if (site._selectionAllowed() && (site._selectOnTap() || site._swipeBehavior === WinJS.UI.SwipeBehavior.select) && !(item && utilities.hasClass(item, WinJS.UI._nonSelectableClass))) {
+                    if (site._selectionAllowed() && (site._selectOnTap() || site._swipeBehavior === _UI.SwipeBehavior.select) && !(item && _ElementUtilities.hasClass(item, _Constants._nonSelectableClass))) {
                         var selected = site._selection._isIncluded(itemIndex),
                             single = !site._multiSelection(),
                             newSelection = site._selection._cloneSelection();
@@ -452,7 +438,7 @@
                 },
 
                 _isDraggable: function SelectionMode_isDraggable(element) {
-                    return (!this._containedInElementWithClass(element, WinJS.UI._nonDraggableClass));
+                    return (!this._containedInElementWithClass(element, _Constants._nonDraggableClass));
                 },
 
                 _isInteractive: function SelectionMode_isInteractive(element) {
@@ -508,7 +494,7 @@
                 _selectAll: function SelectionMode_selectAll() {
                     var unselectableRealizedItems = [];
                     this.site._view.items.each(function (index, item, itemData) {
-                        if (item && utilities.hasClass(item, WinJS.UI._nonSelectableClass)) {
+                        if (item && _ElementUtilities.hasClass(item, _Constants._nonSelectableClass)) {
                             unselectableRealizedItems.push(index);
                         }
                     });
@@ -524,7 +510,7 @@
                     var currentStartRange = -1;
                     for (var i = firstIndex; i <= lastIndex; i++) {
                         var item = this.site._view.items.itemAt(i);
-                        if (item && utilities.hasClass(item, WinJS.UI._nonSelectableClass)) {
+                        if (item && _ElementUtilities.hasClass(item, _Constants._nonSelectableClass)) {
                             if (currentStartRange !== -1) {
                                 ranges.push({
                                     firstIndex: currentStartRange,
@@ -548,19 +534,19 @@
                 },
 
                 onDragStart: function SelectionMode_onDragStart(eventObject) {
-                    this._pressedEntity = { type: WinJS.UI.ObjectType.item, index: this.site._view.items.index(eventObject.target) };
-                    this.site._selection._pivot = WinJS.UI._INVALID_INDEX;
+                    this._pressedEntity = { type: _UI.ObjectType.item, index: this.site._view.items.index(eventObject.target) };
+                    this.site._selection._pivot = _Constants._INVALID_INDEX;
                     // Drag shouldn't be initiated when the user holds down the mouse on a win-interactive element and moves.
                     // The problem is that the dragstart event's srcElement+target will both be an itembox (which has draggable=true), so we can't check for win-interactive in the dragstart event handler.
                     // The itemEventsHandler sets our _pressedElement field on MSPointerDown, so we use that instead when checking for interactive.
-                    if (this._pressedEntity.index !== WinJS.UI._INVALID_INDEX &&
+                    if (this._pressedEntity.index !== _Constants._INVALID_INDEX &&
                             (this.site.itemsDraggable || this.site.itemsReorderable) &&
                             !this.site._view.animating &&
                             this._isDraggable(eventObject.target) &&
                             (!this._pressedElement || !this._isInteractive(this._pressedElement))) {
                         this._dragging = true;
                         this._dragDataTransfer = eventObject.dataTransfer;
-                        this._pressedPosition = WinJS.UI._getCursorPos(eventObject);
+                        this._pressedPosition = _ElementUtilities._getCursorPos(eventObject);
                         this._dragInfo = null;
                         this._lastEnteredElement = eventObject.target;
 
@@ -568,7 +554,7 @@
                             this._dragInfo = this.site.selection;
                         } else {
                             this._draggingUnselectedItem = true;
-                            this._dragInfo = new WinJS.UI._Selection(this.site, [{ firstIndex: this._pressedEntity.index, lastIndex: this._pressedEntity.index }]);
+                            this._dragInfo = new _SelectionManager._Selection(this.site, [{ firstIndex: this._pressedEntity.index, lastIndex: this._pressedEntity.index }]);
                         }
 
                         var dropTarget = this.site.itemsReorderable;
@@ -600,7 +586,7 @@
 
                         if (dropTarget) {
                             this._addedDragOverClass = true;
-                            utilities.addClass(this.site._element, WinJS.UI._dragOverClass);
+                            _ElementUtilities.addClass(this.site._element, _Constants._dragOverClass);
                         }
 
                         this._draggedItemBoxes = [];
@@ -616,7 +602,7 @@
                             that.onDragEnd(eventObject);
                         });
                         // We delay setting the opacity of the dragged items so that IE has time to create a thumbnail before me make them invisible
-                        WinJS.Utilities._yieldForDomModification(function () {
+                        _BaseUtils._yieldForDomModification(function () {
                             if (that._dragging) {
                                 var indicesSelected = that._dragInfo.getIndices();
                                 for (var i = 0, len = indicesSelected.length; i < len; i++) {
@@ -651,7 +637,7 @@
                         this._dragUnderstood = true;
                         if (!this._addedDragOverClass) {
                             this._addedDragOverClass = true;
-                            utilities.addClass(this.site._element, WinJS.UI._dragOverClass);
+                            _ElementUtilities.addClass(this.site._element, _Constants._dragOverClass);
                         }
                     }
                     this._pointerLeftRegion = false;
@@ -727,7 +713,7 @@
                             }
                             if (that._addedDragOverClass) {
                                 that._addedDragOverClass = false;
-                                utilities.removeClass(that.site._element, WinJS.UI._dragOverClass);
+                                _ElementUtilities.removeClass(that.site._element, _Constants._dragOverClass);
                             }
                             that._exitEventTimer = 0;
                             that._stopAutoScroll();
@@ -783,9 +769,9 @@
 
                 _addDragSourceClass: function (itemBox) {
                     this._draggedItemBoxes.push(itemBox);
-                    utilities.addClass(itemBox, WinJS.UI._dragSourceClass);
+                    _ElementUtilities.addClass(itemBox, _Constants._dragSourceClass);
                     if (itemBox.parentNode) {
-                        utilities.addClass(itemBox.parentNode, WinJS.UI._footprintClass);
+                        _ElementUtilities.addClass(itemBox.parentNode, _Constants._footprintClass);
                     }
                 },
 
@@ -830,13 +816,13 @@
                 _clearDragProperties: function () {
                     if (this._addedDragOverClass) {
                         this._addedDragOverClass = false;
-                        utilities.removeClass(this.site._element, WinJS.UI._dragOverClass);
+                        _ElementUtilities.removeClass(this.site._element, _Constants._dragOverClass);
                     }
                     if (this._draggedItemBoxes) {
                         for (var i = 0, len = this._draggedItemBoxes.length; i < len; i++) {
-                            utilities.removeClass(this._draggedItemBoxes[i], WinJS.UI._dragSourceClass);
+                            _ElementUtilities.removeClass(this._draggedItemBoxes[i], _Constants._dragSourceClass);
                             if (this._draggedItemBoxes[i].parentNode) {
-                                utilities.removeClass(this._draggedItemBoxes[i].parentNode, WinJS.UI._footprintClass);
+                                _ElementUtilities.removeClass(this._draggedItemBoxes[i].parentNode, _Constants._footprintClass);
                             }
                         }
                         this._draggedItemBoxes = [];
@@ -918,7 +904,7 @@
                         if (ensureVisibleAtEnd) {
                             site.ensureVisible(site._selection._getFocused());
                         }
-                    }
+                    };
                     reorderedItems.getItems().then(function (items) {
                         var ds = site.itemDataSource;
                         if (dropIndex === -1) {
@@ -955,7 +941,7 @@
                     if (this._draggedItemBoxes) {
                         for (var i = 0, len = this._draggedItemBoxes.length; i < len; i++) {
                             if (this._draggedItemBoxes[i].parentNode) {
-                                utilities.removeClass(this._draggedItemBoxes[i].parentNode, WinJS.UI._footprintClass);
+                                _ElementUtilities.removeClass(this._draggedItemBoxes[i].parentNode, _Constants._footprintClass);
                             }
                         }
                     }
@@ -996,12 +982,12 @@
                         scrollPosition = Math.floor(this.site.scrollPosition),
                         travelRate = 0;
 
-                    if (cursorPositionInViewport < WinJS.UI._AUTOSCROLL_THRESHOLD) {
-                        travelRate = cursorPositionInViewport - WinJS.UI._AUTOSCROLL_THRESHOLD;
-                    } else if (cursorPositionInViewport > (viewportSize - WinJS.UI._AUTOSCROLL_THRESHOLD)) {
-                        travelRate = (cursorPositionInViewport - (viewportSize - WinJS.UI._AUTOSCROLL_THRESHOLD));
+                    if (cursorPositionInViewport < _Constants._AUTOSCROLL_THRESHOLD) {
+                        travelRate = cursorPositionInViewport - _Constants._AUTOSCROLL_THRESHOLD;
+                    } else if (cursorPositionInViewport > (viewportSize - _Constants._AUTOSCROLL_THRESHOLD)) {
+                        travelRate = (cursorPositionInViewport - (viewportSize - _Constants._AUTOSCROLL_THRESHOLD));
                     }
-                    travelRate = Math.round((travelRate / WinJS.UI._AUTOSCROLL_THRESHOLD) * (WinJS.UI._MAX_AUTOSCROLL_RATE - WinJS.UI._MIN_AUTOSCROLL_RATE));
+                    travelRate = Math.round((travelRate / _Constants._AUTOSCROLL_THRESHOLD) * (_Constants._MAX_AUTOSCROLL_RATE - _Constants._MIN_AUTOSCROLL_RATE));
 
                     // If we're at the edge of the content, we don't need to keep scrolling. We'll set travelRate to 0 to stop the autoscroll timer.
                     if ((scrollPosition === 0 && travelRate < 0) || (scrollPosition >= (canvasSize - viewportSize) && travelRate > 0)) {
@@ -1017,25 +1003,25 @@
                             var that = this;
                             this._autoScrollDelay = setTimeout(function () {
                                 if (that._autoScrollRate) {
-                                    that._lastDragTimeout = WinJS.Utilities._now();
+                                    that._lastDragTimeout = _BaseUtils._now();
                                     var nextFrame = function () {
                                         if ((!that._autoScrollRate && that._autoScrollFrame) || that.site._disposed) {
                                             that._stopAutoScroll();
                                         } else {
                                             // Timeout callbacks aren't reliably timed, so extra math is needed to figure out how far the scroll position should move since the last callback
-                                            var currentTime = WinJS.Utilities._now();
+                                            var currentTime = _BaseUtils._now();
                                             var delta = that._autoScrollRate * ((currentTime - that._lastDragTimeout) / 1000);
                                             delta = (delta < 0 ? Math.min(-1, delta) : Math.max(1, delta));
                                             var newScrollPos = {};
                                             newScrollPos[that.site._scrollProperty] = that.site._viewportScrollPosition + delta;
-                                            WinJS.Utilities.setScrollPosition(that.site._viewport, newScrollPos);
+                                            _ElementUtilities.setScrollPosition(that.site._viewport, newScrollPos);
                                             that._lastDragTimeout = currentTime;
                                             that._autoScrollFrame = requestAnimationFrame(nextFrame);
                                         }
                                     };
                                     that._autoScrollFrame = requestAnimationFrame(nextFrame);
                                 }
-                            }, WinJS.UI._AUTOSCROLL_DELAY);
+                            }, _Constants._AUTOSCROLL_DELAY);
                         }
                     }
                     this._autoScrollRate = travelRate;
@@ -1053,7 +1039,7 @@
                 onKeyDown: function SelectionMode_onKeyDown(eventObject) {
                     var that = this,
                         site = this.site,
-                        swipeEnabled = site._swipeBehavior === WinJS.UI.SwipeBehavior.select,
+                        swipeEnabled = site._swipeBehavior === _UI.SwipeBehavior.select,
                         view = site._view,
                         oldEntity = site._selection._getFocused(),
                         handled = true,
@@ -1080,7 +1066,7 @@
                                     if (that._setNewFocusItemOffsetPromise) {
                                         that._setNewFocusItemOffsetPromise.cancel();
                                     }
-                                    site._batchViewUpdates(WinJS.UI._ViewChange.realize, WinJS.UI._ScrollToPriority.high, function () {
+                                    site._batchViewUpdates(_Constants._ViewChange.realize, _Constants._ScrollToPriority.high, function () {
                                         that._setNewFocusItemOffsetPromise = site._getItemOffset(oldEntity, true).then(function (range) {
                                             range = site._convertFromCanvasCoordinates(range);
                                             var oldItemOffscreen = range.end <= site.scrollPosition || range.begin >= site.scrollPosition + site._getViewportLength() - 1;
@@ -1130,21 +1116,21 @@
                                 site.ensureVisible(oldEntity);
                             }
                             if (invalidIndex) {
-                                return { type: WinJS.UI.ObjectType.item, index: WinJS.UI._INVALID_INDEX };
+                                return { type: _UI.ObjectType.item, index: _Constants._INVALID_INDEX };
                             } else {
                                 return newEntity;
                             }
                         }
 
                         // We need to get the final item in the view so that we don't try setting focus out of bounds.
-                        if (newEntity.type !== WinJS.UI.ObjectType.groupHeader) {
+                        if (newEntity.type !== _UI.ObjectType.groupHeader) {
                             return view.finalItem().then(setNewFocusImpl);
                         } else {
                             return Promise.wrap(site._groups.length() - 1).then(setNewFocusImpl);
                         }
                     }
 
-                    var Key = utilities.Key,
+                    var Key = _ElementUtilities.Key,
                         keyCode = eventObject.keyCode,
                         rtl = site._rtl();
 
@@ -1152,7 +1138,7 @@
                         if (eventObject.ctrlKey && !eventObject.altKey && !eventObject.shiftKey && this._keyboardAcceleratorHandlers[keyCode]) {
                             this._keyboardAcceleratorHandlers[keyCode]();
                         }
-                        if (site.itemsReorderable && (!eventObject.ctrlKey && eventObject.altKey && eventObject.shiftKey && oldEntity.type === WinJS.UI.ObjectType.item) &&
+                        if (site.itemsReorderable && (!eventObject.ctrlKey && eventObject.altKey && eventObject.shiftKey && oldEntity.type === _UI.ObjectType.item) &&
                             (keyCode === Key.leftArrow || keyCode === Key.rightArrow || keyCode === Key.upArrow || keyCode === Key.downArrow)) {
                             var selection = site._selection,
                                 focusedIndex = oldEntity.index,
@@ -1162,11 +1148,11 @@
                                 if (!selection._isIncluded(focusedIndex)) {
                                     var item = site._view.items.itemAt(focusedIndex);
                                     // Selected items should never be marked as non draggable, so we only need to check for nonDraggableClass when trying to reorder an unselected item.
-                                    if (item && utilities.hasClass(item, WinJS.UI._nonDraggableClass)) {
+                                    if (item && _ElementUtilities.hasClass(item, _Constants._nonDraggableClass)) {
                                         processReorder = false;
                                     } else {
                                         movingUnselectedItem = true;
-                                        selection = new WinJS.UI._Selection(this.site, [{ firstIndex: focusedIndex, lastIndex: focusedIndex }]);
+                                        selection = new _SelectionManager._Selection(this.site, [{ firstIndex: focusedIndex, lastIndex: focusedIndex }]);
                                     }
                                 }
                                 if (processReorder) {
@@ -1240,28 +1226,28 @@
                             if (this._keyboardNavigationHandlers[keyCode]) {
                                 this._keyboardNavigationHandlers[keyCode](oldEntity).then(function (newEntity) {
                                     var clampToBounds = that._keyboardNavigationHandlers[keyCode].clampToBounds;
-                                    if (newEntity.type !== WinJS.UI.ObjectType.groupHeader && eventObject.shiftKey && site._selectionAllowed() && site._multiSelection()) {
+                                    if (newEntity.type !== _UI.ObjectType.groupHeader && eventObject.shiftKey && site._selectionAllowed() && site._multiSelection()) {
                                         // Shift selection should work when shift or shift+ctrl are depressed
-                                        if (site._selection._pivot === WinJS.UI._INVALID_INDEX) {
+                                        if (site._selection._pivot === _Constants._INVALID_INDEX) {
                                             site._selection._pivot = oldEntity.index;
                                         }
                                         setNewFocus(newEntity, true, clampToBounds).then(function (newEntity) {
-                                            if (newEntity.index !== WinJS.UI._INVALID_INDEX) {
+                                            if (newEntity.index !== _Constants._INVALID_INDEX) {
                                                 var firstIndex = Math.min(newEntity.index, site._selection._pivot),
                                                     lastIndex = Math.max(newEntity.index, site._selection._pivot),
-                                                    additive = (eventObject.ctrlKey || site._tap === WinJS.UI.TapBehavior.toggleSelect);
+                                                    additive = (eventObject.ctrlKey || site._tap === _UI.TapBehavior.toggleSelect);
                                                 that._selectRange(firstIndex, lastIndex, additive);
                                             }
                                         });
                                     } else {
-                                        site._selection._pivot = WinJS.UI._INVALID_INDEX;
+                                        site._selection._pivot = _Constants._INVALID_INDEX;
                                         setNewFocus(newEntity, false, clampToBounds);
                                     }
                                 });
                             } else if (!eventObject.ctrlKey && keyCode === Key.enter) {
-                                var element = oldEntity.type === WinJS.UI.ObjectType.groupHeader ? site._groups.group(oldEntity.index).header : site._view.items.itemBoxAt(oldEntity.index);
+                                var element = oldEntity.type === _UI.ObjectType.groupHeader ? site._groups.group(oldEntity.index).header : site._view.items.itemBoxAt(oldEntity.index);
                                 if (element) {
-                                    if (oldEntity.type === WinJS.UI.ObjectType.groupHeader) {
+                                    if (oldEntity.type === _UI.ObjectType.groupHeader) {
                                         this._pressedHeader = element;
                                         this._pressedItemBox = null;
                                         this._pressedContainer = null;
@@ -1277,7 +1263,7 @@
                                     }
                                     this._fireInvokeEvent(oldEntity, element);
                                 }
-                            } else if (oldEntity.type !== WinJS.UI.ObjectType.groupHeader &&
+                            } else if (oldEntity.type !== _UI.ObjectType.groupHeader &&
                                     ((eventObject.ctrlKey && keyCode === Key.enter) ||
                                     (swipeEnabled && eventObject.shiftKey && keyCode === Key.F10) ||
                                     (swipeEnabled && keyCode === Key.menu) ||
@@ -1286,7 +1272,7 @@
                                 this._itemEventsHandler.handleSwipeBehavior(oldEntity.index);
                                 site._changeFocus(oldEntity, true, ctrlKeyDown, false, true);
                             } else if (keyCode === Key.escape && site._selection.count() > 0) {
-                                site._selection._pivot = WinJS.UI._INVALID_INDEX;
+                                site._selection._pivot = _Constants._INVALID_INDEX;
                                 site._selection.clear();
                             } else {
                                 handled = false;
@@ -1334,12 +1320,12 @@
                         this.inboundFocusHandled = true;
 
                         // We tabbed into the ListView
-                        focused.index = (focused.index === WinJS.UI._INVALID_INDEX ? 0 : focused.index);
+                        focused.index = (focused.index === _Constants._INVALID_INDEX ? 0 : focused.index);
 
                         if (forward || !this.site._supportsGroupHeaderKeyboarding) {
                             // We tabbed into the ListView from before the ListView, so focus should go to items
-                            var entity = { type: WinJS.UI.ObjectType.item };
-                            if (focused.type === WinJS.UI.ObjectType.groupHeader) {
+                            var entity = { type: _UI.ObjectType.item };
+                            if (focused.type === _UI.ObjectType.groupHeader) {
                                 entity.index = site._groupFocusCache.getIndexForGroup(focused.index);
                                 if (dispatchKeyboardNavigating(site._element, focused, entity)) {
                                     site._changeFocus(entity, true, false, false, true);
@@ -1353,8 +1339,8 @@
                             eventObject.preventDefault();
                         } else {
                             // We tabbed into the ListView from after the ListView, focus should go to headers
-                            var entity = { type: WinJS.UI.ObjectType.groupHeader };
-                            if (focused.type !== WinJS.UI.ObjectType.groupHeader) {
+                            var entity = { type: _UI.ObjectType.groupHeader };
+                            if (focused.type !== _UI.ObjectType.groupHeader) {
                                 entity.index = site._groups.groupFromItem(focused.index);
                                 if (dispatchKeyboardNavigating(site._element, focused, entity)) {
                                     site._changeFocus(entity, true, false, false, true);
@@ -1379,25 +1365,25 @@
                         focused = site._selection._getFocused(),
                         forward = eventObject.detail;
 
-                    if (forward && focused.type !== WinJS.UI.ObjectType.groupHeader) {
+                    if (forward && focused.type !== _UI.ObjectType.groupHeader) {
                         // Tabbing and we were focusing an item, go to headers
-                        var entity = { type: WinJS.UI.ObjectType.groupHeader, index: site._groups.groupFromItem(focused.index) };
+                        var entity = { type: _UI.ObjectType.groupHeader, index: site._groups.groupFromItem(focused.index) };
                         if (dispatchKeyboardNavigating(site._element, focused, entity)) {
                             site._changeFocus(entity, true, false, false, true);
                             eventObject.preventDefault();
                         }
-                    } else if (!forward && focused.type === WinJS.UI.ObjectType.groupHeader) {
+                    } else if (!forward && focused.type === _UI.ObjectType.groupHeader) {
                         // Shift tabbing and we were focusing a header, go to items
-                        var entity = { type: WinJS.UI.ObjectType.item, index: site._groupFocusCache.getIndexForGroup(focused.index) };
+                        var entity = { type: _UI.ObjectType.item, index: site._groupFocusCache.getIndexForGroup(focused.index) };
                         if (dispatchKeyboardNavigating(site._element, focused, entity)) {
                             site._changeFocus(entity, true, false, false, true);
                             eventObject.preventDefault();
                         }
                     }
                 }
-            };
+            });
             return _SelectionMode;
         })
     });
 
-})(this, WinJS);
+});

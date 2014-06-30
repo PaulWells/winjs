@@ -1,12 +1,20 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function resInit(WinJS, undefined) {
+define([
+    'exports',
+    './Core/_Base',
+    './Core/_BaseUtils',
+    './Core/_ErrorFromName',
+    './Core/_Resources',
+    './ControlProcessor/_OptionsParser',
+    './Promise'
+    ], function resInit(exports, _Base, _BaseUtils, _ErrorFromName, _Resources, _OptionsParser, Promise) {
     "use strict";
 
     var readyComplete = false;
     var resourceMap;
     var resourceLoader;
 
-    var requireSupportedForProcessing = WinJS.Utilities.requireSupportedForProcessing
+    var requireSupportedForProcessing = _BaseUtils.requireSupportedForProcessing;
 
     function processAllImpl(rootElement, count) {
         rootElement = rootElement || document.body;
@@ -20,7 +28,7 @@
                     // Fragment-loaded root element isn't caught by querySelectorAll
                     var rootElementNode = rootElement.getAttribute('data-win-res');
                     if (rootElementNode) {
-                        var decls = WinJS.UI.optionsParser(rootElementNode);
+                        var decls = _OptionsParser.optionsParser(rootElementNode);
                         setMembers(rootElement, rootElement, decls, count);
                     }
                 }
@@ -29,7 +37,7 @@
             var selector = "[data-win-res],[data-win-control]";
             var elements = rootElement.querySelectorAll(selector);
             if (elements.length === 0) {
-                return WinJS.Promise.as(rootElement);
+                return Promise.as(rootElement);
             }
 
             for (var i = 0, len = elements.length; i < len; i++) {
@@ -39,7 +47,7 @@
                     var idcc = e.winControl.constructor.isDeclarativeControlContainer;
                     if (typeof idcc === "function") {
                         idcc = requireSupportedForProcessing(idcc);
-                        idcc(e.winControl, WinJS.Resources.processAll);
+                        idcc(e.winControl, processAll);
 
                         // Skip all children of declarative control container
                         i += e.querySelectorAll(selector).length;
@@ -51,16 +59,16 @@
                 }
                 // Use optionsParser that accept string format
                 // {name="value", name2="value2"}
-                var decls = WinJS.UI.optionsParser(e.getAttribute('data-win-res'));
+                var decls = _OptionsParser.optionsParser(e.getAttribute('data-win-res'));
                 setMembers(e, e, decls, count);
             }
 
         }
-        else if (WinJS.validation) {
-            throw new WinJS.ErrorFromName("WinJS.Res.NestingExceeded", WinJS.Resources._getWinJSString("base/nestingExceeded").value);
+        else if (_BaseUtils.validation) {
+            throw new _ErrorFromName("WinJS.Res.NestingExceeded", _Resources._getWinJSString("base/nestingExceeded").value);
         }
 
-        return WinJS.Promise.as(rootElement);
+        return Promise.as(rootElement);
     }
 
     function setAttributes(root, descriptor) {
@@ -70,7 +78,7 @@
             var name = names[k];
             var value = descriptor[name];
 
-            var data = WinJS.Resources.getString(value);
+            var data = _Resources.getString(value);
 
             if (!data || !data.empty) {
                 root.setAttribute(name, data.value);
@@ -82,14 +90,14 @@
                         root.lang = data.lang;
                     }
             }
-            else if (WinJS.validation) {
+            else if (_BaseUtils.validation) {
                 notFound(value);
             }
         }
     }
 
     function notFound(name) {
-        throw new WinJS.ErrorFromName("WinJS.Res.NotFound", WinJS.Resources._formatString(WinJS.Resources._getWinJSString("base/notFound").value, name));
+        throw new _ErrorFromName("WinJS.Res.NotFound", _Resources._formatString(_Resources._getWinJSString("base/notFound").value, name));
     }
 
     function setMembers(root, target, descriptor, count) {
@@ -101,7 +109,7 @@
             var value = descriptor[name];
 
             if (typeof value === "string") {
-                var data = WinJS.Resources.getString(value);
+                var data = _Resources.getString(value);
 
                 if (!data || !data.empty) {
                     target[name] = data.value;
@@ -117,7 +125,7 @@
                         processAllImpl(target, count + 1);
                     }
                 }
-                else if (WinJS.validation) {
+                else if (_BaseUtils.validation) {
                     notFound(value);
                 }
             }
@@ -131,8 +139,7 @@
         }
     }
 
-    WinJS.Namespace.define("WinJS.Resources", {
-        processAll: function (rootElement) {
+    function processAll(rootElement) {
             /// <signature helpKeyword="WinJS.Resources.processAll">
             /// <summary locid="WinJS.Resources.processAll">
             /// Processes resources tag and replaces strings
@@ -145,7 +152,7 @@
             /// </signature>
 
             if (!readyComplete) {
-                return WinJS.Utilities.ready().then(function () {
+                return _BaseUtils.ready().then(function () {
                     readyComplete = true;
                     return processAllImpl(rootElement);
                 });
@@ -155,9 +162,12 @@
                     return processAllImpl(rootElement);
                 }
                 catch (e) {
-                    return WinJS.Promise.wrapError(e);
+                    return Promise.wrapError(e);
                 }
             }
         }
+
+    _Base.Namespace._moduleDefine(exports, "WinJS.Resources", {
+        processAll: processAll
     });
-})(WinJS);
+});

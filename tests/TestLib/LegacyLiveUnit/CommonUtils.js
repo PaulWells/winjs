@@ -31,7 +31,8 @@ CommonUtils.prototype = (function () {
                 var e = document.createEvent("MouseEvent");
                 return e;
             } else if (fallbackType === "touch") {
-                var e = document.createEvent("TouchEvent");
+                var e = document.createEvent("MouseEvent");
+                e.isTouch = true;
                 return e;
             }
         },
@@ -51,20 +52,31 @@ CommonUtils.prototype = (function () {
                 });
 
                 e.initPointerEvent.apply(e, args);
-            } else if (e instanceof MouseEvent) {
+            } else if (e instanceof MouseEvent && !e.isTouch) {
                 // Convert "pointerevent" to "mouseevent"
                 args[0] = args[0].replace(/pointer/g, "mouse");
 
                 // Get the arguments mouse events care about
-                args = args.slice(0, 14);
+                args = args.slice(0, 15);
                 e.initMouseEvent.apply(e, args);
-            } else if (e instanceof TouchEvent) {
+            } else if (e instanceof MouseEvent && e.isTouch) {
                 // Convert "pointerevent" to "touchevent"
                 args[0] = args[0].replace(/pointer/g, "touch");
+                if (args[0] === "touchdown")
+                    args[0] = "touchstart";
+                else if (args[0] === "touchup")
+                    args[0] = "touchend";
+                else if (args[0] === "touchout")
+                    args[0] = "touchleave";
 
                 // Get the arguments touch events care about
-                args = args.slice(0, 14);
-                e.initTouchEvent.apply(e, args);
+                args = args.slice(0, 15);
+                e.initMouseEvent.apply(e, args);
+
+                // Throw in the changedTouches array
+                // No docs on how to construct an actual TouchList / Touch object, but this seems
+                // to work
+                e.changedTouches = [{screenX: args[5], screenY: args[6], clientX: args[7], clientY: args[8], pageX: args[7], pageY: args[8], target: args[14]}];
             }
         },
 

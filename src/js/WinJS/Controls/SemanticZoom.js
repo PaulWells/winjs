@@ -1,9 +1,27 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 // Semantic Zoom control
-(function semanticZoomInit(global) {
+define([
+    '../Core/_Global',
+    '../Core/_Base',
+    '../Core/_BaseUtils',
+    '../Core/_ErrorFromName',
+    '../Core/_Events',
+    '../Core/_Resources',
+    '../Core/_WriteProfilerMark',
+    '../Animations',
+    '../Animations/_TransitionAnimation',
+    '../ControlProcessor',
+    '../Promise',
+    '../Utilities/_Control',
+    '../Utilities/_Dispose',
+    '../Utilities/_ElementUtilities',
+    '../Utilities/_ElementListUtilities',
+    'require-style!less/desktop/controls',
+    'require-style!less/phone/controls'
+    ], function semanticZoomInit(global, _Base, _BaseUtils, _ErrorFromName, _Events, _Resources, _WriteProfilerMark, Animations, _TransitionAnimation, ControlProcessor, Promise, _Control, _Dispose, _ElementUtilities, _ElementListUtilities) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace.define("WinJS.UI", {
         /// <field>
         /// <summary locid="WinJS.UI.SemanticZoom">
         /// Enables the user to zoom between two different views supplied by two child controls.
@@ -17,13 +35,11 @@
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/base.js" shared="true" />
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/ui.js" shared="true" />
         /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
-        SemanticZoom: WinJS.Namespace._lazy(function () {
-            var Utilities = WinJS.Utilities,
-                UI = WinJS.UI,
-                browserStyleEquivalents = WinJS.Utilities._browserStyleEquivalents;
+        SemanticZoom: _Base.Namespace._lazy(function () {
+            var browserStyleEquivalents = _BaseUtils._browserStyleEquivalents;
 
             var strings = {
-                get invalidZoomFactor() { return WinJS.Resources._getWinJSString("ui/invalidZoomFactor").value; },
+                get invalidZoomFactor() { return _Resources._getWinJSString("ui/invalidZoomFactor").value; },
             };
 
             function identity(item) {
@@ -66,7 +82,7 @@
             var transitionScriptName = browserStyleEquivalents["transition"].scriptName;
 
             function buildTransition(prop, duration, timing) {
-                return prop + " " + WinJS.UI._animationTimeAdjustment(duration) + "s " + timing + " " + WinJS.UI._libraryDelay + "ms";
+                return prop + " " + _TransitionAnimation._animationTimeAdjustment(duration) + "s " + timing + " " + _TransitionAnimation._libraryDelay + "ms";
             }
             function outgoingElementTransition() {
                 return buildTransition(transformNames.cssName, outgoingScaleTransitionDuration, "ease-in-out") + ", " +
@@ -105,16 +121,16 @@
                 zoomedOut: 2
             };
 
-            var PT_TOUCH = WinJS.Utilities._MSPointerEvent.MSPOINTER_TYPE_TOUCH || "touch";
-            var PT_PEN = WinJS.Utilities._MSPointerEvent.MSPOINTER_TYPE_PEN || "pen";
-            var PT_MOUSE = WinJS.Utilities._MSPointerEvent.MSPOINTER_TYPE_MOUSE || "mouse";
+            var PT_TOUCH = _ElementUtilities._MSPointerEvent.MSPOINTER_TYPE_TOUCH || "touch";
+            var PT_PEN = _ElementUtilities._MSPointerEvent.MSPOINTER_TYPE_PEN || "pen";
+            var PT_MOUSE = _ElementUtilities._MSPointerEvent.MSPOINTER_TYPE_MOUSE || "mouse";
 
             function getDimension(element, property) {
-                return WinJS.Utilities.convertToPixels(element, property);
+                return _ElementUtilities.convertToPixels(element, property);
             }
 
             function scaleElement(element, scale) {
-                if (WinJS.UI.isAnimationEnabled()) {
+                if (_TransitionAnimation.isAnimationEnabled()) {
                     element.style[transformNames.scriptName] = "scale(" + scale + ")";
                 }
             }
@@ -122,7 +138,7 @@
             var origin = { x: 0, y: 0 };
 
             function translateElement(element, offset) {
-                if (WinJS.UI.isAnimationEnabled()) {
+                if (_TransitionAnimation.isAnimationEnabled()) {
                     element.style[transformNames.scriptName] = "translate(" + offset.x + "px, " + offset.y + "px)";
                 }
             }
@@ -137,12 +153,12 @@
             function onSemanticZoomPropertyChanged(list) {
                 // This will only be called for "aria-checked" changes
                 var control = list[0].target && list[0].target.winControl;
-                if (control && control instanceof WinJS.UI.SemanticZoom) {
+                if (control && control instanceof SemanticZoom) {
                     control._onPropertyChanged();
                 }
             }
 
-            var SemanticZoom = WinJS.Class.define(function SemanticZoom_ctor(element, options) {
+            var SemanticZoom = _Base.Class.define(function SemanticZoom_ctor(element, options) {
                 /// <signature helpKeyword="WinJS.UI.SemanticZoom.SemanticZoom">
                 /// <summary locid="WinJS.UI.SemanticZoom.constructor">
                 /// Creates a new SemanticZoom.
@@ -162,12 +178,12 @@
                 this._disposed = false;
 
                 var that = this;
-                var isPhone = WinJS.Utilities.isPhone;
+                var isPhone = _BaseUtils.isPhone;
 
                 this._element = element;
                 this._element.winControl = this;
-                Utilities.addClass(this._element, "win-disposable");
-                Utilities.addClass(this._element, semanticZoomClass);
+                _ElementUtilities.addClass(this._element, "win-disposable");
+                _ElementUtilities.addClass(this._element, semanticZoomClass);
                 this._element.setAttribute("role", "ms-semanticzoomcontainer");
                 var ariaLabel = this._element.getAttribute("aria-label");
                 if (!ariaLabel) {
@@ -182,14 +198,14 @@
                 }
 
                 this._element.setAttribute("aria-checked", this._zoomedOut.toString());
-                this._zoomFactor = Utilities._clamp(options.zoomFactor, minZoomFactor, maxZoomFactor, defaultZoomFactor);
+                this._zoomFactor = _ElementUtilities._clamp(options.zoomFactor, minZoomFactor, maxZoomFactor, defaultZoomFactor);
 
                 this.zoomedInItem = options.zoomedInItem;
                 this.zoomedOutItem = options.zoomedOutItem;
 
-                if (WinJS.validation) {
+                if (_BaseUtils.validation) {
                     if (options._zoomFactor && options._zoomFactor !== this._zoomFactor) {
-                        throw new WinJS.ErrorFromName("WinJS.UI.SemanticZoom.InvalidZoomFactor", strings.invalidZoomFactor);
+                        throw new _ErrorFromName("WinJS.UI.SemanticZoom.InvalidZoomFactor", strings.invalidZoomFactor);
                     }
                 }
 
@@ -213,22 +229,22 @@
                 // Register event handlers
 
                 this._element.addEventListener("mselementresize", onSemanticZoomResize);
-                new WinJS.Utilities._MutationObserver(onSemanticZoomPropertyChanged).observe(this._element, { attributes: true, attributeFilter: ["aria-checked"] });
+                new _ElementUtilities._MutationObserver(onSemanticZoomPropertyChanged).observe(this._element, { attributes: true, attributeFilter: ["aria-checked"] });
 
                 if (!isPhone) {
                     this._element.addEventListener("mousewheel", this._onMouseWheel.bind(this), true);
                     this._element.addEventListener("keydown", this._onKeyDown.bind(this), true);
 
-                    Utilities._addEventListener(this._element, "pointerdown", this._onPointerDown.bind(this), true);
-                    Utilities._addEventListener(this._element, "pointermove", this._onPointerMove.bind(this), true);
-                    Utilities._addEventListener(this._element, "pointerout", this._onPointerOut.bind(this), true);
-                    Utilities._addEventListener(this._element, "pointercancel", this._onPointerCancel.bind(this), true);
-                    Utilities._addEventListener(this._element, "pointerup", this._onPointerUp.bind(this), false);
+                    _ElementUtilities._addEventListener(this._element, "pointerdown", this._onPointerDown.bind(this), true);
+                    _ElementUtilities._addEventListener(this._element, "pointermove", this._onPointerMove.bind(this), true);
+                    _ElementUtilities._addEventListener(this._element, "pointerout", this._onPointerOut.bind(this), true);
+                    _ElementUtilities._addEventListener(this._element, "pointercancel", this._onPointerCancel.bind(this), true);
+                    _ElementUtilities._addEventListener(this._element, "pointerup", this._onPointerUp.bind(this), false);
                     this._hiddenElement.addEventListener("gotpointercapture", this._onGotPointerCapture.bind(this), false);
                     this._hiddenElement.addEventListener("lostpointercapture", this._onLostPointerCapture.bind(this), false);
                     this._element.addEventListener("click", this._onClick.bind(this), true);
-                    this._canvasIn.addEventListener(WinJS.Utilities._browserEventEquivalents["transitionEnd"], this._onCanvasTransitionEnd.bind(this), false);
-                    this._canvasOut.addEventListener(WinJS.Utilities._browserEventEquivalents["transitionEnd"], this._onCanvasTransitionEnd.bind(this), false);
+                    this._canvasIn.addEventListener(_BaseUtils._browserEventEquivalents["transitionEnd"], this._onCanvasTransitionEnd.bind(this), false);
+                    this._canvasOut.addEventListener(_BaseUtils._browserEventEquivalents["transitionEnd"], this._onCanvasTransitionEnd.bind(this), false);
                     this._element.addEventListener("MSContentZoom", this._onMSContentZoom.bind(this), true);
                     this._resetPointerRecords();
                 }
@@ -236,7 +252,7 @@
                 // Get going
                 this._onResizeImpl();
 
-                WinJS.UI._setOptions(this, options, true);
+                _Control._setOptions(this, options, true);
 
                 // Present the initial view
                 that._setVisibility();
@@ -262,7 +278,7 @@
                     },
                     set: function (value) {
                         var newValue = !!value;
-                        if (this._enableButton !== newValue && !WinJS.Utilities.isPhone) {
+                        if (this._enableButton !== newValue && !_BaseUtils.isPhone) {
                             this._enableButton = newValue;
                             if (newValue) {
                                 this._createSemanticZoomButton();
@@ -281,7 +297,7 @@
                         return this._zoomedOut;
                     },
                     set: function (value) {
-                        this._zoom(!!value, { x: 0.5 * this._sezoClientWidth, y: 0.5 * this._sezoClientHeight }, false, false, (this._zoomedOut && WinJS.Utilities.isPhone));
+                        this._zoom(!!value, { x: 0.5 * this._sezoClientWidth, y: 0.5 * this._sezoClientHeight }, false, false, (this._zoomedOut && _BaseUtils.isPhone));
                     }
                 },
 
@@ -294,7 +310,7 @@
                     },
                     set: function (value) {
                         var oldValue = this._zoomFactor;
-                        var newValue = Utilities._clamp(value, minZoomFactor, maxZoomFactor, defaultZoomFactor);
+                        var newValue = _ElementUtilities._clamp(value, minZoomFactor, maxZoomFactor, defaultZoomFactor);
                         if (oldValue !== newValue) {
                             this._zoomFactor = newValue;
                             this._onResize();
@@ -350,8 +366,8 @@
                     }
 
                     this._disposed = true;
-                    WinJS.Utilities._disposeElement(this._elementIn);
-                    WinJS.Utilities._disposeElement(this._elementOut);
+                    _Dispose._disposeElement(this._elementIn);
+                    _Dispose._disposeElement(this._elementOut);
 
                     this._clearTimeout(this._completeZoomTimer);
                     this._clearTimeout(this._TTFFTimer);
@@ -374,7 +390,7 @@
 
                     // Zoomed in and zoomed out controls must be on the first two child elements
 
-                    var children = Utilities.children(this._element);
+                    var children = _ElementListUtilities.children(this._element);
                     this._elementIn = children[0];
                     this._elementOut = children[1];
 
@@ -384,13 +400,13 @@
 
                     // Create the child controls if they haven't been created already
 
-                    UI.processAll(this._elementIn);
-                    UI.processAll(this._elementOut);
+                    ControlProcessor.processAll(this._elementIn);
+                    ControlProcessor.processAll(this._elementOut);
 
                     this._viewIn = this._elementIn.winControl.zoomableView;
                     this._viewOut = this._elementOut.winControl.zoomableView;
-                    this._elementInIsListView = this._elementIn.winControl instanceof WinJS.UI.ListView;
-                    this._elementOutIsListView = this._elementOut.winControl instanceof WinJS.UI.ListView;
+                    this._elementInIsListView = (WinJS.UI.ListView && this._elementIn.winControl instanceof WinJS.UI.ListView);
+                    this._elementOutIsListView = (WinJS.UI.ListView && this._elementOut.winControl instanceof WinJS.UI.ListView);
 
                     // Remove the children and place them beneath new divs that will serve as canvases and viewports
 
@@ -425,8 +441,8 @@
                     this._hiddenElement.setAttribute("aria-hidden", "true");
                     this._element.appendChild(this._hiddenElement);
 
-                    Utilities.addClass(this._elementIn, zoomedInElementClass);
-                    Utilities.addClass(this._elementOut, zoomedOutElementClass);
+                    _ElementUtilities.addClass(this._elementIn, zoomedInElementClass);
+                    _ElementUtilities.addClass(this._elementOut, zoomedOutElementClass);
                     this._setLayout(this._element, "relative", "hidden");
                     this._setLayout(this._cropViewport, "absolute", "hidden");
                     this._setLayout(this._opticalViewportIn, "absolute", "auto");
@@ -437,7 +453,7 @@
                     this._setLayout(this._canvasOut, "absolute", "hidden");
                     // Pinch zoom on a precision touchpad doesn't send PointerMove etc. events like ordinary touch actions. PTP has to be handled specially.
                     // PTP ignores the -ms-touch-action styles that are applied to elements, which means it ignores the style we apply to disable
-                    // optical zooming. An element can be optically zoomed via PTP but not with touch. SemanticZoom takes advantage of this fact to 
+                    // optical zooming. An element can be optically zoomed via PTP but not with touch. SemanticZoom takes advantage of this fact to
                     // implement zoom for PTPs. The _opticalViewportIn/Out elements have optical zoom properties attached to them to enable
                     // optical zoom, and we attach an MSContentZoom event handler to our root element. When we receive that event on an optical viewport,
                     // and it's in the direction for triggering a zoom, we'll trigger a zoom just like we would for scroll wheel/keyboard.
@@ -482,7 +498,7 @@
                     // Configure the controls for zooming
                     var axisIn = this._viewIn.getPanAxis(),
                         axisOut = this._viewOut.getPanAxis(),
-                        isPhone = WinJS.Utilities.isPhone;
+                        isPhone = _BaseUtils.isPhone;
                     this._pansHorizontallyIn = (axisIn === "horizontal" || axisIn === "both");
                     this._pansVerticallyIn = (axisIn === "vertical" || axisIn === "both");
                     this._pansHorizontallyOut = (axisOut === "horizontal" || axisOut === "both");
@@ -529,7 +545,7 @@
                     }
 
                     // Enable animation
-                    if (WinJS.UI.isAnimationEnabled() && !isPhone) {
+                    if (_TransitionAnimation.isAnimationEnabled() && !isPhone) {
                         styleViewportIn[browserStyleEquivalents["transition-property"].scriptName] = transformNames.cssName;
                         styleViewportIn[browserStyleEquivalents["transition-duration"].scriptName] = "0s";
                         styleViewportIn[browserStyleEquivalents["transition-timing-function"].scriptName] = "linear";
@@ -641,7 +657,7 @@
                     var that = this;
                     this._dismissButtonTimer = setTimeout(function () {
                         that._hideSemanticZoomButton();
-                    }, WinJS.UI._animationTimeAdjustment(sezoButtonShowDuration));
+                    }, _TransitionAnimation._animationTimeAdjustment(sezoButtonShowDuration));
                 },
 
                 _showSemanticZoomButton: function () {
@@ -650,7 +666,7 @@
                     }
 
                     if (this._sezoButton && !this._zoomedOut && !this._locked) {
-                        WinJS.UI.Animation.fadeIn(this._sezoButton);
+                        Animations.fadeIn(this._sezoButton);
                         this._sezoButton.style.visibility = "visible";
                         this._buttonShown = true;
                     }
@@ -664,7 +680,7 @@
                     if (this._sezoButton) {
                         if (!immediately) {
                             var that = this;
-                            WinJS.UI.Animation.fadeOut(this._sezoButton).then(function () {
+                            Animations.fadeOut(this._sezoButton).then(function () {
                                 that._sezoButton.style.visibility = "hidden";
                             });
                         } else {
@@ -704,7 +720,7 @@
                     var handled = false;
 
                     if (ev.ctrlKey) {
-                        var Key = Utilities.Key;
+                        var Key = _ElementUtilities.Key;
 
                         switch (ev.keyCode) {
                             case Key.add:
@@ -775,7 +791,7 @@
 
                     for (var i = 0, len = contactKeys.length; i < len; i++) {
                         try {
-                            WinJS.Utilities._setPointerCapture(this._hiddenElement, contactKeys[i] || 0);
+                            _ElementUtilities._setPointerCapture(this._hiddenElement, contactKeys[i] || 0);
                         } catch (e) {
                             this._resetPointerRecords();
                             return;
@@ -891,7 +907,7 @@
                         this._updatePinchDistanceRecords(contactDistance);
                         if (this._pinchDistanceCount >= pinchDistanceCount) {
                             if (!this._zooming && !this._isBouncing) {
-                                WinJS.Utilities._writeProfilerMark("WinJS.UI.SemanticZoom:EndPinchDetection,info");
+                                _WriteProfilerMark("WinJS.UI.SemanticZoom:EndPinchDetection,info");
                                 processPinchGesture(this._lastPinchDirection === PinchDirection.zoomedOut);
                             }
                         }
@@ -902,7 +918,7 @@
                     }
 
                     if (this._pointerCount >= 2) {
-                        // When two or more pointers are down, we want to hide all of their move events from the underlying view. 
+                        // When two or more pointers are down, we want to hide all of their move events from the underlying view.
                         // If the pointer we're looking at needs to have a touch cancel event fired for it, we'll fake that now.
                         if (pointerRecord.fireCancelOnPinch) {
                             this._fakeCancelOnPointer(ev, pointerRecord);
@@ -956,7 +972,7 @@
                         // 3 - Capture got moved outside of the semantic zoom region. We'll destroy the pointer record if this happens.
                         pointerRecord.dirty = true;
                         var that = this;
-                        WinJS.Promise.timeout(eventTimeoutDelay).then(function () {
+                        Promise.timeout(eventTimeoutDelay).then(function () {
                             if (pointerRecord.dirty) {
                                 // If the timeout completed and the record is still dirty, we can discard it
                                 that._completePointerUp(ev, false);
@@ -995,7 +1011,7 @@
                     }
 
                     if (this._lastPinchDistance === -1) {
-                        WinJS.Utilities._writeProfilerMark("WinJS.UI.SemanticZoom:StartPinchDetection,info");
+                        _WriteProfilerMark("WinJS.UI.SemanticZoom:StartPinchDetection,info");
                         this._lastPinchDistance = contactDistance;
                     } else {
                         if (this._lastPinchDistance !== contactDistance) {
@@ -1013,7 +1029,7 @@
                 },
 
                 _zoom: function (zoomOut, zoomCenter, gesture, centerOnCurrent, skipAlignment) {
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.SemanticZoom:StartZoom(zoomOut=" + zoomOut + "),info");
+                    _WriteProfilerMark("WinJS.UI.SemanticZoom:StartZoom(zoomOut=" + zoomOut + "),info");
 
                     this._clearTimeout(this._completeZoomTimer);
                     this._clearTimeout(this._TTFFTimer);
@@ -1046,7 +1062,7 @@
                         this._zoomInProgress = true;
 
                         (zoomOut ? this._opticalViewportOut : this._opticalViewportIn).style.visibility = "visible";
-                        if (zoomOut && WinJS.Utilities.isPhone) {
+                        if (zoomOut && _BaseUtils.isPhone) {
                             // When on the phone, we need to make sure the zoomed out canvas is visible before calling beginZoom(), otherwise
                             // beginZoom will start up animations on an invisible element, and those animations will be animated dependently.
                             this._canvasOut.style.opacity = 1;
@@ -1056,8 +1072,8 @@
                             promiseOut = this._viewOut.beginZoom(),
                             beginZoomPromises = null;
 
-                        if ((promiseIn || promiseOut) && WinJS.Utilities.isPhone) {
-                            beginZoomPromises = WinJS.Promise.join([promiseIn, promiseOut]);
+                        if ((promiseIn || promiseOut) && _BaseUtils.isPhone) {
+                            beginZoomPromises = Promise.join([promiseIn, promiseOut]);
                         }
                         // To simplify zoomableView implementations, only call getCurrentItem between beginZoom and endZoom
                         if (centerOnCurrent && !skipAlignment) {
@@ -1069,7 +1085,7 @@
                                 that._prepareForZoom(zoomOut, {
                                     x: that._rtl() ? (that._sezoClientWidth - position.left - 0.5 * position.width) : position.left + 0.5 * position.width,
                                     y: position.top + 0.5 * position.height
-                                }, WinJS.Promise.wrap(current), beginZoomPromises);
+                                }, Promise.wrap(current), beginZoomPromises);
                             });
                         } else {
                             this._prepareForZoom(zoomOut, zoomCenter || {}, null, beginZoomPromises, skipAlignment);
@@ -1078,7 +1094,7 @@
                 },
 
                 _prepareForZoom: function (zoomOut, zoomCenter, completedCurrentItem, customViewAnimationPromise, skipAlignment) {
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.SemanticZoom:prepareForZoom,StartTM");
+                    _WriteProfilerMark("WinJS.UI.SemanticZoom:prepareForZoom,StartTM");
                     var that = this;
                     var centerX = zoomCenter.x,
                         centerY = zoomCenter.y;
@@ -1115,7 +1131,7 @@
                     // Force style resolution
                     getComputedStyle(this._canvasIn).opacity;
                     getComputedStyle(this._canvasOut).opacity;
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.SemanticZoom:prepareForZoom,StopTM");
+                    _WriteProfilerMark("WinJS.UI.SemanticZoom:prepareForZoom,StopTM");
                     this._startAnimations(zoomOut, customViewAnimationPromise);
                 },
 
@@ -1158,15 +1174,15 @@
                         }
                     }
 
-                    return new WinJS.Promise(function (c) { c({ x: 0, y: 0 }); });
+                    return new Promise(function (c) { c({ x: 0, y: 0 }); });
                 },
 
                 _startAnimations: function (zoomOut, customViewAnimationPromise) {
                     this._zoomingOut = zoomOut;
 
-                    var isPhone = WinJS.Utilities.isPhone;
-                    if (WinJS.UI.isAnimationEnabled() && !isPhone) {
-                        WinJS.Utilities._writeProfilerMark("WinJS.UI.SemanticZoom:ZoomAnimation,StartTM");
+                    var isPhone = _BaseUtils.isPhone;
+                    if (_TransitionAnimation.isAnimationEnabled() && !isPhone) {
+                        _WriteProfilerMark("WinJS.UI.SemanticZoom:ZoomAnimation,StartTM");
                         this._canvasIn.style[transitionScriptName] = (zoomOut ? outgoingElementTransition() : incomingElementTransition());
                         this._canvasOut.style[transitionScriptName] = (zoomOut ? incomingElementTransition() : outgoingElementTransition());
                     }
@@ -1180,13 +1196,13 @@
                         this._canvasOut.style.opacity = (zoomOut ? 1 : 0);
                     }
 
-                    if (!WinJS.UI.isAnimationEnabled()) {
+                    if (!_TransitionAnimation.isAnimationEnabled()) {
                         this._zooming = false;
                         this._canvasIn.style[transformNames.scriptName] = "";
                         this._canvasOut.style[transformNames.scriptName] = "";
                         this._completeZoom();
                     } else if (!customViewAnimationPromise) {
-                        this.setTimeoutAfterTTFF(this._onZoomAnimationComplete.bind(this), WinJS.UI._animationTimeAdjustment(zoomAnimationDuration));
+                        this.setTimeoutAfterTTFF(this._onZoomAnimationComplete.bind(this), _TransitionAnimation._animationTimeAdjustment(zoomAnimationDuration));
                     } else {
                         var that = this;
                         var onComplete = function onComplete() {
@@ -1205,7 +1221,7 @@
                 },
 
                 _onZoomAnimationComplete: function () {
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.SemanticZoom:ZoomAnimation,StopTM");
+                    _WriteProfilerMark("WinJS.UI.SemanticZoom:ZoomAnimation,StopTM");
 
                     if (this._disposed) {
                         return;
@@ -1295,7 +1311,7 @@
                     if (this._zoomInProgress || this._isBouncing) {
                         that._completeZoomTimer = setTimeout(function () {
                             that._completeZoom();
-                        }, WinJS.UI._animationTimeAdjustment(zoomAnimationTimeout));
+                        }, _TransitionAnimation._animationTimeAdjustment(zoomAnimationTimeout));
                     }
                 },
 
@@ -1319,7 +1335,7 @@
                         return;
                     }
 
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.SemanticZoom:CompleteZoom,info");
+                    _WriteProfilerMark("WinJS.UI.SemanticZoom:CompleteZoom,info");
                     this._aligning = false;
                     this._alignViewsPromise && this._alignViewsPromise.cancel();
 
@@ -1330,7 +1346,7 @@
                     this[this._zoomingOut ? "_opticalViewportOut" : "_opticalViewportIn"].msContentZoomFactor = 1.0;
                     this._viewIn.endZoom(!this._zoomingOut);
                     this._viewOut.endZoom(this._zoomingOut);
-                    this._canvasIn.style.opacity = (this._zoomingOut && !WinJS.Utilities.isPhone ? 0 : 1);
+                    this._canvasIn.style.opacity = (this._zoomingOut && !_BaseUtils.isPhone ? 0 : 1);
                     this._canvasOut.style.opacity = (this._zoomingOut ? 1 : 0);
 
                     this._zoomInProgress = false;
@@ -1353,11 +1369,11 @@
                         if (this._isActive) {
                             // If the element is no longer a valid focus target, it will throw, we
                             // simply won't do anything in this case
-                            WinJS.Utilities._setActive(this._zoomedOut ? this._elementOut : this._elementIn);
+                            _ElementUtilities._setActive(this._zoomedOut ? this._elementOut : this._elementIn);
                         }
                     }
 
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.SemanticZoom:CompleteZoom_Custom,info");
+                    _WriteProfilerMark("WinJS.UI.SemanticZoom:CompleteZoom_Custom,info");
                 },
 
                 _isActive: function () {
@@ -1373,7 +1389,7 @@
 
                 _setupOpticalViewport: function (viewport) {
                     viewport.style["-ms-overflow-style"] = "none";
-                    if (!WinJS.Utilities.isPhone) {
+                    if (!_BaseUtils.isPhone) {
                         viewport.style["-ms-content-zooming"] = "zoom";
                         // We don't want the optical zoom to be too obvious with PTP (we're mostly just using it to get MSContentZoom events).
                         // We'll use a +/-1% margin around 100% so that we can still optically zoom, but not too far.
@@ -1388,7 +1404,7 @@
                     function setVisibility(element, isVisible) {
                         element.style.visibility = (isVisible ? "visible" : "hidden");
                     }
-                    setVisibility(this._opticalViewportIn, !this._zoomedOut || WinJS.Utilities.isPhone);
+                    setVisibility(this._opticalViewportIn, !this._zoomedOut || _BaseUtils.isPhone);
                     setVisibility(this._opticalViewportOut, this._zoomedOut);
                     this._opticalViewportIn.setAttribute("aria-hidden", !!this._zoomedOut);
                     this._opticalViewportOut.setAttribute("aria-hidden", !this._zoomedOut);
@@ -1404,9 +1420,9 @@
                 _releasePointerCapture: function (ev) {
                     var id = ev.pointerId;
                     try {
-                        // Release the pointer capture since they are going away, to allow in air touch pointers 
+                        // Release the pointer capture since they are going away, to allow in air touch pointers
                         // to be reused for multiple interactions
-                        WinJS.Utilities._releasePointerCapture(this._hiddenElement, id);
+                        _ElementUtilities._releasePointerCapture(this._hiddenElement, id);
                     } catch (e) {
                         // This can throw if the pointer was not already captured
                     }
@@ -1418,7 +1434,7 @@
                     }
 
                     var that = this;
-                    this._recordResetPromise = WinJS.Promise.timeout(eventTimeoutDelay).then(function () {
+                    this._recordResetPromise = Promise.timeout(eventTimeoutDelay).then(function () {
                         if (that._pointerCount === 0) {
                             that._resetPointerRecords();
                             that._recordResetPromise = null;
@@ -1454,7 +1470,7 @@
                 },
 
                 _playBounce: function (beginBounce, center) {
-                    if (!WinJS.UI.isAnimationEnabled()) {
+                    if (!_TransitionAnimation.isAnimationEnabled()) {
                         return;
                     }
 
@@ -1488,7 +1504,7 @@
 
                     scaleElement(targetElement, scale);
 
-                    this.setTimeoutAfterTTFF(this._onBounceAnimationComplete.bind(this), WinJS.UI._animationTimeAdjustment(zoomAnimationDuration));
+                    this.setTimeoutAfterTTFF(this._onBounceAnimationComplete.bind(this), _TransitionAnimation._animationTimeAdjustment(zoomAnimationDuration));
                 },
 
                 _rtl: function () {
@@ -1497,21 +1513,16 @@
 
                 _pinching: {
                     set: function (value) {
-                        if (this._elementInIsListView) {
-                            this._elementIn.winControl._pinching = value;
-                        }
-
-                        if (this._elementOutIsListView) {
-                            this._elementOut.winControl._pinching = value;
-                        }
+                        this._viewIn.pinching = value;
+                        this._viewOut.pinching = value;
                     }
                 }
             });
-            WinJS.Class.mix(SemanticZoom, WinJS.Utilities.createEventProperties("zoomchanged"));
-            WinJS.Class.mix(SemanticZoom, WinJS.UI.DOMEventMixin);
+            _Base.Class.mix(SemanticZoom, _Events.createEventProperties("zoomchanged"));
+            _Base.Class.mix(SemanticZoom, _Control.DOMEventMixin);
             return SemanticZoom;
         })
 
     });
 
-})(this);
+});

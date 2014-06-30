@@ -1,17 +1,26 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 define([
-    './NavBar/_Command', 
-    './NavBar/_Container'
-    ], function() {
-(function NavBarInit(global, WinJS, undefined) {
+    '../Core/_Base',
+    '../Core/_BaseUtils',
+    '../Core/_Events',
+    '../Core/_WriteProfilerMark',
+    '../Promise',
+    '../Scheduler',
+    '../Utilities/_ElementUtilities',
+    './AppBar',
+    './NavBar/_Command',
+    './NavBar/_Container',
+    'require-style!less/desktop/controls',
+    'require-style!less/phone/controls'
+], function NavBarInit(_Base, _BaseUtils, _Events, _WriteProfilerMark, Promise, Scheduler, _ElementUtilities, AppBar, _Command, _Container) {
     "use strict";
 
     var customLayout = "custom";
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace.define("WinJS.UI", {
         /// <field>
         /// <summary locid="WinJS.UI.NavBar">
-        /// Displays navigation commands in a toolbar that the user can show or hide. 
+        /// Displays navigation commands in a toolbar that the user can show or hide.
         /// </summary>
         /// <compatibleWith platform="Windows" minVersion="8.1"/>
         /// </field>
@@ -31,11 +40,11 @@ define([
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/base.js" shared="true" />
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/ui.js" shared="true" />
         /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
-        NavBar: WinJS.Namespace._lazy(function () {
+        NavBar: _Base.Namespace._lazy(function () {
             var childrenProcessedEventName = "childrenprocessed";
-            var createEvent = WinJS.Utilities._createEventProperty;
+            var createEvent = _Events._createEventProperty;
 
-            return WinJS.Class.derive(WinJS.UI.AppBar, function NavBar_ctor(element, options) {
+            var NavBar = _Base.Class.derive(AppBar.AppBar, function NavBar_ctor(element, options) {
                 /// <signature helpKeyword="WinJS.UI.NavBar.NavBar">
                 /// <summary locid="WinJS.UI.NavBar.constructor">
                 /// Creates a new NavBar.
@@ -44,8 +53,8 @@ define([
                 /// The DOM element that will host the new NavBar control.
                 /// </param>
                 /// <param name="options" type="Object" locid="WinJS.UI.NavBar.constructor_p:options">
-                /// An object that contains one or more property/value pairs to apply to the new control. Each property of the options object corresponds to one of the control's 
-                /// properties or events. 
+                /// An object that contains one or more property/value pairs to apply to the new control. Each property of the options object corresponds to one of the control's
+                /// properties or events.
                 /// </param>
                 /// <returns type="WinJS.UI.NavBar" locid="WinJS.UI.NavBar.constructor_returnValue">
                 /// The new NavBar control.
@@ -56,22 +65,22 @@ define([
                 options = options || {};
 
                 // Shallow copy object so we can modify it.
-                options = WinJS.Utilities._shallowCopy(options);
+                options = _BaseUtils._shallowCopy(options);
 
                 // Default to Placement = Top and Layout = Custom
                 options.placement = options.placement || "top";
                 options.layout = customLayout;
 
-                WinJS.UI.AppBar.call(this, element, options);
+                AppBar.AppBar.call(this, element, options);
 
                 this._element.addEventListener("beforeshow", this._handleBeforeShow.bind(this));
 
-                WinJS.Utilities.addClass(this.element, WinJS.UI.NavBar._ClassName.navbar);
+                _ElementUtilities.addClass(this.element, NavBar._ClassName.navbar);
 
                 if (window.Windows && Windows.ApplicationModel && Windows.ApplicationModel.DesignMode && Windows.ApplicationModel.DesignMode.designModeEnabled) {
                     this._processChildren();
                 } else {
-                    WinJS.Utilities.Scheduler.schedule(this._processChildren.bind(this), WinJS.Utilities.Scheduler.Priority.idle, null, "WinJS.UI.NavBar.processChildren");
+                    Scheduler.schedule(this._processChildren.bind(this), Scheduler.Priority.idle, null, "WinJS.UI.NavBar.processChildren");
                 }
             }, {
                 // Block others from setting the layout property.
@@ -85,7 +94,7 @@ define([
                         return customLayout;
                     },
                     set: function (value) {
-                        // NOP
+                        Object.getOwnPropertyDescriptor(AppBar.AppBar.prototype, "layout").set.call(this, customLayout);
                     },
                 },
 
@@ -96,16 +105,16 @@ define([
                 onchildrenprocessed: createEvent(childrenProcessedEventName),
 
                 _processChildren: function NavBar_processChildren() {
-                    // The NavBar control schedules processAll on its children at idle priority to avoid hurting startup 
-                    // performance. If the NavBar is shown before the scheduler gets to the idle job, the NavBar will 
-                    // immediately call processAll on its children. If your app needs the children to be processed before 
+                    // The NavBar control schedules processAll on its children at idle priority to avoid hurting startup
+                    // performance. If the NavBar is shown before the scheduler gets to the idle job, the NavBar will
+                    // immediately call processAll on its children. If your app needs the children to be processed before
                     // the scheduled job executes, you may call processChildren to force the processAll call.
                     if (!this._processed) {
                         this._processed = true;
 
                         this._writeProfilerMark("processChildren,StartTM");
                         var that = this;
-                        var processed = WinJS.Promise.as();
+                        var processed = Promise.as();
                         if (this._processors) {
                             this._processors.forEach(function (processAll) {
                                 for (var i = 0, len = that.element.children.length; i < len; i++) {
@@ -120,15 +129,15 @@ define([
                         return processed.then(
                             function () {
                                 that._writeProfilerMark("processChildren,StopTM");
-                                that._fireEvent(WinJS.UI.NavBar._EventName.childrenProcessed);
+                                that._fireEvent(NavBar._EventName.childrenProcessed);
                             },
                             function () {
                                 that._writeProfilerMark("processChildren,StopTM");
-                                that._fireEvent(WinJS.UI.NavBar._EventName.childrenProcessed);
+                                that._fireEvent(NavBar._EventName.childrenProcessed);
                             }
                         );
                     }
-                    return WinJS.Promise.wrap();
+                    return Promise.wrap();
                 },
 
                 _show: function NavBar_show() {
@@ -139,13 +148,13 @@ define([
                     }
                     var that = this;
                     this._processChildren().then(function () {
-                        WinJS.UI.AppBar.prototype._show.call(that);
+                        AppBar.AppBar.prototype._show.call(that);
                     });
                 },
 
                 _handleBeforeShow: function NavBar_handleBeforeShow() {
-                    // Navbar needs to ensure its elements to have their correct height and width after AppBar changes display="none" 
-                    // to  display="" and AppBar needs the elements to have their final height before it measures its own element height 
+                    // Navbar needs to ensure its elements to have their correct height and width after AppBar changes display="none"
+                    // to  display="" and AppBar needs the elements to have their final height before it measures its own element height
                     // to do the slide in animation over the correct amount of pixels.
                     if (this._disposed) {
                         return;
@@ -164,7 +173,7 @@ define([
                 },
 
                 _writeProfilerMark: function NavBar_writeProfilerMark(text) {
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.NavBar:" + this._id + ":" + text);
+                    _WriteProfilerMark("WinJS.UI.NavBar:" + this._id + ":" + text);
                 }
             }, {
                 _ClassName: {
@@ -173,7 +182,7 @@ define([
                 _EventName: {
                     childrenProcessed: childrenProcessedEventName
                 },
-                isDeclarativeControlContainer: WinJS.Utilities.markSupportedForProcessing(function (navbar, callback) {
+                isDeclarativeControlContainer: _BaseUtils.markSupportedForProcessing(function (navbar, callback) {
                     if (navbar._processed) {
                         for (var i = 0, len = navbar.element.children.length; i < len; i++) {
                             callback(navbar.element.children[i]);
@@ -184,8 +193,9 @@ define([
                     }
                 })
             });
+
+            return NavBar;
         })
     });
 
-})(this, WinJS);
 });

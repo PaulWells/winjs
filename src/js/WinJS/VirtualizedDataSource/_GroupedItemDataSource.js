@@ -1,10 +1,13 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 // Grouped Item Data Source
 
-(function groupedItemDataSourceInit() {
+define([
+    '../Core/_Base',
+    './_GroupDataSource'
+    ], function groupedItemDataSourceInit(_Base, _GroupDataSource) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace.define("WinJS.UI", {
 
         computeDataSourceGroups: function (listDataSource, groupKey, groupData, options) {
             /// <signature helpKeyword="WinJS.UI.computeDataSourceGroups">
@@ -111,7 +114,7 @@
                         if (listBinding[listBindingMethod]) {
                             groupedItemListBinding[listBindingMethod] = function () {
                                 return createGroupedItemPromise(listBinding[listBindingMethod].apply(listBinding, arguments));
-                            }
+                            };
                         }
                     })(listBindingMethods[i]);
                 }
@@ -162,7 +165,7 @@
                     if (listDataSource[listDataSourceMethod]) {
                         groupedItemDataSource[listDataSourceMethod] = function () {
                             return createGroupedItemPromise(listDataSource[listDataSourceMethod].apply(listDataSource, arguments));
-                        }
+                        };
                     }
                 })(listDataSourceMethods[i]);
             }
@@ -171,7 +174,7 @@
                 if (listDataSource[methodName]) {
                     groupedItemDataSource[methodName] = function () {
                         return listDataSource[methodName].apply(listDataSource, arguments);
-                    }
+                    };
                 }
             });
 
@@ -180,7 +183,7 @@
             Object.defineProperty(groupedItemDataSource, "groups", {
                 get: function () {
                     if (!groupDataSource) {
-                        groupDataSource = new WinJS.UI._GroupDataSource(listDataSource, groupKey, groupData, options);
+                        groupDataSource = new _GroupDataSource._GroupDataSource(listDataSource, groupKey, groupData, options);
                     }
                     return groupDataSource;
                 },
@@ -193,5 +196,5 @@
 
     });
 
-})();
+});
 

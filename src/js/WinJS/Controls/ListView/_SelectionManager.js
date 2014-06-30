@@ -1,13 +1,17 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function selectionManagerInit(global, WinJS, undefined) {
+define([
+    'exports',
+    '../../Core/_Base',
+    '../../Promise',
+    '../../_Signal',
+    '../../Utilities/_UI',
+    '../ItemContainer/_Constants'
+    ], function selectionManagerInit(exports, _Base, Promise, _Signal, _UI, _Constants) {
     "use strict";
 
-    var utilities = WinJS.Utilities,
-        Promise = WinJS.Promise;
-
-    WinJS.Namespace.define("WinJS.UI", {
-        _ItemSet: WinJS.Namespace._lazy(function () {
-            var _ItemSet = WinJS.Class.define(function _ItemSet_ctor(listView, ranges, count) {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        _ItemSet: _Base.Namespace._lazy(function () {
+            var _ItemSet = _Base.Class.define(function _ItemSet_ctor(listView, ranges, count) {
                 this._listView = listView;
                 this._ranges = ranges;
                 this._itemsCount = count;
@@ -28,7 +32,7 @@
                 },
 
                 getItems: function () {
-                    return WinJS.UI.getItemsFromRanges(this._listView._itemsManager.dataSource, this._ranges);
+                    return exports.getItemsFromRanges(this._listView._itemsManager.dataSource, this._ranges);
                 },
 
                 isEverything: function () {
@@ -78,19 +82,19 @@
                     promises.push(listBinding.fromIndex(indices[i]));
                 }
 
-                return WinJS.Promise.join(promises).then(function (items) {
+                return Promise.join(promises).then(function (items) {
                     listBinding.release();
                     return items;
                 });
             });
         },
 
-        _Selection: WinJS.Namespace._lazy(function () {
+        _Selection: _Base.Namespace._lazy(function () {
             function isEverythingRange(ranges) {
                 return ranges && ranges.firstIndex === 0 && ranges.lastIndex === Number.MAX_VALUE;
             }
 
-            return WinJS.Class.derive(WinJS.UI._ItemSet, function (listView, indexesAndRanges) {
+            return _Base.Class.derive(exports._ItemSet, function (listView, indexesAndRanges) {
                 this._listView = listView;
                 this._itemsCount = -1;
                 this._ranges = [];
@@ -290,7 +294,7 @@
                             }
                             left.lastPromise = that._getListBinding().fromIndex(left.lastIndex).retain();
                         }
-                    }
+                    };
 
                     for (var i = 0, len = this._ranges.length; i < len; i++) {
                         range = this._ranges[i];
@@ -424,7 +428,7 @@
                         } else {
                             return Promise.wrap();
                         }
-                    }
+                    };
 
                     for (var i = 0, len = this._ranges.length; i < len; i++) {
                         var range = this._ranges[i];
@@ -513,13 +517,13 @@
         }),
 
         // This component is responsible for holding selection state
-        _SelectionManager: WinJS.Namespace._lazy(function () {
+        _SelectionManager: _Base.Namespace._lazy(function () {
             var _SelectionManager = function (listView) {
                 this._listView = listView;
-                this._selected = new WinJS.UI._Selection(this._listView);
+                this._selected = new exports._Selection(this._listView);
                 // Don't rename this member. Some apps reference it.
-                this._pivot = WinJS.UI._INVALID_INDEX;
-                this._focused = { type: WinJS.UI.ObjectType.item, index: 0 };
+                this._pivot = _Constants._INVALID_INDEX;
+                this._focused = { type: _UI.ObjectType.item, index: 0 };
                 this._pendingChange = Promise.wrap();
             };
             _SelectionManager.prototype = {
@@ -600,9 +604,9 @@
                     /// </returns>
                     /// </signature>
                     var that = this,
-                        signal = new WinJS._Signal();
+                        signal = new _Signal();
                     return this._synchronize(signal).then(function () {
-                        var newSelection = new WinJS.UI._Selection(that._listView);
+                        var newSelection = new exports._Selection(that._listView);
                         return newSelection.set(items).then(
                             function () {
                                 that._set(newSelection);
@@ -611,7 +615,7 @@
                             function (error) {
                                 newSelection.clear();
                                 signal.complete();
-                                return WinJS.Promise.wrapError(error);
+                                return Promise.wrapError(error);
                             }
                         );
                     });
@@ -628,9 +632,9 @@
                     /// </signature>
 
                     var that = this,
-                        signal = new WinJS._Signal();
+                        signal = new _Signal();
                     return this._synchronize(signal).then(function () {
-                        var newSelection = new WinJS.UI._Selection(that._listView);
+                        var newSelection = new exports._Selection(that._listView);
                         return newSelection.clear().then(
                             function () {
                                 that._set(newSelection);
@@ -639,7 +643,7 @@
                             function (error) {
                                 newSelection.clear();
                                 signal.complete();
-                                return WinJS.Promise.wrapError(error);
+                                return Promise.wrapError(error);
                             }
                         );
                     });
@@ -661,7 +665,7 @@
                     /// </returns>
                     /// </signature>
                     var that = this,
-                        signal = new WinJS._Signal();
+                        signal = new _Signal();
                     return this._synchronize(signal).then(function () {
                         var newSelection = that._cloneSelection();
                         return newSelection.add(items).then(
@@ -672,7 +676,7 @@
                             function (error) {
                                 newSelection.clear();
                                 signal.complete();
-                                return WinJS.Promise.wrapError(error);
+                                return Promise.wrapError(error);
                             }
                         );
                     });
@@ -693,7 +697,7 @@
                     /// </returns>
                     /// </signature>
                     var that = this,
-                        signal = new WinJS._Signal();
+                        signal = new _Signal();
                     return this._synchronize(signal).then(function () {
                         var newSelection = that._cloneSelection();
                         return newSelection.remove(items).then(
@@ -704,7 +708,7 @@
                             function (error) {
                                 newSelection.clear();
                                 signal.complete();
-                                return WinJS.Promise.wrapError(error);
+                                return Promise.wrapError(error);
                             }
                         );
                     });
@@ -720,9 +724,9 @@
                     /// </returns>
                     /// </signature>
                     var that = this,
-                        signal = new WinJS._Signal();
+                        signal = new _Signal();
                     return this._synchronize(signal).then(function () {
-                        var newSelection = new WinJS.UI._Selection(that._listView);
+                        var newSelection = new exports._Selection(that._listView);
                         return newSelection.selectAll().then(
                             function () {
                                 that._set(newSelection);
@@ -731,7 +735,7 @@
                             function (error) {
                                 newSelection.clear();
                                 signal.complete();
-                                return WinJS.Promise.wrapError(error);
+                                return Promise.wrapError(error);
                             }
                         );
                     });
@@ -741,18 +745,18 @@
                     var that = this;
                     return this._listView._versionManager.unlocked.then(function () {
                         var currentPendingChange = that._pendingChange;
-                        that._pendingChange = WinJS.Promise.join([currentPendingChange, signal.promise]).then(function () { });
+                        that._pendingChange = Promise.join([currentPendingChange, signal.promise]).then(function () { });
                         return currentPendingChange;
                     });
                 },
 
                 _reset: function () {
-                    this._pivot = WinJS.UI._INVALID_INDEX;
-                    this._setFocused({ type: WinJS.UI.ObjectType.item, index: 0 }, this._keyboardFocused());
+                    this._pivot = _Constants._INVALID_INDEX;
+                    this._setFocused({ type: _UI.ObjectType.item, index: 0 }, this._keyboardFocused());
                     this._pendingChange.cancel();
                     this._pendingChange = Promise.wrap();
                     this._selected.clear();
-                    this._selected = new WinJS.UI._Selection(this._listView);
+                    this._selected = new exports._Selection(this._listView);
                 },
 
                 _dispose: function () {
@@ -833,7 +837,7 @@
                 },
 
                 _cloneSelection: function () {
-                    var newSelection = new WinJS.UI._Selection(this._listView);
+                    var newSelection = new exports._Selection(this._listView);
                     newSelection._ranges = this._selected.getRanges();
                     newSelection._itemsCount = this._selected._itemsCount;
                     newSelection._retainRanges();
@@ -845,4 +849,4 @@
         })
     });
 
-})(this, WinJS);
+});

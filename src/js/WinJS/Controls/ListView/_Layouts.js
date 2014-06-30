@@ -1,15 +1,31 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function layouts2Init(global, WinJS, undefined) {
+define([
+    'exports',
+    '../../Core/_Base',
+    '../../Core/_BaseUtils',
+    '../../Core/_ErrorFromName',
+    '../../Core/_Resources',
+    '../../Core/_WriteProfilerMark',
+    '../../Animations/_TransitionAnimation',
+    '../../Promise',
+    '../../Scheduler',
+    '../../_Signal',
+    '../../Utilities/_Dispose',
+    '../../Utilities/_ElementUtilities',
+    '../../Utilities/_SafeHtml',
+    '../../Utilities/_UI',
+    '../../Utilities/_UIUtilities',
+    '../ItemContainer/_Constants',
+    './_ErrorMessages'
+    ], function layouts2Init(exports, _Base, _BaseUtils, _ErrorFromName, _Resources, _WriteProfilerMark, _TransitionAnimation, Promise, Scheduler, _Signal, _Dispose, _ElementUtilities, _SafeHtml, _UI, _UIUtilities, _Constants, _ErrorMessages) {
     "use strict";
 
-    var Utilities = WinJS.Utilities,
-        Key = Utilities.Key,
-        Scheduler = Utilities.Scheduler,
-        uniqueID = WinJS.Utilities._uniqueID;
+    var Key = _ElementUtilities.Key,
+        uniqueID = _ElementUtilities._uniqueID;
 
     var strings = {
-        get itemInfoIsInvalid() { return WinJS.Resources._getWinJSString("ui/itemInfoIsInvalid").value; },
-        get groupInfoResultIsInvalid() { return WinJS.Resources._getWinJSString("ui/groupInfoResultIsInvalid").value; }
+        get itemInfoIsInvalid() { return _Resources._getWinJSString("ui/itemInfoIsInvalid").value; },
+        get groupInfoResultIsInvalid() { return _Resources._getWinJSString("ui/groupInfoResultIsInvalid").value; }
     };
 
     //
@@ -32,9 +48,9 @@
         return "_win-dynamic-" + prefix + "-" + (nextCssClassId++);
     }
 
-    var browserStyleEquivalents = WinJS.Utilities._browserStyleEquivalents;
+    var browserStyleEquivalents = _BaseUtils._browserStyleEquivalents;
     var transformNames = browserStyleEquivalents["transform"];
-    var transitionScriptName = WinJS.Utilities._browserStyleEquivalents["transition"].scriptName;
+    var transitionScriptName = _BaseUtils._browserStyleEquivalents["transition"].scriptName;
     var dragBetweenTransition = transformNames.cssName + " cubic-bezier(0.1, 0.9, 0.2, 1) 167ms";
     var dragBetweenDistance = 12;
 
@@ -64,14 +80,14 @@
     // using deleteDynamicCssRule. uniqueToken should be created using uniqueCssClassName.
     function addDynamicCssRule(uniqueToken, site, selector, body) {
         flushDynamicCssRules();
-        var rule = "." + WinJS.UI._listViewClass + " ." + uniqueToken + " " + selector + " { " +
+        var rule = "." + _Constants._listViewClass + " ." + uniqueToken + " " + selector + " { " +
              body +
         "}";
         var perfId = "_addDynamicCssRule:" + uniqueToken + ",info";
         if (site) {
             site._writeProfilerMark(perfId);
         } else {
-            WinJS.Utilities._writeProfilerMark("WinJS.UI.ListView:Layout" + perfId);
+            _WriteProfilerMark("WinJS.UI.ListView:Layout" + perfId);
         }
         layoutStyleElem.sheet.insertRule(rule, 0);
     }
@@ -92,7 +108,7 @@
     }
 
     function getDimension(element, property) {
-        return WinJS.Utilities.convertToPixels(element, window.getComputedStyle(element, null)[property]);
+        return _ElementUtilities.convertToPixels(element, window.getComputedStyle(element, null)[property]);
     }
 
     // Returns the sum of the margin, border, and padding for the side of the
@@ -181,7 +197,7 @@
             // Set up the DOM
             var flexRoot = document.createElement("div");
             flexRoot.style.cssText += "width: 500px; height: 200px; display: -webkit-flex; display: flex";
-            Utilities.setInnerHTMLUnsafe(flexRoot, 
+            _SafeHtml.setInnerHTMLUnsafe(flexRoot, 
                 "<div style='height: 100%; display: -webkit-flex; display: flex; flex-flow: column wrap; align-content: flex-start; -webkit-flex-flow: column wrap; -webkit-align-content: flex-start'>" +
                     "<div style='width: 100px; height: 100px'></div>" +
                     "<div style='width: 100px; height: 100px'></div>" +
@@ -221,23 +237,23 @@
         return environmentDetails;
     }
 
-    WinJS.Namespace.define("WinJS.UI", {
-        Layout: WinJS.Class.define(function Layout_ctor(options) {
-            /// <signature helpKeyword="WinJS.UI.Layout.Layout">
-            /// <summary locid="WinJS.UI.Layout.constructor">
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        Layout: _Base.Class.define(function Layout_ctor(options) {
+            /// <signature helpKeyword="exports.Layout.Layout">
+            /// <summary locid="exports.Layout.constructor">
             /// Creates a new Layout object.
             /// </summary>
-            /// <param name="options" type="Object" locid="WinJS.UI.Layout.constructor_p:options">
+            /// <param name="options" type="Object" locid="exports.Layout.constructor_p:options">
             /// The set of options to be applied initially to the new Layout object.
             /// </param>
-            /// <returns type="WinJS.UI.Layout" locid="WinJS.UI.Layout.constructor_returnValue">
+            /// <returns type="exports.Layout" locid="exports.Layout.constructor_returnValue">
             /// The new Layout object.
             /// </returns>
             /// </signature>
         }),
 
-        _LayoutCommon: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(WinJS.UI.Layout, null, {
+        _LayoutCommon: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(exports.Layout, null, {
                 /// <field type="String" oamOptionsDatatype="WinJS.UI.HeaderPosition" locid="WinJS.UI._LayoutCommon.groupHeaderPosition" helpKeyword="WinJS.UI._LayoutCommon.groupHeaderPosition">
                 /// Gets or sets the position of group headers relative to their items.
                 /// The default value is "top".
@@ -258,19 +274,19 @@
                 initialize: function _LayoutCommon_initialize(site, groupsEnabled) {
                     site._writeProfilerMark("Layout:initialize,info");
                     if (!this._inListMode) {
-                        Utilities.addClass(site.surface, WinJS.UI._gridLayoutClass);
+                        _ElementUtilities.addClass(site.surface, _Constants._gridLayoutClass);
                     }
                     
                     this._envInfo = getEnvironmentSupportInformation(site) || {};
                     
                     if (!this._envInfo.supportsCSSGrid) {
-                        Utilities.addClass(site.surface, WinJS.UI._noCSSGrid);
+                        _ElementUtilities.addClass(site.surface, _Constants._noCSSGrid);
                     }
                     if (this._backdropColorClassName) {
-                        Utilities.addClass(site.surface, this._backdropColorClassName);
+                        _ElementUtilities.addClass(site.surface, this._backdropColorClassName);
                     }
                     if (this._disableBackdropClassName) {
-                        Utilities.addClass(site.surface, this._disableBackdropClassName);
+                        _ElementUtilities.addClass(site.surface, this._disableBackdropClassName);
                     }
                     this._groups = [];
                     this._groupMap = {};
@@ -313,10 +329,10 @@
 
                     if (this._site) {
                         this._site._writeProfilerMark(perfId);
-                        Utilities.removeClass(this._site.surface, WinJS.UI._gridLayoutClass);
-                        Utilities.removeClass(this._site.surface, WinJS.UI._headerPositionTopClass);
-                        Utilities.removeClass(this._site.surface, WinJS.UI._headerPositionLeftClass);
-                        WinJS.Utilities.removeClass(this._site.surface, WinJS.UI._structuralNodesClass);
+                        _ElementUtilities.removeClass(this._site.surface, _Constants._gridLayoutClass);
+                        _ElementUtilities.removeClass(this._site.surface, _Constants._headerPositionTopClass);
+                        _ElementUtilities.removeClass(this._site.surface, _Constants._headerPositionLeftClass);
+                        _ElementUtilities.removeClass(this._site.surface, _Constants._structuralNodesClass);
                         this._site.surface.style.cssText = "";
                         if (this._groups) {
                             cleanGroups(this._groups);
@@ -335,12 +351,12 @@
                         // remembered if the layout is reused.
 
                         if (this._backdropColorClassName) {
-                            Utilities.removeClass(this._site.surface, this._backdropColorClassName);
+                            _ElementUtilities.removeClass(this._site.surface, this._backdropColorClassName);
                             deleteDynamicCssRule(this._backdropColorClassName);
                             this._backdropColorClassName = null;
                         }
                         if (this._disableBackdropClassName) {
-                            Utilities.removeClass(this._site.surface, this._disableBackdropClassName);
+                            _ElementUtilities.removeClass(this._site.surface, this._disableBackdropClassName);
                             deleteDynamicCssRule(this._disableBackdropClassName);
                             this._disableBackdropClassName = null;
                         }
@@ -352,7 +368,7 @@
                         }
                         this._animatingItemsBlocks = {};
                     } else {
-                        WinJS.Utilities._writeProfilerMark("WinJS.UI.ListView:" + perfId);
+                        _WriteProfilerMark("WinJS.UI.ListView:" + perfId);
                     }
                 },
 
@@ -380,8 +396,8 @@
                             if (!that._envInfo.nestedFlexTooLarge && // Disabling structural nodes works around this issue
                                     !that._envInfo.nestedFlexTooSmall && 
                                     allGroupsAreUniform()) {
-                                that._usingStructuralNodes = WinJS.UI._LayoutCommon._barsPerItemsBlock > 0;
-                                return WinJS.UI._LayoutCommon._barsPerItemsBlock * that._itemsPerBar;
+                                that._usingStructuralNodes = exports._LayoutCommon._barsPerItemsBlock > 0;
+                                return exports._LayoutCommon._barsPerItemsBlock * that._itemsPerBar;
                             } else {
                                 that._usingStructuralNodes = false;
                                 return null;
@@ -501,7 +517,7 @@
                             newGroupMap[groupKey] = group;
                         }
 
-                        return WinJS.Promise.join(prepared).then(function () {
+                        return Promise.join(prepared).then(function () {
                             var currentOffset = 0;
                             for (var i = 0, len = newGroups.length; i < len; i++) {
                                 var group = newGroups[i];
@@ -562,7 +578,7 @@
                     // Asynchronously lays out the unrealized items
                     function layoutUnrealizedRange() {
                         if (that._groups.length === 0) {
-                            return WinJS.Promise.wrap();
+                            return Promise.wrap();
                         }
 
                         var realizedItemRange = that._getRealizationRange(),
@@ -592,11 +608,11 @@
                             }
                         }
 
-                        return WinJS.Promise.join(layoutPromises);
+                        return Promise.join(layoutPromises);
                     }
 
                     realizedRangePromise = that._measureItem(0).then(function () {
-                        WinJS.Utilities[that._usingStructuralNodes ? "addClass" : "removeClass"](that._site.surface, WinJS.UI._structuralNodesClass);
+                        _ElementUtilities[that._usingStructuralNodes ? "addClass" : "removeClass"](that._site.surface, _Constants._structuralNodesClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
                             that._viewportSizeChanged(that._getViewportCrossSize());
@@ -614,7 +630,7 @@
                         // compatibility with the original layouts by allowing the items
                         // to be shifted through surface margins.
                         if (that._horizontal) {
-                            if (that._groupsEnabled && that._groupHeaderPosition === WinJS.UI.HeaderPosition.left) {
+                            if (that._groupsEnabled && that._groupHeaderPosition === HeaderPosition.left) {
                                 site.surface.style.cssText +=
                                     ";height:" + that._sizes.surfaceContentSize +
                                     "px;-ms-grid-columns: (" + that._sizes.headerContainerWidth + "px auto)[" + tree.length + "]";
@@ -622,7 +638,7 @@
                                 site.surface.style.height = that._sizes.surfaceContentSize + "px";
                             }
                         } else {
-                            if (that._groupsEnabled && that._groupHeaderPosition === WinJS.UI.HeaderPosition.top) {
+                            if (that._groupsEnabled && that._groupHeaderPosition === HeaderPosition.top) {
                                 site.surface.style.cssText +=
                                     ";width:" + that._sizes.surfaceContentSize +
                                     "px;-ms-grid-rows: (" + that._sizes.headerContainerHeight + "px auto)[" + tree.length + "]";
@@ -640,7 +656,7 @@
                     }, function (error) {
                         that._site._writeProfilerMark(realizedRangePerfId + ":canceled,info");
                         that._site._writeProfilerMark(realizedRangePerfId + ",StopTM");
-                        return WinJS.Promise.wrapError(error);
+                        return Promise.wrapError(error);
                     });
 
                     that._layoutPromise = realizedRangePromise.then(function () {
@@ -650,7 +666,7 @@
                         }, function (error) {
                             that._site._writeProfilerMark(layoutPerfId + ":canceled,info");
                             that._site._writeProfilerMark(layoutPerfId + ",StopTM");
-                            return WinJS.Promise.wrapError(error);
+                            return Promise.wrapError(error);
                         });
                     });
 
@@ -681,16 +697,16 @@
                         group = that._groups[groupIndex],
                         adjustedKey = that._adjustedKeyForOrientationAndBars(that._adjustedKeyForRTL(pressedKey), group instanceof Groups.CellSpanningGroup);
 
-                    if (currentItem.type === WinJS.UI.ObjectType.groupHeader) {
+                    if (currentItem.type === _UI.ObjectType.groupHeader) {
                         if (pressedKey === Key.pageUp || pressedKey === Key.pageDown) {
                             // We treat page up and page down keys as if an item had focus
-                            currentItem = { type: WinJS.UI.ObjectType.item, index: this._groups[currentItem.index].startIndex };
+                            currentItem = { type: _UI.ObjectType.item, index: this._groups[currentItem.index].startIndex };
                         } else {
                             switch (adjustedKey) {
                                 case Key.leftArrow:
-                                    return { type: WinJS.UI.ObjectType.groupHeader, index: Math.max(0, currentItem.index - 1) };
+                                    return { type: _UI.ObjectType.groupHeader, index: Math.max(0, currentItem.index - 1) };
                                 case Key.rightArrow:
-                                    return { type: WinJS.UI.ObjectType.groupHeader, index: Math.min(that._groups.length - 1, currentItem.index + 1) };
+                                    return { type: _UI.ObjectType.groupHeader, index: Math.min(that._groups.length - 1, currentItem.index + 1) };
                             }
                             return currentItem;
                         }
@@ -719,12 +735,12 @@
                                         indexOfLastBar = Math.floor((prevGroup.count - 1) / that._itemsPerBar),
                                         startOfLastBar = indexOfLastBar * that._itemsPerBar; // first cell of last bar
                                     return {
-                                        type: WinJS.UI.ObjectType.item,
+                                        type: _UI.ObjectType.item,
                                         index: prevGroup.startIndex + Math.min(prevGroup.count - 1, startOfLastBar + currentSlot)
                                     };
                                 } else {
                                     // Moving to or from a cell spanning group so go to the last item
-                                    return { type: WinJS.UI.ObjectType.item, index: group.startIndex - 1 };
+                                    return { type: _UI.ObjectType.item, index: group.startIndex - 1 };
                                 }
                             } else if (adjustedKey === Key.rightArrow) {
                                 if (groupIndex === lastGroupIndex) {
@@ -735,12 +751,12 @@
                                     var coordinates = that._indexToCoordinate(currentItemInGroup.index),
                                         currentSlot = (that._horizontal ? coordinates.row : coordinates.column);
                                     return {
-                                        type: WinJS.UI.ObjectType.item,
+                                        type: _UI.ObjectType.item,
                                         index: nextGroup.startIndex + Math.min(nextGroup.count - 1, currentSlot)
                                     };
                                 } else {
                                     // Moving to or from a cell spanning group so go to the first item
-                                    return { type: WinJS.UI.ObjectType.item, index: nextGroup.startIndex };
+                                    return { type: _UI.ObjectType.item, index: nextGroup.startIndex };
                                 }
                             } else {
                                 return currentItem;
@@ -758,7 +774,7 @@
                         case Key.rightArrow:
                             return handleArrowKeys();
                         default:
-                            return WinJS.UI._LayoutCommon.prototype._getAdjacentForPageKeys.call(that, currentItem, pressedKey);
+                            return exports._LayoutCommon.prototype._getAdjacentForPageKeys.call(that, currentItem, pressedKey);
                     }
                 },
 
@@ -780,7 +796,7 @@
                         y -= group.offset;
                     }
                     if (this._groupsEnabled) {
-                        if (this._groupHeaderPosition === WinJS.UI.HeaderPosition.left) {
+                        if (this._groupHeaderPosition === HeaderPosition.left) {
                             x -= sizes.headerContainerWidth;
                         } else {
                             // Headers above
@@ -1012,7 +1028,7 @@
                                         }
 
                                         var itemsBlock = container.parentNode;
-                                        if (WinJS.Utilities.hasClass(itemsBlock, WinJS.UI._itemsBlockClass)) {
+                                        if (_ElementUtilities.hasClass(itemsBlock, _Constants._itemsBlockClass)) {
                                             this._animatingItemsBlocks[uniqueID(itemsBlock)] = itemsBlock;
                                         }
                                     }
@@ -1090,7 +1106,7 @@
                     // We fade out removed items, fade in added items, and move items which need to be shifted. If they moved
                     // across columns we do a reflow animation.
 
-                    var animationSignal = new WinJS._Signal();
+                    var animationSignal = new _Signal();
 
                     // Only animate the items on screen.
                     this._filterInsertedElements();
@@ -1105,7 +1121,7 @@
                     }
                     this._animationsRunning = animationSignal.promise;
 
-                    var slowAnimations = WinJS.UI.Layout._debugAnimations || WinJS.UI.Layout._slowAnimations;
+                    var slowAnimations = exports.Layout._debugAnimations || exports.Layout._slowAnimations;
                     var site = this._site;
                     var insertedElements = this._insertedElements;
                     var removedElements = this._removedElements;
@@ -1156,7 +1172,7 @@
                             if (that._itemsPerBar > 1) {
                                 var maxDistance = that._itemsPerBar * that._sizes.containerCrossSize + that._getHeaderSizeContentAdjustment() +
                                     that._sizes.containerMargins[horizontal ? "top" : (site.rtl ? "right" : "left")] +
-                                    (horizontal ? that._sizes.layoutOriginY : that._sizes.layoutOriginX)
+                                    (horizontal ? that._sizes.layoutOriginY : that._sizes.layoutOriginX);
                                 for (var i = 0, len = itemMoveRecords.length; i < len; i++) {
                                     var cachedItemRecord = itemMoveRecords[i];
                                     if (cachedItemRecord[oldReflowLayoutProperty] > cachedItemRecord[reflowLayoutProperty]) {
@@ -1188,26 +1204,26 @@
                         }
                     }
 
-                    if (WinJS.UI.Layout._debugAnimations) {
+                    if (exports.Layout._debugAnimations) {
                         requestAnimationFrame(function () {
-                            startAnimations()
+                            startAnimations();
                         });
                     } else {
                         startAnimations();
                     }
 
                     function waitForNextPhase(nextPhaseCallback) {
-                        currentAnimationPromise = WinJS.Promise.join(pendingTransitionPromises);
+                        currentAnimationPromise = Promise.join(pendingTransitionPromises);
                         currentAnimationPromise.done(function () {
                             pendingTransitionPromises = [];
                             // The success is called even if the animations are canceled due to the WinJS.UI.executeTransition 
                             // API. To deal with that we check the animationSignal variable. If it is null the animations were
                             // canceled so we shouldn't continue.
                             if (animationSignal) {
-                                if (WinJS.UI.Layout._debugAnimations) {
+                                if (exports.Layout._debugAnimations) {
                                     requestAnimationFrame(function () {
                                         nextPhaseCallback();
-                                    })
+                                    });
                                 } else {
                                     nextPhaseCallback();
                                 }
@@ -1227,7 +1243,7 @@
                                 removeDuration *= 10;
                             }
 
-                            pendingTransitionPromises.push(WinJS.UI.executeTransition(removedElements,
+                            pendingTransitionPromises.push(_TransitionAnimation.executeTransition(removedElements,
                             [{
                                 property: "opacity",
                                 delay: removeDelay,
@@ -1263,7 +1279,7 @@
                             fadeOutDuration *= 10;
                         }
 
-                        pendingTransitionPromises.push(WinJS.UI.executeTransition(moveElements,
+                        pendingTransitionPromises.push(_TransitionAnimation.executeTransition(moveElements,
                         {
                             property: "opacity",
                             delay: removeDelay,
@@ -1303,7 +1319,7 @@
                         }
 
                         // For multisize items which move we fade out and then fade in (opacity 1->0->1)
-                        pendingTransitionPromises.push(WinJS.UI.executeTransition(moveElements,
+                        pendingTransitionPromises.push(_TransitionAnimation.executeTransition(moveElements,
                         {
                             property: "opacity",
                             delay: addDelay,
@@ -1320,7 +1336,7 @@
                     function reflowPhase(itemsPerBar) {
                         site._writeProfilerMark("Animation:setupReflowAnimation,StartTM");
 
-                        var itemContainersLastBarIndices = {}
+                        var itemContainersLastBarIndices = {};
                         for (var i = 0, len = reflowItemRecords.length; i < len; i++) {
                             var reflowItemRecord = reflowItemRecords[i];
                             var xOffset = reflowItemRecord.xOffset;
@@ -1344,8 +1360,8 @@
                             minOffset = Math.min(minOffset, horizontal ? xOffset : yOffset);
                             maxOffset = Math.max(maxOffset, horizontal ? xOffset : yOffset);
                             var itemsContainer = container.parentNode;
-                            if (!WinJS.Utilities.hasClass(itemsContainer, "win-itemscontainer")) {
-                                itemsContainer = itemsContainer.parentNode
+                            if (!_ElementUtilities.hasClass(itemsContainer, "win-itemscontainer")) {
+                                itemsContainer = itemsContainer.parentNode;
                             }
 
                             // The itemscontainer element is always overflow:hidden for two reasons:
@@ -1372,7 +1388,7 @@
                                 reflowDuration *= 10;
                             }
 
-                            pendingTransitionPromises.push(WinJS.UI.executeTransition(container,
+                            pendingTransitionPromises.push(_TransitionAnimation.executeTransition(container,
                             {
                                 property: transformNames.cssName,
                                 delay: moveDelay,
@@ -1395,7 +1411,7 @@
                         }
                         var itemsBlockKeys = Object.keys(animatingItemsBlocks);
                         for (var i = 0, len = itemsBlockKeys.length; i < len; i++) {
-                            animatingItemsBlocks[itemsBlockKeys[i]].classList.add(WinJS.UI._clipClass);
+                            animatingItemsBlocks[itemsBlockKeys[i]].classList.add(_Constants._clipClass);
                         }
 
                         waitForNextPhase(afterReflowPhase);
@@ -1422,7 +1438,7 @@
                         for (var i = 0, len = itemsBlockKeys.length; i < len; i++) {
                             var itemsBlock = animatingItemsBlocks[itemsBlockKeys[i]];
                             itemsBlock.style.overflow = '';
-                            itemsBlock.classList.remove(WinJS.UI._clipClass);
+                            itemsBlock.classList.remove(_Constants._clipClass);
                         }
                     }
 
@@ -1453,7 +1469,7 @@
 
                         site._writeProfilerMark("Animation:prepareReflowedItems,StopTM");
 
-                        if (WinJS.UI.Layout._debugAnimations) {
+                        if (exports.Layout._debugAnimations) {
                             requestAnimationFrame(function () {
                                 directMovePhase(true);
                             });
@@ -1487,7 +1503,7 @@
                                 var container = itemMoveRecords[i].element;
                                 moveElements.push(container);
                             }
-                            pendingTransitionPromises.push(WinJS.UI.executeTransition(moveElements,
+                            pendingTransitionPromises.push(_TransitionAnimation.executeTransition(moveElements,
                             {
                                 property: transformNames.cssName,
                                 delay: moveDelay,
@@ -1513,7 +1529,7 @@
                                 addDuration *= 10;
                             }
 
-                            pendingTransitionPromises.push(WinJS.UI.executeTransition(insertedElements,
+                            pendingTransitionPromises.push(_TransitionAnimation.executeTransition(insertedElements,
                             [{
                                 property: "opacity",
                                 delay: addDelay,
@@ -1535,7 +1551,7 @@
                         for (var i = 0, len = removedElements.length; i < len; i++) {
                             var container = removedElements[i];
                             if (container.parentNode) {
-                                WinJS.Utilities._disposeElement(container);
+                                _Dispose._disposeElement(container);
                                 container.parentNode.removeChild(container);
                             }
                         }
@@ -1569,7 +1585,7 @@
                         for (var i = 0, len = removedElements.length; i < len; i++) {
                             var container = removedElements[i];
                             if (container.parentNode) {
-                                WinJS.Utilities._disposeElement(container);
+                                _Dispose._disposeElement(container);
                                 container.parentNode.removeChild(container);
                             }
                         }
@@ -1740,7 +1756,7 @@
                         for (var i = 0, len = itemsBlockKeys.length; i < len; i++) {
                             var itemsBlock = this._animatingItemsBlocks[itemsBlockKeys[i]];
                             itemsBlock.style.overflow = '';
-                            itemsBlock.classList.remove(WinJS.UI._clipClass);
+                            itemsBlock.classList.remove(_Constants._clipClass);
                         }
                     }
 
@@ -1844,7 +1860,7 @@
                 _resetStylesForInsertedRecords: function _LayoutCommon_resetStylesForInsertedRecords(insertedRecords) {
                     var insertedRecordKeys = Object.keys(insertedRecords);
                     for (var i = 0, len = insertedRecordKeys.length; i < len; i++) {
-                        var insertedElement = insertedRecords[insertedRecordKeys[i]]
+                        var insertedElement = insertedRecords[insertedRecordKeys[i]];
                         insertedElement.style.opacity = 1;
                     }
                 },
@@ -1852,7 +1868,7 @@
                     for (var i = 0, len = removedElements.length; i < len; i++) {
                         var container = removedElements[i].element;
                         if (container.parentNode) {
-                            WinJS.Utilities._disposeElement(container);
+                            _Dispose._disposeElement(container);
                             container.parentNode.removeChild(container);
                         }
                     }
@@ -1932,7 +1948,7 @@
                             var container = removedItem.element;
                             if (removedItem[oldLeftStr] + removedItem[widthStr] - 1 < visibleFirstPixel || removedItem[oldLeftStr] > visibleLastPixel || !that._site.viewport.contains(container)) {
                                 if (container.parentNode) {
-                                    WinJS.Utilities._disposeElement(container);
+                                    _Dispose._disposeElement(container);
                                     container.parentNode.removeChild(container);
                                 }
                             } else {
@@ -2050,8 +2066,8 @@
                     var group = this._groups[groupIndex];
                     var itemPosition = group.getItemPositionForAnimations(itemOfGroupIndex);
                     var groupOffset = (this._groups[groupIndex] ? this._groups[groupIndex].offset : 0);
-                    var headerWidth = (this._groupsEnabled && this._groupHeaderPosition === WinJS.UI.HeaderPosition.left ? this._sizes.headerContainerWidth : 0);
-                    var headerHeight = (this._groupsEnabled && this._groupHeaderPosition === WinJS.UI.HeaderPosition.top ? this._sizes.headerContainerHeight : 0);
+                    var headerWidth = (this._groupsEnabled && this._groupHeaderPosition === HeaderPosition.left ? this._sizes.headerContainerWidth : 0);
+                    var headerHeight = (this._groupsEnabled && this._groupHeaderPosition === HeaderPosition.top ? this._sizes.headerContainerHeight : 0);
 
                     itemPosition.left += this._sizes.layoutOriginX + headerWidth + this._sizes.itemsContainerOuterX;
                     itemPosition.top += this._sizes.layoutOriginY + headerHeight + this._sizes.itemsContainerOuterY;
@@ -2070,9 +2086,9 @@
                     if (this._groupsEnabled) {
                         var width = this._sizes.headerContainerWidth - this._sizes.headerContainerOuterWidth,
                             height = this._sizes.headerContainerHeight - this._sizes.headerContainerOuterHeight;
-                        if (this._groupHeaderPosition === WinJS.UI.HeaderPosition.left && !this._horizontal) {
+                        if (this._groupHeaderPosition === HeaderPosition.left && !this._horizontal) {
                             height = this._groups[groupIndex].getItemsContainerSize() - this._sizes.headerContainerOuterHeight;
-                        } else if (this._groupHeaderPosition === WinJS.UI.HeaderPosition.top && this._horizontal) {
+                        } else if (this._groupHeaderPosition === HeaderPosition.top && this._horizontal) {
                             width = this._groups[groupIndex].getItemsContainerSize() - this._sizes.headerContainerOuterWidth;
                         }
 
@@ -2269,7 +2285,7 @@
 
                     if (pressedKey === Key.pageUp) {
                         if (!offscreen && firstIndex !== currentItem.index) {
-                            return { type: WinJS.UI.ObjectType.item, index: firstIndex };
+                            return { type: _UI.ObjectType.item, index: firstIndex };
                         }
                         var end;
                         if (this.orientation === "horizontal") {
@@ -2287,7 +2303,7 @@
                         }
                     } else {
                         if (!offscreen && lastIndex !== currentItem.index) {
-                            return { type: WinJS.UI.ObjectType.item, index: lastIndex };
+                            return { type: _UI.ObjectType.item, index: lastIndex };
                         }
                         // We need to subtract twice the marginSum from the item's starting position because we need to
                         // consider that ensureVisible will scroll the viewport to include the new items margin as well
@@ -2310,7 +2326,7 @@
                         }
                     }
 
-                    return { type: WinJS.UI.ObjectType.item, index: newFocus };
+                    return { type: _UI.ObjectType.item, index: newFocus };
                 },
 
                 _isCellSpanning: function _LayoutCommon_isCellSpanning(groupIndex) {
@@ -2334,7 +2350,7 @@
                     groupInfo = (typeof groupInfo === "function" ? groupInfo(group) : groupInfo);
                     if (groupInfo) {
                         if (groupInfo.enableCellSpanning && (+groupInfo.cellWidth !== groupInfo.cellWidth || +groupInfo.cellHeight !== groupInfo.cellHeight)) {
-                            throw new WinJS.ErrorFromName("WinJS.UI.GridLayout.GroupInfoResultIsInvalid", strings.groupInfoResultIsInvalid);
+                            throw new _ErrorFromName("WinJS.UI.GridLayout.GroupInfoResultIsInvalid", strings.groupInfoResultIsInvalid);
                         }
                         adjustedInfo = {
                             enableCellSpanning: !!groupInfo.enableCellSpanning,
@@ -2353,14 +2369,14 @@
                         if (this._useDefaultItemInfo) {
                             result = this._defaultItemInfo(itemIndex);
                         } else {
-                            throw new WinJS.ErrorFromName("WinJS.UI.GridLayout.ItemInfoIsInvalid", strings.itemInfoIsInvalid);
+                            throw new _ErrorFromName("WinJS.UI.GridLayout.ItemInfoIsInvalid", strings.itemInfoIsInvalid);
                         }
                     } else {
                         result = this._itemInfo(itemIndex);
                     }
-                    return WinJS.Promise.as(result).then(function (size) {
+                    return Promise.as(result).then(function (size) {
                         if (!size || +size.width !== size.width || +size.height !== size.height) {
-                            throw new WinJS.ErrorFromName("WinJS.UI.GridLayout.ItemInfoIsInvalid", strings.itemInfoIsInvalid);
+                            throw new _ErrorFromName("WinJS.UI.GridLayout.ItemInfoIsInvalid", strings.itemInfoIsInvalid);
                         }
                         return size;
                     });
@@ -2386,7 +2402,7 @@
                         },
                         function (error) {
                             delete that._elementsToMeasure[itemIndex];
-                            return WinJS.Promise.wrapError(error);
+                            return Promise.wrapError(error);
                         }
                     );
                 },
@@ -2395,9 +2411,9 @@
                     var headerContainerMinSize = 0;
 
                     if (this._groupsEnabled) {
-                        if (this._horizontal && this._groupHeaderPosition === WinJS.UI.HeaderPosition.top) {
+                        if (this._horizontal && this._groupHeaderPosition === HeaderPosition.top) {
                             headerContainerMinSize = this._sizes.headerContainerMinWidth;
-                        } else if (!this._horizontal && this._groupHeaderPosition === WinJS.UI.HeaderPosition.left) {
+                        } else if (!this._horizontal && this._groupHeaderPosition === HeaderPosition.left) {
                             headerContainerMinSize = this._sizes.headerContainerMinHeight;
                         }
                     }
@@ -2457,7 +2473,7 @@
                         this._measuringPromise = null;
                     }
                     if (this._containerSizeClassName) {
-                        Utilities.removeClass(this._site.surface, this._containerSizeClassName);
+                        _ElementUtilities.removeClass(this._site.surface, this._containerSizeClassName);
                         deleteDynamicCssRule(this._containerSizeClassName);
                         this._containerSizeClassName = null;
                     }
@@ -2484,7 +2500,7 @@
                                     elementsToMeasure = that._elementsToMeasure,
                                     stopMeasuring = false;
 
-                                itemsContainer.className = WinJS.UI._itemsContainerClass + " " + WinJS.UI._laidOutClass;
+                                itemsContainer.className = _Constants._itemsContainerClass + " " + _Constants._laidOutClass;
                                 // This code is executed by CellSpanningGroups where styling is configured for –ms-grid. Let's satisfy these assumptions
                                 itemsContainer.style.cssText +=
                                         ";display: -ms-grid" +
@@ -2514,10 +2530,10 @@
 
                                 for (i = 0, len = keys.length; i < len && !stopMeasuring; i++) {
                                     var entry = elementsToMeasure[keys[i]],
-                                        item = entry.element.querySelector("." + WinJS.UI._itemClass);
+                                        item = entry.element.querySelector("." + _Constants._itemClass);
 
-                                    entry.width = Utilities.getTotalWidth(item);
-                                    entry.height = Utilities.getTotalHeight(item);
+                                    entry.width = _ElementUtilities.getTotalWidth(item);
+                                    entry.height = _ElementUtilities.getTotalHeight(item);
 
                                 }
 
@@ -2532,7 +2548,7 @@
                             },
                             function (error) {
                                 that._measuringElements = null;
-                                return WinJS.Promise.wrapError(error);
+                                return Promise.wrapError(error);
                             }
                         );
                     }
@@ -2546,12 +2562,12 @@
                         "visibility: hidden" +
                         ";-ms-grid-columns: auto" +
                         ";-ms-grid-rows: auto";
-                    surface.className = WinJS.UI._scrollableClass + " " + (this._inListMode ? WinJS.UI._listLayoutClass : WinJS.UI._gridLayoutClass);
+                    surface.className = _Constants._scrollableClass + " " + (this._inListMode ? _Constants._listLayoutClass : _Constants._gridLayoutClass);
                     if (this._groupsEnabled) {
-                        if (this._groupHeaderPosition === WinJS.UI.HeaderPosition.top) {
-                            Utilities.addClass(surface, WinJS.UI._headerPositionTopClass);
+                        if (this._groupHeaderPosition === HeaderPosition.top) {
+                            _ElementUtilities.addClass(surface, _Constants._headerPositionTopClass);
                         } else {
-                            Utilities.addClass(surface, WinJS.UI._headerPositionLeftClass);
+                            _ElementUtilities.addClass(surface, _Constants._headerPositionLeftClass);
                         }
                     }
 
@@ -2580,7 +2596,7 @@
 
                         return site.itemCount.then(function (count) {
                             if (!count || (that._groupsEnabled && !site.groupCount)) {
-                                return WinJS.Promise.cancel;
+                                return Promise.cancel;
                             }
 
                             itemPromise = itemPromise || site.itemFromIndex(index);
@@ -2589,7 +2605,7 @@
                                 elementPromises.headerContainer = site.renderHeader(that._site.groupFromIndex(site.groupIndexFromItemIndex(index)));
                             }
 
-                            return WinJS.Promise.join(elementPromises);
+                            return Promise.join(elementPromises);
                         }).then(function (elements) {
 
                             // Reading from the DOM is tricky because each read may trigger a resize handler which
@@ -2612,7 +2628,7 @@
                                     stopMeasuring = true;
                                 });
 
-                                var firstElementOnSurfaceMargins = WinJS.UI._getMargins(firstElementOnSurface);
+                                var firstElementOnSurfaceMargins = getMargins(firstElementOnSurface);
                                 var firstElementOnSurfaceOffsetX = site.rtl ?
                                     (site.viewport.offsetWidth - (firstElementOnSurface.offsetLeft + firstElementOnSurface.offsetWidth)) :
                                     firstElementOnSurface.offsetLeft;
@@ -2635,16 +2651,16 @@
                                     // Amount of space between the items container's margin and its content
                                     itemsContainerOuterX: getOuter(site.rtl ? "Right" : "Left", itemsContainer),
                                     itemsContainerOuterY: getOuter("Top", itemsContainer),
-                                    itemsContainerMargins: WinJS.UI._getMargins(itemsContainer),
+                                    itemsContainerMargins: getMargins(itemsContainer),
 
                                     itemBoxOuterHeight: getOuterHeight(itemBox),
                                     itemBoxOuterWidth: getOuterWidth(itemBox),
                                     containerOuterHeight: getOuterHeight(elements.container),
                                     containerOuterWidth: getOuterWidth(elements.container),
-                                    emptyContainerContentHeight: Utilities.getContentHeight(emptyContainer),
-                                    emptyContainerContentWidth: Utilities.getContentWidth(emptyContainer),
+                                    emptyContainerContentHeight: _ElementUtilities.getContentHeight(emptyContainer),
+                                    emptyContainerContentWidth: _ElementUtilities.getContentWidth(emptyContainer),
 
-                                    containerMargins: WinJS.UI._getMargins(elements.container),
+                                    containerMargins: getMargins(elements.container),
                                     // containerWidth/Height are computed when a uniform group is detected
                                     containerWidth: 0,
                                     containerHeight: 0,
@@ -2659,8 +2675,8 @@
 
                                     sizes.headerContainerOuterWidth = getOuterWidth(elements.headerContainer);
                                     sizes.headerContainerOuterHeight = getOuterHeight(elements.headerContainer);
-                                    sizes.headerContainerWidth = Utilities.getTotalWidth(elements.headerContainer);
-                                    sizes.headerContainerHeight = Utilities.getTotalHeight(elements.headerContainer);
+                                    sizes.headerContainerWidth = _ElementUtilities.getTotalWidth(elements.headerContainer);
+                                    sizes.headerContainerHeight = _ElementUtilities.getTotalHeight(elements.headerContainer);
                                     sizes.headerContainerMinWidth = getDimension(elements.headerContainer, "minWidth") + sizes.headerContainerOuterWidth;
                                     sizes.headerContainerMinHeight = getDimension(elements.headerContainer, "minHeight") + sizes.headerContainerOuterHeight;
                                 }
@@ -2670,12 +2686,12 @@
                                     sizes: sizes,
 
                                     // Measurements which are only needed within measureItem.
-                                    viewportContentWidth: Utilities.getContentWidth(site.viewport),
-                                    viewportContentHeight: Utilities.getContentHeight(site.viewport),
-                                    containerContentWidth: Utilities.getContentWidth(elements.container),
-                                    containerContentHeight: Utilities.getContentHeight(elements.container),
-                                    containerWidth: Utilities.getTotalWidth(elements.container),
-                                    containerHeight: Utilities.getTotalHeight(elements.container)
+                                    viewportContentWidth: _ElementUtilities.getContentWidth(site.viewport),
+                                    viewportContentHeight: _ElementUtilities.getContentHeight(site.viewport),
+                                    containerContentWidth: _ElementUtilities.getContentWidth(elements.container),
+                                    containerContentHeight: _ElementUtilities.getContentHeight(elements.container),
+                                    containerWidth: _ElementUtilities.getTotalWidth(elements.container),
+                                    containerHeight: _ElementUtilities.getTotalHeight(elements.container)
                                 };
                                 measurements.viewportCrossSize = measurements[horizontal ? "viewportContentHeight" : "viewportContentWidth"];
 
@@ -2693,11 +2709,11 @@
                             var surface = that._createMeasuringSurface(),
                                 itemsContainer = document.createElement("div"),
                                 emptyContainer = document.createElement("div"),
-                                itemBox = elements.container.querySelector("." + WinJS.UI._itemBoxClass),
+                                itemBox = elements.container.querySelector("." + _Constants._itemBoxClass),
                                 groupIndex = site.groupIndexFromItemIndex(index);
 
-                            emptyContainer.className = WinJS.UI._containerClass;
-                            itemsContainer.className = WinJS.UI._itemsContainerClass + " " + WinJS.UI._laidOutClass;
+                            emptyContainer.className = _Constants._containerClass;
+                            itemsContainer.className = _Constants._itemsContainerClass + " " + _Constants._laidOutClass;
                             // Use display=inline-block so that the width sizes to content when not in list mode.
                             // When in grid mode, put items container and header container in different rows and columns so that the size of the items container does not affect the size of the header container and vice versa.
                             // Use the same for list mode when headers are inline with item containers.
@@ -2710,12 +2726,12 @@
                                 headerContainerColumn = 2,
                                 firstElementOnSurface = itemsContainer;
                             if (that._inListMode && that._groupsEnabled) {
-                                if (that._horizontal && that._groupHeaderPosition === WinJS.UI.HeaderPosition.top) {
+                                if (that._horizontal && that._groupHeaderPosition === HeaderPosition.top) {
                                     itemsContainerRow = 2;
                                     headerContainerColumn = 1;
                                     headerContainerRow = 1;
                                     firstElementOnSurface = elements.headerContainer;
-                                } else if (!that._horizontal && that._groupHeaderPosition === WinJS.UI.HeaderPosition.left) {
+                                } else if (!that._horizontal && that._groupHeaderPosition === HeaderPosition.left) {
                                     itemsContainerColumn = 2;
                                     headerContainerColumn = 1;
                                     headerContainerRow = 1;
@@ -2736,10 +2752,10 @@
                                     ";display: inline-block" +
                                     ";-ms-grid-column: " + headerContainerColumn +
                                     ";-ms-grid-row: " + headerContainerRow;
-                                WinJS.Utilities.addClass(elements.headerContainer, WinJS.UI._laidOutClass + " " + WinJS.UI._groupLeaderClass);
-                                if ((that._groupHeaderPosition === WinJS.UI.HeaderPosition.top && that._horizontal) ||
-                                    (that._groupHeaderPosition === WinJS.UI.HeaderPosition.left && !that._horizontal)) {
-                                    WinJS.Utilities.addClass(itemsContainer, WinJS.UI._groupLeaderClass);
+                                _ElementUtilities.addClass(elements.headerContainer, _Constants._laidOutClass + " " + _Constants._groupLeaderClass);
+                                if ((that._groupHeaderPosition === HeaderPosition.top && that._horizontal) ||
+                                    (that._groupHeaderPosition === HeaderPosition.left && !that._horizontal)) {
+                                    _ElementUtilities.addClass(itemsContainer, _Constants._groupLeaderClass);
                                 }
                             }
 
@@ -2757,11 +2773,11 @@
                             if (!measurements) {
                                 // While reading from the DOM, the measuring operation was invalidated. Bail out.
                                 cleanUp();
-                                return WinJS.Promise.cancel;
+                                return Promise.cancel;
                             } else if ((that._horizontal && measurements.viewportContentHeight === 0) || (!that._horizontal && measurements.viewportContentWidth === 0)) {
                                 // ListView is invisible so we can't measure. Return a canceled promise.
                                 cleanUp();
-                                return WinJS.Promise.cancel;
+                                return Promise.cancel;
                             } else if (!secondTry && !that._isCellSpanning(groupIndex) &&
                                     (measurements.containerContentWidth === 0 || measurements.containerContentHeight === 0)) {
                                 // win-container has no size. For backwards compatibility, wait for the item promise and then try measuring again.
@@ -2856,7 +2872,7 @@
                         site._writeProfilerMark(perfId + ",StartTM");
                         // Use a signal to guarantee that measuringPromise is set before the promise
                         // handler is executed (measuringPromise is referenced within measureItemImpl).
-                        var promiseStoredSignal = new WinJS._Signal();
+                        var promiseStoredSignal = new _Signal();
                         that._measuringPromise = measuringPromise = promiseStoredSignal.promise.then(function () {
                             return measureItemImpl(index);
                         }).then(function () {
@@ -2871,7 +2887,7 @@
                             site._writeProfilerMark(perfId + ":canceled,info");
                             site._writeProfilerMark(perfId + ",StopTM");
 
-                            return WinJS.Promise.wrapError(error);
+                            return Promise.wrapError(error);
                         });
                         promiseStoredSignal.complete();
                     }
@@ -2880,9 +2896,9 @@
 
                 _getHeaderSizeGroupAdjustment: function () {
                     if (this._groupsEnabled) {
-                        if (this._horizontal && this._groupHeaderPosition === WinJS.UI.HeaderPosition.left) {
+                        if (this._horizontal && this._groupHeaderPosition === HeaderPosition.left) {
                             return this._sizes.headerContainerWidth;
-                        } else if (!this._horizontal && this._groupHeaderPosition === WinJS.UI.HeaderPosition.top) {
+                        } else if (!this._horizontal && this._groupHeaderPosition === HeaderPosition.top) {
                             return this._sizes.headerContainerHeight;
                         }
                     }
@@ -2891,9 +2907,9 @@
                 },
                 _getHeaderSizeContentAdjustment: function () {
                     if (this._groupsEnabled) {
-                        if (this._horizontal && this._groupHeaderPosition === WinJS.UI.HeaderPosition.top) {
+                        if (this._horizontal && this._groupHeaderPosition === HeaderPosition.top) {
                             return this._sizes.headerContainerHeight;
-                        } else if (!this._horizontal && this._groupHeaderPosition === WinJS.UI.HeaderPosition.left) {
+                        } else if (!this._horizontal && this._groupHeaderPosition === HeaderPosition.left) {
                             return this._sizes.headerContainerWidth;
                         }
                     }
@@ -2951,9 +2967,9 @@
 
                         if (!this._containerSizeClassName) {
                             this._containerSizeClassName = uniqueCssClassName("containersize");
-                            Utilities.addClass(this._site.surface, this._containerSizeClassName);
+                            _ElementUtilities.addClass(this._site.surface, this._containerSizeClassName);
                         }
-                        var ruleSelector = "." + WinJS.UI._containerClass,
+                        var ruleSelector = "." + _Constants._containerClass,
                             ruleBody = "width:" + width + ";height:" + height + ";";
                         addDynamicCssRule(this._containerSizeClassName, this._site, ruleSelector, ruleBody);
                     }
@@ -2967,7 +2983,7 @@
                         var promise;
                         if ((!this._itemInfo || typeof this._itemInfo !== "function") && this._useDefaultItemInfo) {
                             var margins = sizes.containerMargins;
-                            promise = WinJS.Promise.wrap({
+                            promise = Promise.wrap({
                                 width: group.groupInfo.cellWidth - margins.left - margins.right,
                                 height: group.groupInfo.cellHeight - margins.top - margins.bottom
                             });
@@ -3004,7 +3020,7 @@
 
                         return promise;
                     } else {
-                        return this._ensuringContainerSize ? this._ensuringContainerSize : WinJS.Promise.wrap();
+                        return this._ensuringContainerSize ? this._ensuringContainerSize : Promise.wrap();
                     }
                 },
 
@@ -3050,44 +3066,44 @@
                         var len = tree.length,
                             i;
                         // Remove styles associated with old group header position
-                        if (this._oldGroupHeaderPosition === WinJS.UI.HeaderPosition.top) {
-                            Utilities.removeClass(this._site.surface, WinJS.UI._headerPositionTopClass);
+                        if (this._oldGroupHeaderPosition === HeaderPosition.top) {
+                            _ElementUtilities.removeClass(this._site.surface, _Constants._headerPositionTopClass);
                             // maxWidth must be cleared because it is used with headers in the top position but not the left position.
                             // The _groupLeaderClass must be removed from the itemsContainer element because the associated styles
                             // should only be applied to it when headers are in the top position.
                             if (this._horizontal) {
                                 for (i = 0; i < len; i++) {
                                     tree[i].header.style.maxWidth = "";
-                                    WinJS.Utilities.removeClass(tree[i].itemsContainer.element, WinJS.UI._groupLeaderClass);
+                                    _ElementUtilities.removeClass(tree[i].itemsContainer.element, _Constants._groupLeaderClass);
                                 }
                             } else {
                                 this._site.surface.style.msGridRows = "";
                             }
-                        } else if (this._oldGroupHeaderPosition === WinJS.UI.HeaderPosition.left) {
-                            Utilities.removeClass(this._site.surface, WinJS.UI._headerPositionLeftClass);
+                        } else if (this._oldGroupHeaderPosition === HeaderPosition.left) {
+                            _ElementUtilities.removeClass(this._site.surface, _Constants._headerPositionLeftClass);
                             // msGridColumns is cleared for a similar reason as maxWidth
                             if (!this._horizontal) {
                                 for (i = 0; i < len; i++) {
                                     tree[i].header.style.maxHeight = "";
-                                    WinJS.Utilities.removeClass(tree[i].itemsContainer.element, WinJS.UI._groupLeaderClass);
+                                    _ElementUtilities.removeClass(tree[i].itemsContainer.element, _Constants._groupLeaderClass);
                                 }
                             }
                             this._site.surface.style.msGridColumns = "";
                         }
 
                         // Add styles associated with new group header position
-                        if (this._groupHeaderPosition === WinJS.UI.HeaderPosition.top) {
-                            Utilities.addClass(this._site.surface, WinJS.UI._headerPositionTopClass);
+                        if (this._groupHeaderPosition === HeaderPosition.top) {
+                            _ElementUtilities.addClass(this._site.surface, _Constants._headerPositionTopClass);
                             if (this._horizontal) {
                                 for (i = 0; i < len; i++) {
-                                    WinJS.Utilities.addClass(tree[i].itemsContainer.element, WinJS.UI._groupLeaderClass);
+                                    _ElementUtilities.addClass(tree[i].itemsContainer.element, _Constants._groupLeaderClass);
                                 }
                             }
                         } else {
-                            Utilities.addClass(this._site.surface, WinJS.UI._headerPositionLeftClass);
+                            _ElementUtilities.addClass(this._site.surface, _Constants._headerPositionLeftClass);
                             if (!this._horizontal) {
                                 for (i = 0; i < len; i++) {
-                                    WinJS.Utilities.addClass(tree[i].itemsContainer.element, WinJS.UI._groupLeaderClass);
+                                    _ElementUtilities.addClass(tree[i].itemsContainer.element, _Constants._groupLeaderClass);
                                 }
                             }
                         }
@@ -3106,7 +3122,7 @@
 
                     if (this._groupsEnabled) {
                         if (this._horizontal) {
-                            if (this._groupHeaderPosition === WinJS.UI.HeaderPosition.top) {
+                            if (this._groupHeaderPosition === HeaderPosition.top) {
                                 var headerContainerMinContentWidth = sizes.headerContainerMinWidth - sizes.headerContainerOuterWidth,
                                     itemsContainerContentWidth = group.getItemsContainerSize() - sizes.headerContainerOuterWidth;
                                 headerContainer.style.maxWidth = Math.max(headerContainerMinContentWidth, itemsContainerContentWidth) + "px";
@@ -3121,7 +3137,7 @@
                                     itemsContainer.style.marginBottom = sizes.itemsContainerMargins.bottom + (sizes.maxItemsContainerContentSize - groupCrossSize + sizes.itemsContainerOuterHeight) + "px";
                                 }
                                 // itemsContainers only get the _groupLeaderClass when header position is top.
-                                Utilities.addClass(itemsContainer, WinJS.UI._groupLeaderClass);
+                                _ElementUtilities.addClass(itemsContainer, _Constants._groupLeaderClass);
                             } else {
                                 if (this._envInfo.supportsCSSGrid) {
                                     headerContainer.style.msGridColumn = index * 2 + 1;
@@ -3132,7 +3148,7 @@
                                 }
                             }
                         } else {
-                            if (this._groupHeaderPosition === WinJS.UI.HeaderPosition.left) {
+                            if (this._groupHeaderPosition === HeaderPosition.left) {
                                 var headerContainerMinContentHeight = sizes.headerContainerMinHeight - sizes.headerContainerOuterHeight,
                                     itemsContainerContentHeight = group.getItemsContainerSize() - sizes.headerContainerOuterHeight;
                                 headerContainer.style.maxHeight = Math.max(headerContainerMinContentHeight, itemsContainerContentHeight) + "px";
@@ -3148,7 +3164,7 @@
                                         (sizes.maxItemsContainerContentSize - groupCrossSize + sizes.itemsContainerOuterWidth)) + "px";
                                 }
                                 // itemsContainers only get the _groupLeaderClass when header position is left.
-                                Utilities.addClass(itemsContainer, WinJS.UI._groupLeaderClass);
+                                _ElementUtilities.addClass(itemsContainer, _Constants._groupLeaderClass);
                             } else {
                                 headerContainer.style.msGridRow = index * 2 + 1;
                                 // It's important to explicitly set the container height in vertical list mode with headers above, since we use flow layout.
@@ -3167,9 +3183,9 @@
 
                         }
                         // Header containers always get the _groupLeaderClass.
-                        Utilities.addClass(headerContainer, WinJS.UI._laidOutClass + " " + WinJS.UI._groupLeaderClass);
+                        _ElementUtilities.addClass(headerContainer, _Constants._laidOutClass + " " + _Constants._groupLeaderClass);
                     }
-                    Utilities.addClass(itemsContainer, WinJS.UI._laidOutClass);
+                    _ElementUtilities.addClass(itemsContainer, _Constants._laidOutClass);
                 }
             }, {
                 // The maximum number of rows or columns of win-containers to put into each items block.
@@ -3184,8 +3200,8 @@
         // Layouts
         //
 
-        _LegacyLayout: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(WinJS.UI._LayoutCommon, null, {
+        _LegacyLayout: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(exports._LayoutCommon, null, {
                 /// <field type="Boolean" locid="WinJS.UI._LegacyLayout.disableBackdrop" helpKeyword="WinJS.UI._LegacyLayout.disableBackdrop">
                 /// Gets or sets a value that indicates whether the layout should disable the backdrop feature
                 /// which avoids blank areas while panning in a virtualized list.
@@ -3198,17 +3214,17 @@
                         return this._backdropDisabled || false;
                     },
                     set: function _LegacyLayout_disableBackdrop_set(value) {
-                        Utilities._deprecated(WinJS.UI._strings.disableBackdropIsDeprecated);
+                        _UIUtilities._deprecated(_ErrorMessages.disableBackdropIsDeprecated);
                         value = !!value;
                         if (this._backdropDisabled !== value) {
                             this._backdropDisabled = value;
                             if (this._disableBackdropClassName) {
                                 deleteDynamicCssRule(this._disableBackdropClassName);
-                                this._site && Utilities.removeClass(this._site.surface, this._disableBackdropClassName);
+                                this._site && _ElementUtilities.removeClass(this._site.surface, this._disableBackdropClassName);
                                 this._disableBackdropClassName = null;
                             }
                             this._disableBackdropClassName = uniqueCssClassName("disablebackdrop");
-                            this._site && Utilities.addClass(this._site.surface, this._disableBackdropClassName);
+                            this._site && _ElementUtilities.addClass(this._site.surface, this._disableBackdropClassName);
                             if (value) {
                                 var ruleSelector = ".win-container.win-backdrop",
                                     ruleBody = "background-color:transparent;";
@@ -3230,16 +3246,16 @@
                         return this._backdropColor || "rgba(155,155,155,0.23)";
                     },
                     set: function _LegacyLayout_backdropColor_set(value) {
-                        Utilities._deprecated(WinJS.UI._strings.backdropColorIsDeprecated);
+                        _UIUtilities._deprecated(_ErrorMessages.backdropColorIsDeprecated);
                         if (value && this._backdropColor !== value) {
                             this._backdropColor = value;
                             if (this._backdropColorClassName) {
                                 deleteDynamicCssRule(this._backdropColorClassName);
-                                this._site && Utilities.removeClass(this._site.surface, this._backdropColorClassName);
+                                this._site && _ElementUtilities.removeClass(this._site.surface, this._backdropColorClassName);
                                 this._backdropColorClassName = null;
                             }
                             this._backdropColorClassName = uniqueCssClassName("backdropcolor");
-                            this._site && Utilities.addClass(this._site.surface, this._backdropColorClassName);
+                            this._site && _ElementUtilities.addClass(this._site.surface, this._backdropColorClassName);
                             var ruleSelector = ".win-container.win-backdrop",
                                 ruleBody = "background-color:" + value + ";";
                             addDynamicCssRule(this._backdropColorClassName, this._site, ruleSelector, ruleBody);
@@ -3249,8 +3265,8 @@
             });
         }),
 
-        GridLayout: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(WinJS.UI._LegacyLayout, function (options) {
+        GridLayout: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(exports._LegacyLayout, function (options) {
                 /// <signature helpKeyword="WinJS.UI.GridLayout">
                 /// <summary locid="WinJS.UI.GridLayout">
                 /// Creates a new GridLayout.
@@ -3270,7 +3286,7 @@
                 this._maxRowsOrColumns = 0;
                 this._useDefaultItemInfo = true;
                 this._elementsToMeasure = {};
-                this._groupHeaderPosition = options.groupHeaderPosition || WinJS.UI.HeaderPosition.top;
+                this._groupHeaderPosition = options.groupHeaderPosition || HeaderPosition.top;
                 this.orientation = options.orientation || "horizontal";
 
                 if (options.maxRows) {
@@ -3307,7 +3323,7 @@
                         return this.maximumRowsOrColumns;
                     },
                     set: function (maxRows) {
-                        Utilities._deprecated(WinJS.UI._strings.maxRowsIsDeprecated);
+                        _UIUtilities._deprecated(_ErrorMessages.maxRowsIsDeprecated);
                         this.maximumRowsOrColumns = maxRows;
                     }
                 },
@@ -3325,7 +3341,7 @@
                         return this._itemInfo;
                     },
                     set: function (itemInfo) {
-                        itemInfo && Utilities._deprecated(WinJS.UI._strings.itemInfoIsDeprecated);
+                        itemInfo && _UIUtilities._deprecated(_ErrorMessages.itemInfoIsDeprecated);
                         this._itemInfo = itemInfo;
                         this._invalidateLayout();
                     }
@@ -3343,7 +3359,7 @@
                         return this._groupInfo;
                     },
                     set: function (groupInfo) {
-                        groupInfo && Utilities._deprecated(WinJS.UI._strings.groupInfoIsDeprecated);
+                        groupInfo && _UIUtilities._deprecated(_ErrorMessages.groupInfoIsDeprecated);
                         this._groupInfo = groupInfo;
                         this._invalidateLayout();
                     }
@@ -3352,10 +3368,10 @@
         })
     });
 
-    var Groups = WinJS.Namespace.defineWithParent(null, null, {
+    var Groups = _Base.Namespace.defineWithParent(null, null, {
 
-        UniformGroupBase: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.define(null, {
+        UniformGroupBase: _Base.Namespace._lazy(function () {
+            return _Base.Class.define(null, {
                 cleanUp: function UniformGroupBase_cleanUp() {
                 },
 
@@ -3455,7 +3471,7 @@
                             newFocus = (currentBar === lastBar ? "boundary" : Math.min(index + this._layout._itemsPerBar, this.count - 1));
                             break;
                     }
-                    return (newFocus === "boundary" ? newFocus : { type: WinJS.UI.ObjectType.item, index: newFocus });
+                    return (newFocus === "boundary" ? newFocus : { type: _UI.ObjectType.item, index: newFocus });
                 },
 
                 getItemsContainerSize: function UniformGroupBase_getItemsContainerSize() {
@@ -3522,16 +3538,16 @@
         // is called, the group object cannnot be reused.
         //
 
-        UniformGroup: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(Groups.UniformGroupBase, function UniformGroup_ctor(layout, itemsContainer) {
+        UniformGroup: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(Groups.UniformGroupBase, function UniformGroup_ctor(layout, itemsContainer) {
                 this._layout = layout;
                 this._itemsContainer = itemsContainer;
-                Utilities.addClass(this._itemsContainer, layout._inListMode ? WinJS.UI._uniformListLayoutClass : WinJS.UI._uniformGridLayoutClass);
+                _ElementUtilities.addClass(this._itemsContainer, layout._inListMode ? _Constants._uniformListLayoutClass : _Constants._uniformGridLayoutClass);
             }, {
                 cleanUp: function UniformGroup_cleanUp(skipDomCleanUp) {
                     if (!skipDomCleanUp) {
-                        Utilities.removeClass(this._itemsContainer, WinJS.UI._uniformGridLayoutClass);
-                        Utilities.removeClass(this._itemsContainer, WinJS.UI._uniformListLayoutClass);
+                        _ElementUtilities.removeClass(this._itemsContainer, _Constants._uniformGridLayoutClass);
+                        _ElementUtilities.removeClass(this._itemsContainer, _Constants._uniformListLayoutClass);
                         this._itemsContainer.style.height = this._itemsContainer.style.width = "";
                     }
                     this._itemsContainer = null;
@@ -3559,21 +3575,21 @@
                 },
 
                 layoutUnrealizedRange: function UniformGroup_layoutUnrealizedRange(changedRange, realizedRange, beforeRealizedRange) {
-                    return WinJS.Promise.wrap();
+                    return Promise.wrap();
                 }
             });
         }),
 
-        UniformFlowGroup: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(Groups.UniformGroupBase, function UniformFlowGroup_ctor(layout, tree) {
+        UniformFlowGroup: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(Groups.UniformGroupBase, function UniformFlowGroup_ctor(layout, tree) {
                 this._layout = layout;
                 this._itemsContainer = tree.element;
-                Utilities.addClass(this._itemsContainer, layout._inListMode ? WinJS.UI._uniformListLayoutClass : WinJS.UI._uniformGridLayoutClass);
+                _ElementUtilities.addClass(this._itemsContainer, layout._inListMode ? _Constants._uniformListLayoutClass : _Constants._uniformGridLayoutClass);
             }, {
                 cleanUp: function UniformFlowGroup_cleanUp(skipDomCleanUp) {
                     if (!skipDomCleanUp) {
-                        Utilities.removeClass(this._itemsContainer, WinJS.UI._uniformListLayoutClass);
-                        Utilities.removeClass(this._itemsContainer, WinJS.UI._uniformGridLayoutClass);
+                        _ElementUtilities.removeClass(this._itemsContainer, _Constants._uniformListLayoutClass);
+                        _ElementUtilities.removeClass(this._itemsContainer, _Constants._uniformGridLayoutClass);
                         this._itemsContainer.style.height = "";
                     }
                 },
@@ -3581,21 +3597,21 @@
                     this._layout._site._writeProfilerMark("Layout:_UniformFlowGroup:setItemsContainerHeight,info");
                     this._itemsContainer.style.height = this.count * this._layout._sizes.containerHeight + "px";
                 }
-            })
+            });
         }),
 
-        CellSpanningGroup: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.define(function CellSpanningGroup_ctor(layout, itemsContainer) {
+        CellSpanningGroup: _Base.Namespace._lazy(function () {
+            return _Base.Class.define(function CellSpanningGroup_ctor(layout, itemsContainer) {
                 this._layout = layout;
                 this._itemsContainer = itemsContainer;
-                Utilities.addClass(this._itemsContainer, WinJS.UI._cellSpanningGridLayoutClass);
+                _ElementUtilities.addClass(this._itemsContainer, _Constants._cellSpanningGridLayoutClass);
 
                 this.resetMap();
             }, {
                 cleanUp: function CellSpanningGroup_cleanUp(skipDomCleanUp) {
                     if (!skipDomCleanUp) {
                         this._cleanContainers();
-                        Utilities.removeClass(this._itemsContainer, WinJS.UI._cellSpanningGridLayoutClass);
+                        _ElementUtilities.removeClass(this._itemsContainer, _Constants._cellSpanningGridLayoutClass);
                         this._itemsContainer.style.cssText = "";
                     }
                     this._itemsContainer = null;
@@ -3646,7 +3662,7 @@
                     for (i = 0; i < this.count; i++) {
                         itemInfoPromises[i] = this._layout._getItemInfo(this.startIndex + i);
                     }
-                    return WinJS.Promise.join(itemInfoPromises).then(function (itemInfos) {
+                    return Promise.join(itemInfoPromises).then(function (itemInfos) {
                         itemInfos.forEach(function (itemInfo, index) {
                             that.addItemToMap(index, itemInfo);
                         });
@@ -3666,7 +3682,7 @@
 
                     // Hide the old containers that are in the realized range but weren't relaid out
                     Object.keys(this._containersToHide).forEach(function (id) {
-                        WinJS.Utilities.removeClass(this._containersToHide[id], WinJS.UI._laidOutClass);
+                        _ElementUtilities.removeClass(this._containersToHide[id], _Constants._laidOutClass);
                     }.bind(this));
                     this._containersToHide = {};
 
@@ -3683,7 +3699,7 @@
                     var that = this;
                     var layoutJob;
 
-                    that._layoutPromise = new WinJS.Promise(function (complete) {
+                    that._layoutPromise = new Promise(function (complete) {
                         function completeLayout() {
                             layoutJob = null;
                             complete();
@@ -3809,14 +3825,14 @@
                                 if (row > 0) {
                                     inMapIndex--;
                                 } else {
-                                    return { type: WinJS.UI.ObjectType.item, index: originalIndex };
+                                    return { type: _UI.ObjectType.item, index: originalIndex };
                                 }
                                 break;
                             case Key.downArrow:
                                 if (row + 1 < this._slotsPerColumn) {
                                     inMapIndex++;
                                 } else {
-                                    return { type: WinJS.UI.ObjectType.item, index: originalIndex };
+                                    return { type: _UI.ObjectType.item, index: originalIndex };
                                 }
                                 break;
                             case Key.leftArrow:
@@ -3837,7 +3853,7 @@
                     this.lastAdjacent = newIndex;
                     this.lastInMapIndex = inMapIndex;
 
-                    return (inMap ? { type: WinJS.UI.ObjectType.item, index: newIndex } : "boundary");
+                    return (inMap ? { type: _UI.ObjectType.item, index: newIndex } : "boundary");
                 },
 
                 hitTest: function CellSpanningGroup_hitTest(x, y) {
@@ -3878,7 +3894,7 @@
                     }
 
                     return {
-                        type: WinJS.UI.ObjectType.item,
+                        type: _UI.ObjectType.item,
                         index: clampToRange(0, this.count - 1, itemIndex),
                         insertAfterIndex: clampToRange(-1, this.count - 1, insertAfterIndex)
                     };
@@ -3929,7 +3945,7 @@
                         ";-ms-grid-column-span:" + entry.columns +
                         ";height:" + entry.contentHeight +
                         "px;width:" + entry.contentWidth + "px";
-                    Utilities.addClass(this._items[index], WinJS.UI._laidOutClass);
+                    _ElementUtilities.addClass(this._items[index], _Constants._laidOutClass);
 
                     return this._items[index];
                 },
@@ -3940,7 +3956,7 @@
                         i;
                     for (i = 0; i < len; i++) {
                         items[i].style.cssText = "";
-                        Utilities.removeClass(items[i], WinJS.UI._laidOutClass);
+                        _ElementUtilities.removeClass(items[i], _Constants._laidOutClass);
                     }
                 },
 
@@ -4090,7 +4106,7 @@
                             return {
                                 index: index,
                                 item: this.occupancyMap[index].index
-                            }
+                            };
                         } else {
                             index = this.occupancyMap.length - 1;
                         }
@@ -4106,10 +4122,10 @@
 
     });
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
 
-        ListLayout: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(WinJS.UI._LegacyLayout, function ListLayout_ctor(options) {
+        ListLayout: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(exports._LegacyLayout, function ListLayout_ctor(options) {
                 /// <signature helpKeyword="WinJS.UI.ListLayout">
                 /// <summary locid="WinJS.UI.ListLayout">
                 /// Creates a new ListLayout object.
@@ -4125,27 +4141,27 @@
                 options = options || {};
                 this._itemInfo = {};
                 this._groupInfo = {};
-                this._groupHeaderPosition = options.groupHeaderPosition || WinJS.UI.HeaderPosition.top;
+                this._groupHeaderPosition = options.groupHeaderPosition || HeaderPosition.top;
                 this._inListMode = true;
                 this.orientation = options.orientation || "vertical";
             }, {
                 initialize: function ListLayout_initialize(site, groupsEnabled) {
-                    Utilities.addClass(site.surface, WinJS.UI._listLayoutClass);
-                    WinJS.UI._LegacyLayout.prototype.initialize.call(this, site, groupsEnabled);
+                    _ElementUtilities.addClass(site.surface, _Constants._listLayoutClass);
+                    exports._LegacyLayout.prototype.initialize.call(this, site, groupsEnabled);
                 },
 
                 uninitialize: function ListLayout_uninitialize() {
                     if (this._site) {
-                        Utilities.removeClass(this._site.surface, WinJS.UI._listLayoutClass);
+                        _ElementUtilities.removeClass(this._site.surface, _Constants._listLayoutClass);
                     }
-                    WinJS.UI._LegacyLayout.prototype.uninitialize.call(this);
+                    exports._LegacyLayout.prototype.uninitialize.call(this);
                 },
 
                 layout: function ListLayout_layout(tree, changedRange, modifiedItems, modifiedGroups) {
                     if (!this._groupsEnabled && !this._horizontal) {
                         return this._layoutNonGroupedVerticalList(tree, changedRange, modifiedItems, modifiedGroups);
                     } else {
-                        return WinJS.UI._LegacyLayout.prototype.layout.call(this, tree, changedRange, modifiedItems, modifiedGroups);
+                        return exports._LegacyLayout.prototype.layout.call(this, tree, changedRange, modifiedItems, modifiedGroups);
                     }
                 },
 
@@ -4154,7 +4170,7 @@
                     var perfId = "Layout:_layoutNonGroupedVerticalList";
                     that._site._writeProfilerMark(perfId + ",StartTM");
                     this._layoutPromise = that._measureItem(0).then(function () {
-                        WinJS.Utilities[that._usingStructuralNodes ? "addClass" : "removeClass"](that._site.surface, WinJS.UI._structuralNodesClass);
+                        _ElementUtilities[that._usingStructuralNodes ? "addClass" : "removeClass"](that._site.surface, _Constants._structuralNodesClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
                             that._viewportSizeChanged(that._getViewportCrossSize());
@@ -4181,7 +4197,7 @@
                     }, function (error) {
                         that._site._writeProfilerMark(perfId + ":canceled,info");
                         that._site._writeProfilerMark(perfId + ",StopTM");
-                        return WinJS.Promise.wrapError(error);
+                        return Promise.wrapError(error);
                     });
                     return {
                         realizedRangeComplete: this._layoutPromise,
@@ -4193,9 +4209,9 @@
                     get: function ListLayout_getNumberOfItemsPerItemsBlock() {
                         // Measure when numberOfItemsPerItemsBlock is called so that we measure before ListView has created the full tree structure
                         // which reduces the trident layout required by measure.
-                        this._usingStructuralNodes = WinJS.UI.ListLayout._numberOfItemsPerItemsBlock > 0;
+                        this._usingStructuralNodes = exports.ListLayout._numberOfItemsPerItemsBlock > 0;
                         return this._measureItem(0).then(function () {
-                            return WinJS.UI.ListLayout._numberOfItemsPerItemsBlock;
+                            return exports.ListLayout._numberOfItemsPerItemsBlock;
                         });
                     }
                 },
@@ -4207,8 +4223,8 @@
             });
         }),
 
-        CellSpanningLayout: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.derive(WinJS.UI._LayoutCommon, function CellSpanningLayout_ctor(options) {
+        CellSpanningLayout: _Base.Namespace._lazy(function () {
+            return _Base.Class.derive(exports._LayoutCommon, function CellSpanningLayout_ctor(options) {
                 /// <signature helpKeyword="WinJS.UI.CellSpanningLayout">
                 /// <summary locid="WinJS.UI.CellSpanningLayout">
                 /// Creates a new CellSpanningLayout object.
@@ -4224,7 +4240,7 @@
                 options = options || {};
                 this._itemInfo = options.itemInfo;
                 this._groupInfo = options.groupInfo;
-                this._groupHeaderPosition = options.groupHeaderPosition || WinJS.UI.HeaderPosition.top;
+                this._groupHeaderPosition = options.groupHeaderPosition || HeaderPosition.top;
                 this._horizontal = true;
                 this._cellSpanning = true;
             }, {
@@ -4293,8 +4309,8 @@
             });
         }),
 
-        _LayoutWrapper: WinJS.Namespace._lazy(function () {
-            return WinJS.Class.define(function LayoutWrapper_ctor(layout) {
+        _LayoutWrapper: _Base.Namespace._lazy(function () {
+            return _Base.Class.define(function LayoutWrapper_ctor(layout) {
                 this.defaultAnimations = true;
 
                 // Initialize and hitTest are required
@@ -4342,14 +4358,14 @@
                     get: function () {
                         return "vertical";
                     }
-                }
+                };
                 if (layout.orientation !== undefined) {
                     propertyDefinition.get = function () {
                         return layout.orientation;
-                    }
+                    };
                     propertyDefinition.set = function (value) {
                         layout.orientation = value;
-                    }
+                    };
                 }
                 Object.defineProperty(this, "orientation", propertyDefinition);
 
@@ -4398,16 +4414,15 @@
                     return { firstIndex: 0, lastIndex: Number.MAX_VALUE };
                 },
                 getAdjacent: function LayoutWrapper_getAdjacent(currentItem, pressedKey) {
-                    var key = WinJS.Utilities.Key;
 
                     switch (pressedKey) {
-                        case key.pageUp:
-                        case key.upArrow:
-                        case key.leftArrow:
+                        case Key.pageUp:
+                        case Key.upArrow:
+                        case Key.leftArrow:
                             return { type: currentItem.type, index: currentItem.index - 1 };
-                        case key.downArrow:
-                        case key.rightArrow:
-                        case key.pageDown:
+                        case Key.downArrow:
+                        case Key.rightArrow:
+                        case Key.pageDown:
                             return { type: currentItem.type, index: currentItem.index + 1 };
                     }
                 },
@@ -4428,7 +4443,7 @@
     });
 
     function normalizeLayoutPromises(retVal) {
-        if (WinJS.Promise.is(retVal)) {
+        if (Promise.is(retVal)) {
             return {
                 realizedRangeComplete: retVal,
                 layoutComplete: retVal
@@ -4437,11 +4452,16 @@
             return retVal;
         } else {
             return {
-                realizedRangeComplete: WinJS.Promise.wrap(),
-                layoutComplete: WinJS.Promise.wrap()
+                realizedRangeComplete: Promise.wrap(),
+                layoutComplete: Promise.wrap()
             };
         }
     }
+
+    var HeaderPosition = {
+        left: "left",
+        top: "top"
+    };
 
     function getMargins(element) {
         return {
@@ -4453,12 +4473,9 @@
     }
 
     // Layout, _LayoutCommon, and _LegacyLayout are defined ealier so that their fully
-    // qualified names can be used in WinJS.Class.derive. This is required by Blend.
-    WinJS.Namespace.define("WinJS.UI", {
-        HeaderPosition: {
-            left: "left",
-            top: "top"
-        },
+    // qualified names can be used in _Base.Class.derive. This is required by Blend.
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        HeaderPosition: HeaderPosition,
         _getMargins: getMargins
     });
-})(this, WinJS);
+});

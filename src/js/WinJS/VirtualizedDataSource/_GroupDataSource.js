@@ -1,20 +1,25 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 // Group Data Source
 
-(function groupDataSourceInit() {
+define([
+    'exports',
+    '../Core/_Base',
+    '../Core/_ErrorFromName',
+    '../Promise',
+    '../Scheduler',
+    '../Utilities/_UI',
+    './_VirtualizedDataSourceImpl'
+    ], function groupDataSourceInit(exports, _Base, _ErrorFromName, Promise, Scheduler, _UI, VirtualizedDataSource) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
 
-        _GroupDataSource: WinJS.Namespace._lazy(function () {
-            var UI = WinJS.UI;
-            var Promise = WinJS.Promise,
-                Scheduler = WinJS.Utilities.Scheduler;
+        _GroupDataSource: _Base.Namespace._lazy(function () {
 
             // Private statics
 
             function errorDoesNotExist() {
-                return new WinJS.ErrorFromName(UI.FetchError.doesNotExist);
+                return new _ErrorFromName(_UI.FetchError.doesNotExist);
             }
 
             var batchSizeDefault = 101;
@@ -23,7 +28,7 @@
                 return group && group.firstReached && group.lastReached;
             }
 
-            var ListNotificationHandler = WinJS.Class.define(function ListNotificationHandler_ctor(groupDataAdapter) {
+            var ListNotificationHandler = _Base.Class.define(function ListNotificationHandler_ctor(groupDataAdapter) {
                 // Constructor
 
                 this._groupDataAdapter = groupDataAdapter;
@@ -72,7 +77,7 @@
                 supportedForProcessing: false,
             });
 
-            var GroupDataAdapter = WinJS.Class.define(function GroupDataAdapater_ctor(listDataSource, groupKey, groupData, options) {
+            var GroupDataAdapter = _Base.Class.define(function GroupDataAdapater_ctor(listDataSource, groupKey, groupData, options) {
                 // Constructor
 
                 this._listBinding = listDataSource.createListBinding(new ListNotificationHandler(this));
@@ -563,7 +568,7 @@
                                 result.totalCount = (
                                     typeof this._count === "number" ?
                                         this._count :
-                                        UI.CountResult.unknown
+                                        _UI.CountResult.unknown
                                 );
 
                                 if (typeof group.index === "number") {
@@ -827,7 +832,7 @@
                 supportedForProcessing: false,
             });
 
-            return WinJS.Class.derive(UI.VirtualizedDataSource, function (listDataSource, groupKey, groupData, options) {
+            return _Base.Class.derive(VirtualizedDataSource.VirtualizedDataSource, function (listDataSource, groupKey, groupData, options) {
                 var groupDataAdapter = new GroupDataAdapter(listDataSource, groupKey, groupData, options);
 
                 this._baseDataSourceConstructor(groupDataAdapter);
@@ -846,5 +851,5 @@
 
     });
 
-})();
+});
 

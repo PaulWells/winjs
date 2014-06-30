@@ -1,14 +1,23 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 // Storage Item Data Source
 
-(function storageDataSourceInit(global) {
+define([
+    'exports',
+    '../Core/_Base',
+    '../Core/_ErrorFromName',
+    '../Core/_WriteProfilerMark',
+    '../Animations',
+    '../Promise',
+    '../Utilities/_UI',
+    './_VirtualizedDataSourceImpl'
+    ], function storageDataSourceInit(exports, _Base, _ErrorFromName, _WriteProfilerMark, Animations, Promise, _UI, VirtualizedDataSource) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
-        StorageDataSource: WinJS.Namespace._lazy(function () {
-            var StorageDataAdapter = WinJS.Class.define(function StorageDataAdapter_ctor(query, options) {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
+        StorageDataSource: _Base.Namespace._lazy(function () {
+            var StorageDataAdapter = _Base.Class.define(function StorageDataAdapter_ctor(query, options) {
                 // Constructor
-                WinJS.Utilities._writeProfilerMark("WinJS.UI.StorageDataSource:constructor,StartTM");
+                _WriteProfilerMark("WinJS.UI.StorageDataSource:constructor,StartTM");
 
                 var mode = Windows.Storage.FileProperties.ThumbnailMode.singleItem,
                     size = 256,
@@ -76,7 +85,7 @@
                 this._loader = new Windows.Storage.BulkAccess.FileInformationFactory(this._query, mode, size, flags, delayLoad);
                 this.compareByIdentity = false;
                 this.firstDataRequest = true;
-                WinJS.Utilities._writeProfilerMark("WinJS.UI.StorageDataSource:constructor,StopTM");
+                _WriteProfilerMark("WinJS.UI.StorageDataSource:constructor,StopTM");
             }, {
                 // Public members
 
@@ -92,10 +101,10 @@
 
                 itemsFromEnd: function (count) {
                     var that = this;
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.StorageDataSource:itemsFromEnd,info");
+                    _WriteProfilerMark("WinJS.UI.StorageDataSource:itemsFromEnd,info");
                     return this.getCount().then(function (totalCount) {
                         if (totalCount === 0) {
-                            return WinJS.Promise.wrapError(new WinJS.ErrorFromName(WinJS.UI.FetchError.doesNotExist));
+                            return Promise.wrapError(new _ErrorFromName(_UI.FetchError.doesNotExist));
                         }
                         // Intentionally passing countAfter = 1 to go one over the end so that itemsFromIndex will
                         // report the vector size since its known.
@@ -124,11 +133,11 @@
                     }
 
                     var perfId = "WinJS.UI.StorageDataSource:itemsFromIndex(" + first + "-" + (first + count - 1) + ")";
-                    WinJS.Utilities._writeProfilerMark(perfId + ",StartTM");
+                    _WriteProfilerMark(perfId + ",StartTM");
                     return this._loader.getItemsAsync(first, count).then(function (itemsVector) {
                         var vectorSize = itemsVector.size;
                         if (vectorSize <= countBefore) {
-                            return WinJS.Promise.wrapError(new WinJS.ErrorFromName(WinJS.UI.FetchError.doesNotExist));
+                            return Promise.wrapError(new _ErrorFromName(_UI.FetchError.doesNotExist));
                         }
                         var items = new Array(vectorSize);
                         var localItemsVector = new Array(vectorSize);
@@ -146,21 +155,21 @@
                         if (vectorSize < count) {
                             result.totalCount = first + vectorSize;
                         }
-                        WinJS.Utilities._writeProfilerMark(perfId + ",StopTM");
+                        _WriteProfilerMark(perfId + ",StopTM");
                         return result;
                     });
                 },
 
                 itemsFromDescription: function (description, countBefore, countAfter) {
                     var that = this;
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.StorageDataSource:itemsFromDescription,info");
+                    _WriteProfilerMark("WinJS.UI.StorageDataSource:itemsFromDescription,info");
                     return this._query.findStartIndexAsync(description).then(function (index) {
                         return that.itemsFromIndex(index, countBefore, countAfter);
                     });
                 },
 
                 getCount: function () {
-                    WinJS.Utilities._writeProfilerMark("WinJS.UI.StorageDataSource:getCount,info");
+                    _WriteProfilerMark("WinJS.UI.StorageDataSource:getCount,info");
                     return this._query.getItemCountAsync();
                 },
 
@@ -194,7 +203,7 @@
                 supportedForProcessing: false,
             });
 
-            return WinJS.Class.derive(WinJS.UI.VirtualizedDataSource, function (query, options) {
+            return _Base.Class.derive(VirtualizedDataSource.VirtualizedDataSource, function (query, options) {
                 /// <signature helpKeyword="WinJS.UI.StorageDataSource">
                 /// <summary locid="WinJS.UI.StorageDataSource">
                 /// Creates a data source that enumerates an IStorageQueryResultBase.
@@ -241,7 +250,7 @@
                         thumbnailPromise,
                         shouldRespondToThumbnailUpdate = false;
             
-                    return new WinJS.Promise(function (complete, error, progress) {
+                    return new Promise(function (complete, error, progress) {
                         // Load a thumbnail if it exists. The promise completes when a full quality thumbnail is visible.
                         var tagSupplied = (image ? true : false);
                         var processThumbnail = function (thumbnail) {
@@ -258,12 +267,12 @@
                                         return item.isOnScreen().then(function (visible) {
                                             var imagePromise;
                                             if (visible && tagSupplied) {
-                                                imagePromise = WinJS.UI.Animation.fadeIn(image).then(function () {
+                                                imagePromise = Animations.fadeIn(image).then(function () {
                                                     return image;
                                                 });
                                             } else {
                                                 image.style.opacity = 1;
-                                                imagePromise = WinJS.Promise.wrap(image);
+                                                imagePromise = Promise.wrap(image);
                                             }
                                             return imagePromise;
                                         });
@@ -278,8 +287,8 @@
 
                                 // If we have the full resolution thumbnail, we can cancel further updates and complete the promise
                                 // when current work is complete.
-                                if ((thumbnail.type != Windows.Storage.FileProperties.ThumbnailType.icon) && !thumbnail.returnedSmallerCachedSize) {
-                                    WinJS.Utilities._writeProfilerMark("WinJS.UI.StorageDataSource:loadThumbnail complete,info");
+                                if ((thumbnail.type !== Windows.Storage.FileProperties.ThumbnailType.icon) && !thumbnail.returnedSmallerCachedSize) {
+                                    _WriteProfilerMark("WinJS.UI.StorageDataSource:loadThumbnail complete,info");
                                     item.data.removeEventListener("thumbnailupdated", thumbnailUpdateHandler);
                                     shouldRespondToThumbnailUpdate = false;
                                     thumbnailPromise = thumbnailPromise.then(function (image) {
@@ -318,4 +327,4 @@
         })
     });
 
-})();
+});

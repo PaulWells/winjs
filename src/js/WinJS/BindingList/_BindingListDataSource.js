@@ -1,13 +1,23 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 // WinJS.Binding.ListDataSource
 //
-(function bindingListDataSourceInit(global, undefined) {
+define([
+    'exports',
+    '../Core/_Global',
+    '../Core/_Base',
+    '../Core/_BaseUtils',
+    '../Core/_ErrorFromName',
+    '../Binding/_DomWeakRefTable',
+    '../Promise',
+    '../Scheduler',
+    '../Utilities/_UI'
+    ], function bindingListDataSourceInit(exports, _Global, _Base, _BaseUtils, _ErrorFromName, _DomWeakRefTable, Promise, Scheduler, _UI) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.Binding", {
-        _BindingListDataSource: WinJS.Namespace._lazy(function () {
+    _Base.Namespace._moduleDefine(exports, "WinJS.Binding", {
+        _BindingListDataSource: _Base.Namespace._lazy(function () {
             var errors = {
-                get noLongerMeaningful() { return WinJS.Promise.wrapError(new WinJS.ErrorFromName(WinJS.UI.EditError.noLongerMeaningful)); }
+                get noLongerMeaningful() { return Promise.wrapError(new _ErrorFromName(_UI.EditError.noLongerMeaningful)); }
             };
 
             function findNextKey(list, index) {
@@ -43,9 +53,9 @@
                 });
             }
 
-            var CompletePromise = WinJS.Promise.wrap().constructor;
+            var CompletePromise = Promise.wrap().constructor;
 
-            var NullWrappedItem = WinJS.Class.derive(CompletePromise,
+            var NullWrappedItem = _Base.Class.derive(CompletePromise,
                 function () {
                     this._value = null;
                 }, {
@@ -56,7 +66,7 @@
                 }
             );
 
-            var WrappedItem = WinJS.Class.derive(CompletePromise,
+            var WrappedItem = _Base.Class.derive(CompletePromise,
                 function (listBinding, item) {
                     this._value = item;
                     this._listBinding = listBinding;
@@ -79,19 +89,19 @@
                 }
             );
 
-            var AsyncWrappedItem = WinJS.Class.derive(WinJS.Promise,
+            var AsyncWrappedItem = _Base.Class.derive(Promise,
                 function (listBinding, item, name) {
                     var that = this;
                     this._item = item;
                     this._listBinding = listBinding;
-                    WinJS.Promise.call(this, function (c) {
-                        WinJS.Utilities.Scheduler.schedule(function BindingList_async_item() {
+                    Promise.call(this, function (c) {
+                        Scheduler.schedule(function BindingList_async_item() {
                             if (listBinding._released) {
                                 that.cancel();
                                 return;
                             }
                             c(item);
-                        }, WinJS.Utilities.Scheduler.Priority.normal, null, "WinJS.Binding.List." + name);
+                        }, Scheduler.Priority.normal, null, "WinJS.Binding.List." + name);
                     });
                 }, {
                     handle: {
@@ -124,7 +134,7 @@
                 return item && list._annotateWithIndex(item, index);
             }
 
-            var ListBinding = WinJS.Class.define(function ListBinding_ctor(dataSource, list, notificationHandler, id) {
+            var ListBinding = _Base.Class.define(function ListBinding_ctor(dataSource, list, notificationHandler, id) {
                 this._dataSource = dataSource;
                 this._list = list;
                 this._editsCount = 0;
@@ -137,12 +147,12 @@
                 // When in WebContext, weakref utility functions don't work as desired so we capture this
                 // ListBinding object in the handler's closure. This causes the same leak as in 1.0.
                 var fallbackReference = null;
-                if (!WinJS.Utilities.hasWinRT || !global.msSetWeakWinRTProperty || !global.msGetWeakWinRTProperty) {
+                if (!_BaseUtils.hasWinRT || !_Global.msSetWeakWinRTProperty || !_Global.msGetWeakWinRTProperty) {
                     fallbackReference = this;
                 }
                 if (notificationHandler) {
                     var handleEvent = function (eventName, eventArg) {
-                        var lb = WinJS.Utilities._getWeakRefElement(id) || fallbackReference;
+                        var lb = _DomWeakRefTable._getWeakRefElement(id) || fallbackReference;
                         if (lb) {
                             lb["_" + eventName](eventArg);
                             return true;
@@ -423,9 +433,9 @@
                             //
                             this._editsCount++;
                             var that = this;
-                            WinJS.Utilities.Scheduler.schedule(function BindingList_async_batchedEdits() {
+                            Scheduler.schedule(function BindingList_async_batchedEdits() {
                                 that._endEdits();
-                            }, WinJS.Utilities.Scheduler.Priority.high, null, "WinJS.Binding.List._endEdits");
+                            }, Scheduler.Priority.high, null, "WinJS.Binding.List._endEdits");
                         }
                         if (handler.beginNotifications) {
                             handler.beginNotifications();
@@ -452,7 +462,7 @@
                 jumpToItem: function (item) {
                     var index = this._list.indexOfKey(item.handle);
                     if (index === -1) {
-                        return WinJS.Promise.wrap(null);
+                        return Promise.wrap(null);
                     }
                     this._pos = index;
                     return this.current();
@@ -597,12 +607,12 @@
                     return errors.noLongerMeaningful;
                 }
                 this._list.splice(index, 1);
-                return WinJS.Promise.wrap();
+                return Promise.wrap();
             }
 
             var bindingId = 0;
-            var DataSource = WinJS.Class.define(function DataSource_ctor(list) {
-                this._usingWeakRef = WinJS.Utilities.hasWinRT && global.msSetWeakWinRTProperty && global.msGetWeakWinRTProperty;
+            var DataSource = _Base.Class.define(function DataSource_ctor(list) {
+                this._usingWeakRef = _BaseUtils.hasWinRT && _Global.msSetWeakWinRTProperty && _Global.msGetWeakWinRTProperty;
                 this._bindings = {};
                 this._list = list;
 
@@ -644,7 +654,7 @@
                     binding._id = id;
 
                     if (this._usingWeakRef) {
-                        WinJS.Utilities._createWeakRef(binding, id);
+                        _DomWeakRefTable._createWeakRef(binding, id);
                         this._bindings[id] = id;
                     } else {
                         this._bindings[id] = binding;
@@ -654,7 +664,7 @@
                 },
 
                 getCount: function () {
-                    return WinJS.Promise.wrap(this._list.length);
+                    return Promise.wrap(this._list.length);
                 },
 
                 itemFromKey: function (key) {
@@ -671,10 +681,10 @@
                         configurable: true
                     });
 
-                    return WinJS.Promise.wrap(item);
+                    return Promise.wrap(item);
                 },
                 itemFromIndex: function (index) {
-                    return WinJS.Promise.wrap(cloneWithIndex(this._list, this._list.getItem(index), index));
+                    return Promise.wrap(cloneWithIndex(this._list, this._list.getItem(index), index));
                 },
 
                 list: {
@@ -696,7 +706,7 @@
                     if (this._usingWeakRef) {
                         var toBeDeleted = [];
                         Object.keys(this._bindings).forEach(function (id) {
-                            var lb = WinJS.Utilities._getWeakRefElement(id);
+                            var lb = _DomWeakRefTable._getWeakRefElement(id);
                             if (lb) {
                                 callback(lb);
                             } else {
@@ -715,7 +725,7 @@
                 },
 
                 invalidateAll: function () {
-                    return WinJS.Promise.wrap();
+                    return Promise.wrap();
                 },
 
                 //
@@ -739,4 +749,4 @@
         })
     });
 
-}(this));
+});

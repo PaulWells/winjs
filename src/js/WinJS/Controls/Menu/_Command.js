@@ -1,10 +1,19 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 // Menu Command
 /// <dictionary>appbar,appbars,Flyout,Flyouts,onclick,Statics</dictionary>
-(function menuCommandInit(WinJS) {
+define([
+    'exports',
+    '../../Core/_Base',
+    '../../Core/_ErrorFromName',
+    '../../Core/_Resources',
+    '../../Utilities/_Control',
+    '../../Utilities/_ElementUtilities',
+    '../AppBar/_Constants',
+    '../Flyout/_Overlay'
+    ], function menuCommandInit(exports, _Base, _ErrorFromName, _Resources, _Control, _ElementUtilities, _Constants, _Overlay) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
         /// <field>
         /// <summary locid="WinJS.UI.MenuCommand">
         /// Represents a command to be displayed in a Menu. MenuCommand objects provide button, toggle button, flyout button, 
@@ -19,23 +28,15 @@
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/base.js" shared="true" />
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/ui.js" shared="true" />
         /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
-        MenuCommand: WinJS.Namespace._lazy(function () {
-            var thisWinUI = WinJS.UI;
-
-            // Class Names
-            var menuCommandClass = "win-command";
-            var typeSeparator = "separator";
-            var typeButton = "button";
-            var typeToggle = "toggle";
-            var typeFlyout = "flyout";
+        MenuCommand: _Base.Namespace._lazy(function () {
 
             function _handleMenuClick(event) {
                 var command = this.winControl;
                 if (command) {
                     var hideParent = true;
-                    if (command._type === typeToggle) {
+                    if (command._type === _Constants.typeToggle) {
                         command.selected = !command.selected;
-                    } else if (command._type === typeFlyout && command._flyout) {
+                    } else if (command._type === _Constants.typeFlyout && command._flyout) {
                         var flyout = command._flyout;
                         // Flyout may not have processAll'd, so this may be a DOM object
                         if (typeof flyout === "string") {
@@ -82,7 +83,7 @@
                 var parentFlyout = _getParentFlyout(that);
                 if (parentFlyout
                  && this === document.activeElement
-                 && WinJS.Utilities.hasClass(parentFlyout, "win-menu")
+                 && _ElementUtilities.hasClass(parentFlyout, _Constants.menuClass)
                  && parentFlyout.focus) {
                     // Menu gives focus to the menu itself
                     parentFlyout.focus();
@@ -91,7 +92,7 @@
                         && parentFlyout.children
                         && parentFlyout.children.length > 0
                         && parentFlyout.children[0]
-                        && WinJS.Utilities.hasClass(parentFlyout.children[0], "win-firstdiv")
+                        && _ElementUtilities.hasClass(parentFlyout.children[0], _Constants.firstDivClass)
                         && parentFlyout.children[0].focus) {
                     // Flyout gives focus to firstDiv
                     parentFlyout.children[0].focus();
@@ -101,7 +102,7 @@
             }
 
             function _getParentFlyout(element) {
-                while (element && !WinJS.Utilities.hasClass(element, "win-flyout")) {
+                while (element && !_ElementUtilities.hasClass(element, _Constants.flyoutClass)) {
                     element = element.parentElement;
                 }
 
@@ -109,14 +110,14 @@
             }
 
             var strings = {
-                get ariaLabel() { return WinJS.Resources._getWinJSString("ui/menuCommandAriaLabel").value; },
-                get duplicateConstruction() { return WinJS.Resources._getWinJSString("ui/duplicateConstruction").value; },
-                get badClick() { return WinJS.Resources._getWinJSString("ui/badClick").value; },
-                get badHrElement() { return WinJS.Resources._getWinJSString("ui/badHrElement").value; },
-                get badButtonElement() { return WinJS.Resources._getWinJSString("ui/badButtonElement").value; }
+                get ariaLabel() { return _Resources._getWinJSString("ui/menuCommandAriaLabel").value; },
+                get duplicateConstruction() { return _Resources._getWinJSString("ui/duplicateConstruction").value; },
+                get badClick() { return _Resources._getWinJSString("ui/badClick").value; },
+                get badHrElement() { return _Resources._getWinJSString("ui/badHrElement").value; },
+                get badButtonElement() { return _Resources._getWinJSString("ui/badButtonElement").value; }
             };
 
-            return WinJS.Class.define(function MenuCommand_ctor(element, options) {
+            return _Base.Class.define(function MenuCommand_ctor(element, options) {
                 /// <signature helpKeyword="WinJS.UI.AppBarCommand.MenuCommand">
                 /// <summary locid="WinJS.UI.MenuCommand.constructor">
                 /// Creates a new MenuCommand object.
@@ -135,7 +136,7 @@
 
                 // Check to make sure we weren't duplicated
                 if (element && element.winControl) {
-                    throw new WinJS.ErrorFromName("WinJS.UI.MenuCommand.DuplicateConstruction", strings.duplicateConstruction);
+                    throw new _ErrorFromName("WinJS.UI.MenuCommand.DuplicateConstruction", strings.duplicateConstruction);
                 }
 
                 this._disposed = false;
@@ -147,27 +148,27 @@
 
                 // Need a type before we can create our element
                 if (!options.type) {
-                    this._type = typeButton;
+                    this._type = _Constants.typeButton;
                 }
 
                 // Go ahead and create it, separator types look different than buttons
                 // Don't forget to use passed in element if one was provided.
                 this._element = element;
-                if (options.type === typeSeparator) {
+                if (options.type === _Constants.typeSeparator) {
                     this._createSeparator();
                 } else {
                     // This will also set the icon & label
                     this._createButton();
                 }
-                WinJS.Utilities.addClass(this._element, "win-disposable");
+                _ElementUtilities.addClass(this._element, "win-disposable");
 
                 // Remember ourselves
                 this._element.winControl = this;
 
                 // Attach our css class
-                WinJS.Utilities.addClass(this._element, menuCommandClass);
+                _ElementUtilities.addClass(this._element, _Constants.menuCommandClass);
 
-                if (!options.selected && options.type === typeToggle) {
+                if (!options.selected && options.type === _Constants.typeToggle) {
                     // Make sure toggle's have selected false for CSS
                     this.selected = false;
                 }
@@ -176,19 +177,19 @@
                 }
                 options.onclick = _handleMenuClick;
 
-                WinJS.UI.setOptions(this, options);
+                _Control.setOptions(this, options);
 
                 // Set our options
-                if (this._type !== typeSeparator) {
+                if (this._type !== _Constants.typeSeparator) {
                     // Make sure we have an ARIA role
                     var role = this._element.getAttribute("role");
                     if (role === null || role === "" || role === undefined) {
                         role = "menuitem";
-                        if (this._type === typeToggle) {
+                        if (this._type === _Constants.typeToggle) {
                             role = "menuitemcheckbox";
                         }
                         this._element.setAttribute("role", role);
-                        if (this._type === typeFlyout) {
+                        if (this._type === _Constants.typeFlyout) {
                             this._element.setAttribute("aria-haspopup", true);
                         }
                     }
@@ -228,8 +229,8 @@
                     set: function (value) {
                         // we allow setting first time only. otherwise we ignore it.
                         if (!this._type) {
-                            if (value !== typeButton && value !== typeFlyout && value !== typeToggle && value !== typeSeparator) {
-                                this._type = typeButton;
+                            if (value !== _Constants.typeButton && value !== _Constants.typeFlyout && value !== _Constants.typeToggle && value !== _Constants.typeSeparator) {
+                                this._type = _Constants.typeButton;
                             } else {
                                 this._type = value;
                             }
@@ -264,7 +265,7 @@
                     },
                     set: function (value) {
                         if (value && typeof value !== "function") {
-                            throw new WinJS.ErrorFromName("WinJS.UI.MenuCommand.BadClick", WinJS.Resources._formatString(strings.badClick, "MenuCommand"));
+                            throw new _ErrorFromName("WinJS.UI.MenuCommand.BadClick", _Resources._formatString(strings.badClick, "MenuCommand"));
                         }
                         this._onclick = value;
                     }
@@ -303,7 +304,7 @@
                                     id = id.id;
                                 } else {
                                     // No id, have to fake one
-                                    id.id = WinJS.Utilities._uniqueID(id);
+                                    id.id = _ElementUtilities._uniqueID(id);
                                     id = id.id;
                                 }
                             }
@@ -365,9 +366,9 @@
                         return this._element.style.visibility === "hidden";
                     },
                     set: function (value) {
-                        var menuControl = thisWinUI._Overlay._getParentControlUsingClassName(this._element, "win-menu");
+                        var menuControl = _Overlay._Overlay._getParentControlUsingClassName(this._element, _Constants.menuClass);
                         if (menuControl && !menuControl.hidden) {
-                            throw new WinJS.ErrorFromName("WinJS.UI.MenuCommand.CannotChangeHiddenProperty", WinJS.Resources._formatString(thisWinUI._Overlay.commonstrings.cannotChangeHiddenProperty, "Menu"));
+                            throw new _ErrorFromName("WinJS.UI.MenuCommand.CannotChangeHiddenProperty", _Resources._formatString(_Overlay._Overlay.commonstrings.cannotChangeHiddenProperty, "Menu"));
                         }
 
                         var style = this._element.style;
@@ -391,10 +392,10 @@
                     },
                     set: function (value) {
                         if (this._extraClass) {
-                            WinJS.Utilities.removeClass(this._element, this._extraClass);
+                            _ElementUtilities.removeClass(this._element, this._extraClass);
                         }
                         this._extraClass = value;
-                        WinJS.Utilities.addClass(this._element, this._extraClass);
+                        _ElementUtilities.addClass(this._element, this._extraClass);
                     }
                 },
 
@@ -454,7 +455,7 @@
                     } else {
                         // Verify the input was an hr
                         if (this._element.tagName !== "HR") {
-                            throw new WinJS.ErrorFromName("WinJS.UI.MenuCommand.BadHrElement", strings.badHrElement);
+                            throw new _ErrorFromName("WinJS.UI.MenuCommand.BadHrElement", strings.badHrElement);
                         }
                     }
                 },
@@ -466,7 +467,7 @@
                     } else {
                         // Verify the input was a button
                         if (this._element.tagName !== "BUTTON") {
-                            throw new WinJS.ErrorFromName("WinJS.UI.MenuCommand.BadButtonElement", strings.badButtonElement);
+                            throw new _ErrorFromName("WinJS.UI.MenuCommand.BadButtonElement", strings.badButtonElement);
                         }
                         this._element.innerHTML = "";
                     }
@@ -481,5 +482,5 @@
         })
     });
 
-})(WinJS);
+});
 

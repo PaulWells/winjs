@@ -1,11 +1,20 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-define(['./Application/_State'], function() {
-(function applicationInit(global, WinJS, undefined) {
+define([
+    './Core/_Global',
+    './Core/_Base',
+    './Core/_BaseUtils',
+    './Core/_Events',
+    './Core/_Log',
+    './Core/_WriteProfilerMark',
+    './Application/_State',
+    './Navigation',
+    './Promise',
+    './_Signal',
+    './Scheduler'
+    ], function applicationInit(_Global, _Base, _BaseUtils, _Events, _Log, _WriteProfilerMark, _State, Navigation, Promise, _Signal, Scheduler) {
     "use strict";
 
-    global.Debug && (global.Debug.setNonUserCodeExceptions = true);
-
-    var Scheduler = WinJS.Utilities.Scheduler;
+    _Global.Debug && (_Global.Debug.setNonUserCodeExceptions = true);
 
     var checkpointET = "checkpoint",
         unloadET = "unload",
@@ -24,9 +33,9 @@ define(['./Application/_State'], function() {
     var registered = false;
     // check for WinRT & document, which means we will disabled application WinRT stuff in web worker context
     //
-    var useWinRT = WinJS.Utilities.hasWinRT && global.document;
+    var useWinRT = _BaseUtils.hasWinRT && _Global.document;
 
-    var ListenerType = WinJS.Class.mix(WinJS.Class.define(null, { /* empty */ }, { supportedForProcessing: false }), WinJS.Utilities.eventMixin);
+    var ListenerType = _Base.Class.mix(_Base.Class.define(null, { /* empty */ }, { supportedForProcessing: false }), _Events.eventMixin);
     var listeners = new ListenerType();
     var pendingDeferrals = {};
     var pendingDeferralID = 0;
@@ -61,7 +70,7 @@ define(['./Application/_State'], function() {
 
     function captureDeferral(obj) {
         var id = "def" + (pendingDeferralID++);
-        return { deferral: pendingDeferrals[id] = obj.getDeferral(), id: id }
+        return { deferral: pendingDeferrals[id] = obj.getDeferral(), id: id };
     }
     function completeDeferral(deferral, deferralID) {
         // If we have a deferralID we our table to find the
@@ -88,9 +97,9 @@ define(['./Application/_State'], function() {
     }
 
     function dispatchEvent(eventRecord) {
-        WinJS.Utilities._writeProfilerMark("WinJS.Application:Event_" + eventRecord.type + ",StartTM");
+        _WriteProfilerMark("WinJS.Application:Event_" + eventRecord.type + ",StartTM");
 
-        var waitForPromise = WinJS.Promise.as();
+        var waitForPromise = Promise.as();
         eventRecord.setPromise = function (promise) {
             /// <signature helpKeyword="WinJS.Application.eventRecord.setPromise">
             /// <summary locid="WinJS.Application.event.setPromise">
@@ -134,7 +143,7 @@ define(['./Application/_State'], function() {
 
 
         function cleanup(r) {
-            WinJS.Utilities._writeProfilerMark("WinJS.Application:Event_" + eventRecord.type + ",StopTM");
+            _WriteProfilerMark("WinJS.Application:Event_" + eventRecord.type + ",StopTM");
 
             if (eventRecord._deferral) {
                 completeDeferral(eventRecord._deferral, eventRecord._deferralID);
@@ -147,13 +156,13 @@ define(['./Application/_State'], function() {
             if (r && r.name === "Canceled") {
                 return;
             }
-            return WinJS.Promise.wrapError(r);
+            return Promise.wrapError(r);
         });
     }
 
     function createEventQueuedSignal() {
         if (!eventQueuedSignal) {
-            eventQueuedSignal = new WinJS._Signal();
+            eventQueuedSignal = new _Signal();
             eventQueuedSignal.promise.done(function () {
                 eventQueuedSignal = null;
             }, function () {
@@ -236,7 +245,7 @@ define(['./Application/_State'], function() {
         /// in the detail property of the event.
         /// </param>
         /// </signature>
-        WinJS.Utilities._writeProfilerMark("WinJS.Application:Event_" + eventRecord.type + " queued,Info");
+        _WriteProfilerMark("WinJS.Application:Event_" + eventRecord.type + " queued,Info");
         eventQueue.push(eventRecord);
         if (running && eventQueuedSignal) {
             eventQueuedSignal.complete(drainQueue);
@@ -267,7 +276,7 @@ define(['./Application/_State'], function() {
                     return;
                 }
 
-                WinJS.log && WinJS.log(safeSerialize(e), "winjs", "error");
+                _Log.log && _Log.log(safeSerialize(e), "winjs", "error");
 
                 if (useWinRT && WinJS.Application._terminateApp) {
                     var data = e.detail;
@@ -287,8 +296,8 @@ define(['./Application/_State'], function() {
             function Application_backClickHandler(e, handled) {
                 if (handled) {
                     e._winRTBackPressedEvent.handled = true;
-                } else if (WinJS.Navigation.canGoBack) {
-                    WinJS.Navigation.back();
+                } else if (Navigation.canGoBack) {
+                    Navigation.back();
                     e._winRTBackPressedEvent.handled = true;
                 }
             }
@@ -341,7 +350,7 @@ define(['./Application/_State'], function() {
                 if (prev !== terminateAppHandler) {
                     prev(d, e);
                 }
-            }
+            };
             dispatchEvent({
                 type: errorET,
                 detail: {
@@ -399,7 +408,7 @@ define(['./Application/_State'], function() {
 
     // capture this early
     //
-    if (global.document) {
+    if (_Global.document) {
         document.addEventListener("DOMContentLoaded", domContentLoadedHandler, false);
     }
 
@@ -421,10 +430,10 @@ define(['./Application/_State'], function() {
     function register() {
         if (!registered) {
             registered = true;
-            global.addEventListener("beforeunload", beforeUnloadHandler, false);
+            _Global.addEventListener("beforeunload", beforeUnloadHandler, false);
 
             if (useWinRT) {
-                global.addEventListener("error", errorHandler, false);
+                _Global.addEventListener("error", errorHandler, false);
 
                 var wui = Windows.UI.WebUI.WebUIApplication;
                 wui.addEventListener("activated", activatedHandler, false);
@@ -447,10 +456,10 @@ define(['./Application/_State'], function() {
     function unregister() {
         if (registered) {
             registered = false;
-            global.removeEventListener("beforeunload", beforeUnloadHandler, false);
+            _Global.removeEventListener("beforeunload", beforeUnloadHandler, false);
 
             if (useWinRT) {
-                global.removeEventListener("error", errorHandler, false);
+                _Global.removeEventListener("error", errorHandler, false);
 
                 var wui = Windows.UI.WebUI.WebUIApplication;
                 wui.removeEventListener("activated", activatedHandler, false);
@@ -467,11 +476,11 @@ define(['./Application/_State'], function() {
                 }
             }
 
-            WinJS.Promise.removeEventListener("error", promiseErrorHandler);
+            Promise.removeEventListener("error", promiseErrorHandler);
         }
     }
 
-    WinJS.Namespace.define("WinJS.Application", {
+    _Base.Namespace.define("WinJS.Application", {
         stop: function () {
             /// <signature helpKeyword="WinJS.Application.stop">
             /// <summary locid="WinJS.Application.stop">
@@ -562,6 +571,5 @@ define(['./Application/_State'], function() {
 
     });
 
-    Object.defineProperties(WinJS.Application, WinJS.Utilities.createEventProperties(checkpointET, unloadET, activatedET, loadedET, readyET, settingsET, errorET, backClickET));
-})(this, WinJS);
+    Object.defineProperties(WinJS.Application, _Events.createEventProperties(checkpointET, unloadET, activatedET, loadedET, readyET, settingsET, errorET, backClickET));
 });

@@ -1,8 +1,18 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-(function datePickerInit(WinJS, undefined) {
+define([
+    '../Core/_Base',
+    '../Core/_BaseUtils',
+    '../Core/_Events',
+    '../Core/_Resources',
+    '../Utilities/_Control',
+    '../Utilities/_ElementUtilities',
+    '../Utilities/_Select',
+    'require-style!less/desktop/controls',
+    'require-style!less/phone/controls'
+    ], function datePickerInit(_Base, _BaseUtils, _Events, _Resources, _Control, _ElementUtilities, _Select) {
     "use strict";
 
-    WinJS.Namespace.define("WinJS.UI", {
+    _Base.Namespace.define("WinJS.UI", {
         /// <field>
         /// <summary locid="WinJS.UI.DatePicker">Allows users to pick a date value.</summary>
         /// <compatibleWith platform="Windows" minVersion="8.0"/>
@@ -15,17 +25,17 @@
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/base.js" shared="true" />
         /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/ui.js" shared="true" />
         /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
-        DatePicker: WinJS.Namespace._lazy(function () {
+        DatePicker: _Base.Namespace._lazy(function () {
             // Constants definition
             var DEFAULT_DAY_PATTERN = 'day',
                 DEFAULT_MONTH_PATTERN = '{month.full}',
                 DEFAULT_YEAR_PATTERN = 'year.full';
 
             var strings = {
-                get ariaLabel() { return WinJS.Resources._getWinJSString("ui/datePicker").value; },
-                get selectDay() { return WinJS.Resources._getWinJSString("ui/selectDay").value; },
-                get selectMonth() { return WinJS.Resources._getWinJSString("ui/selectMonth").value; },
-                get selectYear() { return WinJS.Resources._getWinJSString("ui/selectYear").value; },
+                get ariaLabel() { return _Resources._getWinJSString("ui/datePicker").value; },
+                get selectDay() { return _Resources._getWinJSString("ui/selectDay").value; },
+                get selectMonth() { return _Resources._getWinJSString("ui/selectMonth").value; },
+                get selectYear() { return _Resources._getWinJSString("ui/selectYear").value; },
             };
 
             var yearFormatCache = {};
@@ -96,7 +106,7 @@
             function yearDiff(start, end) {
                 var yearCount = 0;
 
-                if (start.era == end.era) {
+                if (start.era === end.era) {
                     yearCount = end.year - start.year;
                 }
                 else {
@@ -108,15 +118,15 @@
                 return yearCount;
             }
 
-            var DatePicker = WinJS.Class.define(function DatePicker_ctor(element, options) {
+            var DatePicker = _Base.Class.define(function DatePicker_ctor(element, options) {
                 /// <signature helpKeyword="WinJS.UI.DatePicker.DatePicker">
                 /// <summary locid="WinJS.UI.DatePicker.constructor">Creates a new DatePicker control.</summary>
                 /// <param name="element" type="HTMLElement" domElement="true" locid="WinJS.UI.DatePicker.constructor_p:element">
                 /// The DOM element that will host the DatePicker control.
                 /// </param>
                 /// <param name="options" type="Object" locid="WinJS.UI.DatePicker.constructor_p:options">
-                /// An object that contains one or more property/value pairs to apply to the new control. Each property of the options object corresponds 
-                /// to one of the control's properties or events. 
+                /// An object that contains one or more property/value pairs to apply to the new control. Each property of the options object corresponds
+                /// to one of the control's properties or events.
                 /// </param>
                 /// <returns type="WinJS.UI.DatePicker" locid="WinJS.UI.DatePicker.constructor_returnValue">A constructed DatePicker control.</returns>
                 /// <compatibleWith platform="Windows" minVersion="8.0"/>
@@ -135,7 +145,7 @@
                 };
 
                 element = element || document.createElement("div");
-                WinJS.Utilities.addClass(element, "win-disposable");
+                _ElementUtilities.addClass(element, "win-disposable");
                 element.winControl = this;
 
                 var label = element.getAttribute("aria-label");
@@ -146,7 +156,7 @@
                 // Options should be set after the element is initialized which is
                 // the same order of operation as imperatively setting options.
                 this._init(element);
-                WinJS.UI.setOptions(this, options);
+                _Control.setOptions(this, options);
             }, {
                 _information: null,
                 _currentDate: null,
@@ -177,22 +187,21 @@
 
                 _addControlsInOrder: function () {
                     var e = this._domElement;
-                    var u = WinJS.Utilities;
                     var that = this;
                     var orderIndex = 0; // don't use forEach's index, because "era" is in the list
                     that._information.order.forEach(function (s) {
                         switch (s) {
                             case "month":
                                 e.appendChild(that._monthElement);
-                                u.addClass(that._monthElement, "win-order" + (orderIndex++));
+                                _ElementUtilities.addClass(that._monthElement, "win-order" + (orderIndex++));
                                 break;
                             case "date":
                                 e.appendChild(that._dateElement);
-                                u.addClass(that._dateElement, "win-order" + (orderIndex++));
+                                _ElementUtilities.addClass(that._dateElement, "win-order" + (orderIndex++));
                                 break;
                             case "year":
                                 e.appendChild(that._yearElement);
-                                u.addClass(that._yearElement, "win-order" + (orderIndex++));
+                                _ElementUtilities.addClass(that._yearElement, "win-order" + (orderIndex++));
                                 break;
                         }
                     });
@@ -217,19 +226,19 @@
                     }
 
 
-                    this._yearControl = new WinJS.UI._Select(this._yearElement, {
+                    this._yearControl = new _Select._Select(this._yearElement, {
                         dataSource: this._information.years,
                         disabled: this.disabled,
                         index: index.year
                     });
 
-                    this._monthControl = new WinJS.UI._Select(this._monthElement, {
+                    this._monthControl = new _Select._Select(this._monthElement, {
                         dataSource: this._information.months(index.year),
                         disabled: this.disabled,
                         index: index.month
                     });
 
-                    this._dateControl = new WinJS.UI._Select(this._dateElement, {
+                    this._dateControl = new _Select._Select(this._dateElement, {
                         dataSource: this._information.dates(index.year, index.month),
                         disabled: this.disabled,
                         index: index.date
@@ -281,7 +290,7 @@
                         }
 
                         var oldDate = this._currentDate;
-                        if (oldDate != newDate) {
+                        if (oldDate !== newDate) {
                             this._currentDate = newDate;
                             this._updateDisplay();
                         }
@@ -335,8 +344,8 @@
                     this._domElement = this._domElement || element;
                     if (!this._domElement) { return; }
 
-                    WinJS.Utilities.empty(this._domElement);
-                    WinJS.Utilities.addClass(this._domElement, "win-datepicker");
+                    _ElementUtilities.empty(this._domElement);
+                    _ElementUtilities.addClass(this._domElement, "win-datepicker");
 
                     this._updateInformation();
 
@@ -422,7 +431,7 @@
                     min.setFullYear(this._minYear);
                     max.setFullYear(this._maxYear);
 
-                    this._information = WinJS.UI.DatePicker.getInformation(min, max, this._calendar, this._datePatterns);
+                    this._information = DatePicker.getInformation(min, max, this._calendar, this._datePatterns);
                 },
 
                 _init: function (element) {
@@ -430,8 +439,9 @@
                 },
 
                 _updateDisplay: function () {
-                    if (!this._domElement)
+                    if (!this._domElement) {
                         return;
+                    }
 
                     // all controls get populated at the same time, so any check is OK
                     //
@@ -455,7 +465,7 @@
                         var index = that._information.getIndex(that._currentDate);
 
                         // Changing the month (or year, if the current date is 2/29) changes the day range, and could have made the day selection invalid
-                        that._monthControl.dataSource = that._information.months(index.year)
+                        that._monthControl.dataSource = that._information.months(index.year);
                         that._monthControl.index = index.month;
                         that._dateControl.dataSource = that._information.dates(index.year, index.month);
                         that._dateControl.index = index.date;
@@ -510,7 +520,7 @@
 
                     yearLen = yearDiff(tempCal, end) + 1;
 
-                    // Explicity use a template that's equivalent to a longdate template 
+                    // Explicity use a template that's equivalent to a longdate template
                     // as longdate/shortdate can be overriden by the user
                     var dateformat = formatCacheLookup("day month.full year", calendar).formatter;
                     var localdatepattern = dateformat.patterns[0];
@@ -537,7 +547,7 @@
 
                                 return formatYear(datePatterns.year, calendar, DEFAULT_YEAR_PATTERN, datePatterns, order, tempCal);
                             }
-                        }
+                        };
                     })();
 
                     var monthSource = function (yearIndex) {
@@ -632,7 +642,7 @@
                             tempCal.setDateTime(curDate);
                             var monthIndex = tempCal.month - tempCal.firstMonthInThisYear;
                             if (monthIndex < 0) {
-                                // A special case is in some ThaiCalendar years first month 
+                                // A special case is in some ThaiCalendar years first month
                                 // of the year is April, last month is March and month flow is wrap-around
                                 // style; April, March .... November, December, January, February, March. So the first index
                                 // will be 4 and last index will be 3. We are handling the case to convert this wraparound behavior
@@ -729,17 +739,17 @@
                     };
                 }
             });
-            if (WinJS.Utilities.hasWinRT) {
+            if (_BaseUtils.hasWinRT) {
                 DatePicker.getInformation = DatePicker._getInformationWinRT;
             }
             else {
                 DatePicker.getInformation = DatePicker._getInformationJS;
             }
-            WinJS.Class.mix(DatePicker, WinJS.Utilities.createEventProperties("change"));
-            WinJS.Class.mix(DatePicker, WinJS.UI.DOMEventMixin);
+            _Base.Class.mix(DatePicker, _Events.createEventProperties("change"));
+            _Base.Class.mix(DatePicker, _Control.DOMEventMixin);
             return DatePicker;
         })
     });
 
 
-})(WinJS);
+});
