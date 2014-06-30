@@ -687,7 +687,7 @@ define([
                     if (this._needToHandleHidingKeyboard) {
                         // Hiding keyboard, update our position, giving the anchor a chance to update first.
                         var that = this;
-                        WinJS.Utilities._setImmediate(function () { that._findPosition(); });
+                        _BaseUtils._setImmediate(function () { that._findPosition(); });
                         this._needToHandleHidingKeyboard = false;
                     }
                 },

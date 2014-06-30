@@ -1417,8 +1417,7 @@ define([
                         _ElementUtilities.hasClass(element, _Constants._clickEatingFlyoutClass) ||
                         _ElementUtilities.hasClass(element, _Constants.firstDivClass) ||
                         _ElementUtilities.hasClass(element, _Constants.finalDivClass) ||
-                        _ElementUtilities.hasClass(element, _Constants.ellipsisClass) ||
-                        ) {
+                        _ElementUtilities.hasClass(element, _Constants.ellipsisClass)) {
                         return element;
                     }
 
