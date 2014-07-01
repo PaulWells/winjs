@@ -11,6 +11,11 @@
 
 var CorsicaTests = CorsicaTests || {};
 
+var constants;
+WinJS.Utilities._require(["WinJS/Controls/AppBar/_Constants"], function (_Constants) {
+    constants = _Constants;
+})
+
 CorsicaTests.AppBarTests = function () {
     "use strict";
 
@@ -1258,7 +1263,7 @@ CorsicaTests.AppBarTests = function () {
         LiveUnit.Assert.areEqual(children[children.length - 2].className, invokeButton.className, msg);
     }
 
-    var invokeButtonWidth = 40;
+    var invokeButtonWidth = 40;    
     function verifyHasInvokeButton(appBar) {
         appBar = appBar.element || appBar;
 
