@@ -794,7 +794,7 @@ define([
 
                 _show: function AppBar_show() {
 
-                    var toPosition = displayModeVisiblePositions.show;
+                    var toPosition = displayModeVisiblePositions.shown;
                     var showing = !this.disabled && this._closed && appbarShownState;
 
                     // If we're already shown, we just want to animate our position, not fire events or manage focus.

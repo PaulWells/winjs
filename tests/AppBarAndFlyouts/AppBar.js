@@ -892,9 +892,9 @@ CorsicaTests.AppBarTests = function () {
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             verifyClosedIndicators(false, appBar, msg);
 
-            msg = "AppBars that are opening should indicate their visible position is 'open'";
+            msg = "AppBars that are opening should indicate their visible position is 'shown'";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.areEqual("open", appBar._visiblePosition, msg);
+            LiveUnit.Assert.areEqual("shown", appBar._visiblePosition, msg);
         }
 
         var verifyOpenedViaShow = function (evt) {
@@ -905,9 +905,9 @@ CorsicaTests.AppBarTests = function () {
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             verifyClosedIndicators(false, appBar, msg);
 
-            msg = "AppBars that are opened should indicate their visible position is 'open'";
+            msg = "AppBars that are opened should indicate their visible position is 'shown'";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.areEqual("open", appBar._visiblePosition, msg);
+            LiveUnit.Assert.areEqual("shown", appBar._visiblePosition, msg);
 
             appBar.hide();
 
