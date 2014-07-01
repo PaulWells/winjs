@@ -72,6 +72,7 @@ define([
 
             // Send one of our events, duplicate of private _Overlay member function
             function _sendEvent(eventName, detail) {
+                /*jshint validthis: true */
                 if (this._disposed) {
                     return;
                 }
@@ -82,24 +83,28 @@ define([
 
             // Show commands, duplicate of private _Overlay member function
             function _showCommands(commands) {
+                /*jshint validthis: true */
                 var showHide = _resolveCommands.call(this, commands);
                 this._showAndHideCommands(showHide.commands, []);
             }
 
             // Hide commands, duplicate of private _Overlay member function
             function _hideCommands(commands) {
+                /*jshint validthis: true */
                 var showHide = _resolveCommands.call(this, commands);
                 this._showAndHideCommands([], showHide.commands);
             }
 
             // Hide commands, duplicate of private _Overlay member function
             function _showOnlyCommands(commands) {
+                /*jshint validthis: true */
                 var showHide = _resolveCommands.call(this, commands);
                 this._showAndHideCommands(showHide.commands, showHide.others);
             }
 
             // Resolves our commands, duplicate of private _Overlay member function
             function _resolveCommands(commands) {
+                /*jshint validthis: true */
                 // First make sure they're all DOM elements.
                 commands = _resolveElements(commands);
 
@@ -237,7 +242,7 @@ define([
 
                 if (!options.disabled) {
                     // Explicity set to false to ensure sure that setOptions sees the 'disabled' property on the options object.
-                    options.disabled = false; 
+                    options.disabled = false;
                 } else {
                     // If we're supposed to be disabled, set the disabled property immediately to 
                     // disconnect from the commandBar before setOptions() is called.
@@ -310,7 +315,7 @@ define([
                                 this._disabled = false;
 
                                 currentAppBar = this._uniqueId;
-                                if (!this._initializing) { 
+                                if (!this._initializing) {
                                     // An AppBar that was previously disabled is not guaranteed to be in sync with the commandBar when that AppBar is re-enabled. 
                                     // Re-load this AppBar's state into the commandBar.
                                     this.closedDisplayMode = this.closedDisplayMode;
@@ -706,7 +711,7 @@ define([
                         };
                     }
 
-                    if (!this.disabled) {                        
+                    if (!this.disabled) {
 
                         // Use AppBar element backgroundColor (RGBA) to set the new WebUICommandBar.backgroundColor and WebUICommandBar.opacity values
                         var bgColorString = getComputedStyle(this.element).backgroundColor;
@@ -828,7 +833,7 @@ define([
             {
                 _currentAppBarId: { // Expose this static member for unit testing.
                     get: function () {
-                        return currentAppBar; 
+                        return currentAppBar;
                     },
                 }
             });

@@ -197,6 +197,7 @@ define([
             //    2) Top AppBars
             // DOM order is respected, because an AppBar should not have a defined tabIndex
             function _setFocusToPreviousAppBar() {
+                /*jshint validthis: true */
                 var appBars = document.querySelectorAll("." + _Constants.appBarClass);
                 if (!appBars.length) {
                     return;
@@ -247,6 +248,7 @@ define([
             //    2) Top AppBars
             // DOM order is respected, because an AppBar should not have a defined tabIndex
             function _setFocusToNextAppBar() {
+                /*jshint validthis: true */
                 var appBars = document.querySelectorAll("." + _Constants.appBarClass);
 
                 var thisAppBarIndex = 0;

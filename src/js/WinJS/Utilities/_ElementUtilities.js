@@ -483,7 +483,7 @@ define([
             mouse: "mouseover"
         },
         pointerout: {
-            touch: "touchleave",
+            touch: null,
             mspointer: "MSPointerOut",
             mouse: "mouseout"
         },
@@ -708,8 +708,8 @@ define([
                     resizables[i].dispatchEvent(event);
                 }
             },
-                _resizeClass: { get: function () { return 'win-element-resize' } },
-                _resizeEvent: { get: function () { return 'WinJSElementResize' } }
+                _resizeClass: { get: function () { return 'win-element-resize'; } },
+                _resizeEvent: { get: function () { return 'WinJSElementResize'; } }
         }
     );
 
@@ -916,7 +916,7 @@ define([
         _MSGestureEvent: _MSGestureEvent,
         _MSManipulationEvent: _MSManipulationEvent,
 
-            _elementsFromPoint: function (x, y) {
+        _elementsFromPoint: function (x, y) {
             if (document.msElementsFromPoint) {
                 return document.msElementsFromPoint(x, y);
             } else {
@@ -943,8 +943,11 @@ define([
         _addEventListener: function _addEventListener(element, type, listener, useCapture) {
             var eventNameLower = type && type.toLowerCase();
             var entry = customEvents[eventNameLower];
+            var equivalentEvent = _BaseUtils._browserEventEquivalents[type];
             if (entry) {
                 entry.register(element, type, listener, useCapture);
+            } else if (equivalentEvent){
+                element.addEventListener(equivalentEvent, listener, useCapture);
             } else {
                 element.addEventListener(type, listener, useCapture);
             }
@@ -953,8 +956,11 @@ define([
         _removeEventListener: function _removeEventListener(element, type, listener, useCapture) {
             var eventNameLower = type && type.toLowerCase();
             var entry = customEvents[eventNameLower];
+            var equivalentEvent = _BaseUtils._browserEventEquivalents[type];
             if (entry) {
                 entry.unregister(element, type, listener, useCapture);
+            } else if (equivalentEvent) {
+                element.removeEventListener(equivalentEvent, listener, useCapture);
             } else {
                 element.removeEventListener(type, listener, useCapture);
             }
@@ -1102,6 +1108,29 @@ define([
                 }
                 return _resizeNotifier;
             }
+        },
+
+        // Appends a hidden child to the given element that will listen for being added
+        // to the DOM. When the hidden element is added to the DOM, it will dispatch a
+        // "WinJSNodeInserted" event on the provided element.
+        _addInsertedNotifier: function (element) {
+            var hiddenElement = document.createElement("div");
+            hiddenElement.style["animation-name"] = "WinJS-node-inserted";
+            hiddenElement.style["animation-duration"] = "0.01s";
+            hiddenElement.style["-webkit-animation-name"] = "WinJS-node-inserted";
+            hiddenElement.style["-webkit-animation-duration"] = "0.01s";
+            hiddenElement.style["position"] = "absolute";
+            element.appendChild(hiddenElement);
+
+            exports._addEventListener(hiddenElement, "animationStart", function(e) {
+                if (e.animationName === "WinJS-node-inserted") {
+                    var e = document.createEvent("Event");
+                    e.initEvent("WinJSNodeInserted", false, true);
+                    element.dispatchEvent(e);
+                }
+            }, false);
+
+            return hiddenElement;
         },
 
         // Browser agnostic method to set element flex style

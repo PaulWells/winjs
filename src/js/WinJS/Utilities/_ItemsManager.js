@@ -52,11 +52,11 @@ define([
             if (v) {
                 if (typeof v === "object" && v.element) {
                     var elementPromise = Promise.as(v.element);
-                    return elementPromise.then(function (e) { return { element: e, renderComplete: Promise.as(v.renderComplete) } });
+                    return elementPromise.then(function (e) { return { element: e, renderComplete: Promise.as(v.renderComplete) }; });
                 }
                 else {
                     var elementPromise = Promise.as(v);
-                    return elementPromise.then(function (e) { return { element: e, renderComplete: Promise.as() } });
+                    return elementPromise.then(function (e) { return { element: e, renderComplete: Promise.as() }; });
                 }
             }
             else {
@@ -140,7 +140,7 @@ define([
 
     function loadImage(srcUrl, image, data) {
         var imageId = nextImageLoaderId++;
-        imageLoader = imageLoader || new _ParallelWorkQueue(6);
+        imageLoader = imageLoader || new _ParallelWorkQueue._ParallelWorkQueue(6);
         return imageLoader.queue(function () {
             return new Promise(function (c, e, p) {
                 Scheduler.schedule(function ImageLoader_async_loadImage(jobInfo) {

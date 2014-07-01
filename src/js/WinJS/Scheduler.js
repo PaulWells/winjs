@@ -346,6 +346,7 @@ define([
         return false;
     }
     function illegal(job) {
+        /*jshint validthis: true */
         throw "Illegal call by job(" + job.id + ") in state: " + this.name;
     }
 
@@ -864,7 +865,7 @@ define([
         var output = "";
 
         function logJob(job, isRunning) {
-            output += 
+            output +=
                 "    " + (isRunning ? "*" : " ") +
                 "id: " + job.id +
                 ", priority: " + markerFromPriority(job.priority).name +
@@ -892,7 +893,7 @@ define([
 
         output += "Drain requests:\n";
         for (var i = 0, len = drainQueue.length; i < len; i++) {
-            output += 
+            output +=
                 "    " + (i === 0 ? "*" : " ") +
                 "priority: " + markerFromPriority(drainQueue[i].priority).name +
                 ", name: " + drainQueue[i].name +
