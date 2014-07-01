@@ -243,20 +243,20 @@ AppBar
     position: -ms-device-fixed;
     min-height: 25px; 
 
-    &.win-hiding > :not(.win-ellipsis) {
+    &.win-hiding > :not(.win-appbar-invokebutton) {
         opacity: 0;
     }    
 
-    &.win-hidden > :not(.win-ellipsis) {
+    &.win-hidden > :not(.win-appbar-invokebutton) {
         display: none !important;
     }
 
-    &.win-hiding .win-ellipsis, 
-    &.win-hidden .win-ellipsis {
+    &.win-hiding .win-appbar-invokebutton, 
+    &.win-hidden .win-appbar-invokebutton {
         width: 100%;
 }
 
-    .win-ellipsis {
+    .win-appbar-invokebutton {
         width: 40px;
         height: 40px;
         position: absolute;
@@ -266,7 +266,7 @@ AppBar
         border: none;
         min-width: 0px;
 
-        span {
+        .win-appbar.ellipsis {
             width: 36px;
             height: 36px;
             right: 0px;
@@ -281,20 +281,20 @@ AppBar
             }
         }
                 
-        &:focus span {
+        &:focus .win-appbar-ellipsis {
             border: solid 2px;
         }  
     }
 
-    &.win-bottom .win-ellipsis, 
-    &.win-bottom .win-ellipsis span, 
-    &.win-bottom .win-ellipsis span::before {
+    &.win-bottom .win-appbar-invokebutton, 
+    &.win-bottom .win-appbar-invokebutton .win-appbar-ellipsis, 
+    &.win-bottom .win-appbar-invokebutton .win-appbar-ellipsis::before {
         top: 0px;
     }
 
-    &.win-top .win-ellipsis, 
-    &.win-top .win-ellipsis span, 
-    &.win-top .win-ellipsis span::before {
+    &.win-top .win-appbar-invokebutton, 
+    &.win-top .win-appbar-invokebutton .win-appbar-ellipsis, 
+    &.win-top .win-appbar-invokebutton .win-appbar-ellipsis::before {
         bottom: 0px;
     }
 }

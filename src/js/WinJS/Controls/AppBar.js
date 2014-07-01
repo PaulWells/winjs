@@ -81,10 +81,6 @@ define([
                 hidingClass = "win-hiding",
                 hiddenClass = "win-hidden";
 
-            var firstDivClass = "win-firstdiv",
-                finalDivClass = "win-finaldiv",
-                ellipsisClass = "win-ellipsis";
-
             // Hook into event
             var appBarCommandEvent = false;
             var edgyHappening = null;
@@ -395,19 +391,19 @@ define([
                     options.commands = this._verifyCommandsOnly(this._element, "WinJS.UI.AppBarCommand");
                 }
 
-                // Add Show/Hide button.
-                this._ellipsis = document.createElement("BUTTON");
-                this._ellipsis.innerHTML = "<span></span>";
-                _ElementUtilities.addClass(this._ellipsis, ellipsisClass);
-                this._element.appendChild(this._ellipsis);
-                this._ellipsisPointerDown = function AppBar_ellipsisPointerDown() {
-                    _Overlay._Overlay._addHideFocusClass(this._ellipsis);
+                // Add Invoke button.
+                this._invokeButton = document.createElement("BUTTON");
+                this._invokeButton.innerHTML = "<span class='" + _Constants.ellipsisClass + "'></span>";
+                _ElementUtilities.addClass(this._invokeButton, _Constants.invokeButtonClass);
+                this._element.appendChild(this._invokeButton);
+                this._invokeButtonPointerDown = function AppBar_invokeButtonPointerDown() {
+                    _Overlay._Overlay._addHideFocusClass(this._invokeButton);
                 };
-                this._ellipsisClick = function AppBar_ellipsisClick() {
+                this._invokeButtonClick = function AppBar_invokeButtonClick() {
                     AppBar._toggleAppBarEdgy(_KeyboardBehavior._keyboardSeenLast);
                 };
-                this._ellipsis.addEventListener("pointerdown", this._ellipsisPointerDown.bind(this), false);
-                this._ellipsis.addEventListener("click", this._ellipsisClick.bind(this), false);
+                this._invokeButton.addEventListener("pointerdown", this._invokeButtonPointerDown.bind(this), false);
+                this._invokeButton.addEventListener("click", this._invokeButtonClick.bind(this), false);
 
 
                 // Run layout setter immediately. We need to know our layout in order to correctly 
@@ -629,7 +625,7 @@ define([
 
                     // Empties AppBar HTML and repopulates with passed in commands.
                     _ElementUtilities.empty(this._element);
-                    this._element.appendChild(this._ellipsis); // Keep our Show/Hide button.
+                    this._element.appendChild(this._invokeButton); // Keep our Show/Hide button.
 
                     // In case they had only one command to set...
                     if (!Array.isArray(commands)) {
@@ -652,13 +648,13 @@ define([
                         if (oldValue !== value) {
                             if (value === closedDisplayModes.none) {
                                 this._closedDisplayMode = closedDisplayModes.none;
-                                this._ellipsis.style.display = "none";
+                                this._invokeButton.style.display = "none";
                                 this._element.style.paddingRight = "";
                                 this._element.style.width = "";
                             } else {
                                 // Minimal is default fallback.
                                 this._closedDisplayMode = closedDisplayModes.minimal;
-                                this._ellipsis.style.display = "";
+                                this._invokeButton.style.display = "";
                                 this._element.style.paddingRight = "40px";
                                 this._element.style.width = "calc(100% - 40px)";
                             }
@@ -1511,13 +1507,13 @@ define([
                     }
 
 
-                    // Ellipsis should be the second to last element in the AppBar's tab order. Second to the finalDiv.
-                    if (this._element.children[this._element.children.length - 2] !== this._ellipsis) {
-                        this._element.insertBefore(this._ellipsis, appBarFinalDiv);
+                    // invokeButton should be the second to last element in the AppBar's tab order. Second to the finalDiv.
+                    if (this._element.children[this._element.children.length - 2] !== this._invokeButton) {
+                        this._element.insertBefore(this._invokeButton, appBarFinalDiv);
                     }
                     var elms = this._element.getElementsByTagName("*");
                     var highestTabIndex = _UIUtilities._getHighestTabIndexInList(elms);
-                    this._ellipsis.tabIndex = highestTabIndex;
+                    this._invokeButton.tabIndex = highestTabIndex;
 
                     // Update the tabIndex of the firstDiv & finalDiv
                     if (_isThereVisibleNonStickyBar()) {

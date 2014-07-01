@@ -1088,11 +1088,11 @@ CorsicaTests.AppBarTests = function () {
         verifyIsOpen(appBar);
         verifyLightDismissable(appBar);
 
-        var shouldHaveEllipsis = appBar.winControl.closedDisplayMode !== "none";
-        if (shouldHaveEllipsis) {
-            verifyHasEllipsis(appBar);            
+        var shouldHaveInvokeButton = appBar.winControl.closedDisplayMode !== "none";
+        if (shouldHaveInvokeButton) {
+            verifyHasInvokeButton(appBar);            
         } else {
-            verifyNoEllipsis(appBar);
+            verifyNoInvokeButton(appBar);
         }
 
     }
@@ -1106,11 +1106,11 @@ CorsicaTests.AppBarTests = function () {
         verifyIsOpen(appBar);
         verifyIsSticky(appBar);
 
-        var shouldHaveEllipsis = appBar.winControl.closedDisplayMode !== "none";
-        if (shouldHaveEllipsis) {
-            verifyHasEllipsis(appBar);
+        var shouldHaveInvokeButton = appBar.winControl.closedDisplayMode !== "none";
+        if (shouldHaveInvokeButton) {
+            verifyHasInvokeButton(appBar);
         } else {
-            verifyNoEllipsis(appBar);
+            verifyNoInvokeButton(appBar);
         }
 
     }
@@ -1137,19 +1137,19 @@ CorsicaTests.AppBarTests = function () {
         failures = checkShouldBeDisplayNone(appBar, false);
         LiveUnit.Assert.isFalse(failures.length, msg);
 
-        // Closed Minimal AppBar should have Ellipsis.        
-        verifyHasEllipsis(appBar);
+        // Closed Minimal AppBar should have InvokeButton.        
+        verifyHasInvokeButton(appBar);
 
-        // Every all immediate children of the AppBar other than the ellipsis should not be displayed or be tabbable.
-        var childrenMinusEllipsis = document.body.querySelectorAll("#" + appBar.id + " > :not(.win-ellipsis)");
-        msg = "Except for Ellipsis, children of Closed Minimal AppBar should not be visible or have dimensions.";
+        // Every all immediate children of the AppBar other than the invokeButton should not be displayed or be tabbable.
+        var childrenMinusInvokeButton = document.body.querySelectorAll("#" + appBar.id + " > :not(.win-appbar-invokebutton)");
+        msg = "Except for InvokeButton, children of Closed Minimal AppBar should not be visible or have dimensions.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        failures = checkShouldBeDisplayNone(childrenMinusEllipsis, true);
+        failures = checkShouldBeDisplayNone(childrenMinusInvokeButton, true);
         LiveUnit.Assert.isFalse(failures.length, msg);
 
-        msg = "Except for Ellipsis, children of Closed Minimal AppBar should not be tab stops";
+        msg = "Except for InvokeButton, children of Closed Minimal AppBar should not be tab stops";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        failures = checkShouldBeTabStop(childrenMinusEllipsis, false);
+        failures = checkShouldBeTabStop(childrenMinusInvokeButton, false);
         LiveUnit.Assert.isFalse(failures.length, msg);
     }
 
@@ -1235,14 +1235,14 @@ CorsicaTests.AppBarTests = function () {
 
         msg = "Content hosted by Open AppBar should have dimensions";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        var contents = appBar.querySelectorAll("*:not(.win-ellipsis):not(.win-finaldiv):not(.win-firstdiv)");
+        var contents = appBar.querySelectorAll("*:not(.win-appbar-invokebutton):not(.win-finaldiv):not(.win-firstdiv)");
         failures = checkShouldBeDisplayNone(contents, false);
         LiveUnit.Assert.isFalse(failures.length, msg);        
 
         // Verify appBar sub components are in proper DOM order.
         var firstDiv = appBar.querySelector(".win-firstdiv");
         var finalDiv = appBar.querySelector(".win-finaldiv");
-        var ellipsis = appBar.querySelector(".win-ellipsis");
+        var invokeButton = appBar.querySelector(".win-appbar-invokebutton");
         var children = appBar.children;
 
         msg = "firstDiv should be first element in open AppBar";
@@ -1253,56 +1253,56 @@ CorsicaTests.AppBarTests = function () {
         LiveUnit.LoggingCore.logComment("Test: " + msg);        
         LiveUnit.Assert.areEqual(children[children.length - 1].className, finalDiv.className, msg);
 
-        msg = "ellipsis should be 2nd to last element in open AppBar";
+        msg = "invokeButton should be 2nd to last element in open AppBar";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        LiveUnit.Assert.areEqual(children[children.length - 2].className, ellipsis.className, msg);
+        LiveUnit.Assert.areEqual(children[children.length - 2].className, invokeButton.className, msg);
     }
 
-    var ellipsisWidth = 40;
-    function verifyHasEllipsis(appBar) {
+    var invokeButtonWidth = 40;
+    function verifyHasInvokeButton(appBar) {
         appBar = appBar.element || appBar;
 
         var msg,
             failures;
 
-        var ellipsis = appBar.querySelector(".win-ellipsis");
-        var ellipsisSubTree = appBar.querySelectorAll(".win-ellipsis *");
+        var invokeButton = appBar.querySelector(".win-appbar-invokebutton");
+        var invokeButtonSubTree = appBar.querySelectorAll(".win-appbar-invokebutton *");
                   
-        msg = "AppBar with 'minimal' closedDisplayMode should have Ellipsis TabStop.";
-        failures = checkShouldBeTabStop(ellipsis, true);
+        msg = "AppBar with 'minimal' closedDisplayMode should have InvokeButton TabStop.";
+        failures = checkShouldBeTabStop(invokeButton, true);
         LiveUnit.Assert.isFalse(failures.length, msg);
 
-        msg = "AppBar with 'minimal' closedDisplayMode should have visible Ellipsis with dimensions.";
-        failures = checkShouldBeDisplayNone(ellipsis, false);
+        msg = "AppBar with 'minimal' closedDisplayMode should have visible InvokeButton with dimensions.";
+        failures = checkShouldBeDisplayNone(invokeButton, false);
         LiveUnit.Assert.isFalse(failures.length, msg);
-        failures = checkShouldBeDisplayNone(ellipsisSubTree, false);
+        failures = checkShouldBeDisplayNone(invokeButtonSubTree, false);
         LiveUnit.Assert.isFalse(failures.length, msg);
        
-        msg = "AppBar with 'minimal' closedDisplayMode should reserve right padding that matches the width of the ellipsis";
+        msg = "AppBar with 'minimal' closedDisplayMode should reserve right padding that matches the width of the invokeButton";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        LiveUnit.Assert.areEqual(ellipsisWidth, parseInt(getComputedStyle(appBar).paddingRight), msg);
+        LiveUnit.Assert.areEqual(invokeButtonWidth, parseInt(getComputedStyle(appBar).paddingRight), msg);
     }
 
-    function verifyNoEllipsis(appBar) {
+    function verifyNoInvokeButton(appBar) {
         appBar = appBar.element || appBar;
 
         var msg,
             failures;
 
-        var ellipsis = appBar.querySelector(".win-ellipsis");
-        var ellipsisSubTree = appBar.querySelectorAll(".win-ellipsis *");
+        var invokeButton = appBar.querySelector(".win-appbar-invokebutton");
+        var invokeButtonSubTree = appBar.querySelectorAll(".win-appbar-invokebutton *");
           
-        msg = "AppBar with 'none' closedDisplayMode should not have Ellipsis tab stop.";
-        failures = checkShouldBeTabStop(ellipsis, false);
+        msg = "AppBar with 'none' closedDisplayMode should not have InvokeButton tab stop.";
+        failures = checkShouldBeTabStop(invokeButton, false);
         LiveUnit.Assert.isFalse(failures.length, msg);
 
-        msg = "AppBar with 'none' closedDisplayMode should not have visible Ellipsis with dimensions.";
-        failures = checkShouldBeDisplayNone(ellipsis, true);
+        msg = "AppBar with 'none' closedDisplayMode should not have visible InvokeButton with dimensions.";
+        failures = checkShouldBeDisplayNone(invokeButton, true);
         LiveUnit.Assert.isFalse(failures.length, msg);
         
-        msg = "AppBar with 'none' closedDisplayMode should not reserve right padding for ellipsis width";
+        msg = "AppBar with 'none' closedDisplayMode should not reserve right padding for invokeButton width";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
-        LiveUnit.Assert.areNotEqual(ellipsisWidth, parseInt(getComputedStyle(appBar).paddingRight), msg);
+        LiveUnit.Assert.areNotEqual(invokeButtonWidth, parseInt(getComputedStyle(appBar).paddingRight), msg);
     }
 
     function verifyIsSticky(appBar) {

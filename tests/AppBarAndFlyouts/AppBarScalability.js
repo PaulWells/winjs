@@ -10,9 +10,9 @@ var CorsicaTests = CorsicaTests || {};
 CorsicaTests.AppBarScalabilityTests = function () {
     "use strict";
 
-    // If the AppBar has the ellipsis (ie closedDisplayMode !== 'none', then the AppBar also has reserved some right padding 
+    // If the AppBar has the invokeButton (ie closedDisplayMode !== 'none', then the AppBar also has reserved some right padding 
     // to keep other contents in the flow of the AppBar DOM from overlaying it. 
-    var rightPaddingReservedForEllipsis = 40;
+    var rightPaddingReservedForInvokeButton = 40;
 
     // This is the element that will contain the AppBars for all of these tests. 
     // Normally AppBars should be a direct descendant of the body element, but to be able to test our window resize handlers, 
@@ -66,7 +66,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
 
     function testHelper() {
         // Return the width that would be available to the AppBar when full size (not reduced). Full size AppBar always has 0 left padding. 
-        // If it doesn't have ellipsis because of closedDisplayMode 'none', Full-sized AppBar has 0 right padding, otherwise it will have some right padding.
+        // If it doesn't have invokeButton because of closedDisplayMode 'none', Full-sized AppBar has 0 right padding, otherwise it will have some right padding.
 
         if (testHelperPromise) {
             // We expect scaling is completed synchronously from the time this function is called.
@@ -76,8 +76,8 @@ CorsicaTests.AppBarScalabilityTests = function () {
 
         var prevDisplay = this.appBarEl.style.display;
         this.appBarEl.style.display = "";
-        var ellipsisPadding = this.appBarEl.winControl.closedDisplayMode === "none" ? 0 : rightPaddingReservedForEllipsis;
-        var returnValue = this.appBarEl.offsetWidth - ellipsisPadding;
+        var invokeButtonPadding = this.appBarEl.winControl.closedDisplayMode === "none" ? 0 : rightPaddingReservedForInvokeButton;
+        var returnValue = this.appBarEl.offsetWidth - invokeButtonPadding;
         this.appBarEl.style.display = prevDisplay;
         return returnValue;
     }
@@ -110,8 +110,8 @@ CorsicaTests.AppBarScalabilityTests = function () {
         // Check if full size commands would fit in the full size AppBar. Otherwise we expect the AppBar to have scaled down. 
 
         var ctrlWidth = parseInt(getComputedStyle(host).width, 10); // In case AppBar is completely hidden we measure the width of its parent.
-        var hasEllipsis = appBarElem.winControl.closedDisplayMode !== "none";
-        var spaceForCommandsInFullSizeAppBar = ctrlWidth - (hasEllipsis ? rightPaddingReservedForEllipsis : 0);
+        var hasInvokeButton = appBarElem.winControl.closedDisplayMode !== "none";
+        var spaceForCommandsInFullSizeAppBar = ctrlWidth - (hasInvokeButton ? rightPaddingReservedForInvokeButton : 0);
 
         LiveUnit.LoggingCore.logComment("Space Available for commands: " + spaceForCommandsInFullSizeAppBar);
         LiveUnit.LoggingCore.logComment("AppBar command button count: " + cmdCount);
@@ -216,48 +216,48 @@ CorsicaTests.AppBarScalabilityTests = function () {
 
         topAppBar.show();
 
-        LiveUnit.LoggingCore.logComment("Verify padding for full-size AppBar with Ellipsis");
+        LiveUnit.LoggingCore.logComment("Verify padding for full-size AppBar with InvokeButton");
         topAppBar.closedDisplayMode = 'minimal';
         WinJS.Utilities.removeClass(topAppBarElem, reducedAppBarClass);
         var expectedLeftPadding = 0;
-        var expectedRightPadding = rightPaddingReservedForEllipsis;
+        var expectedRightPadding = rightPaddingReservedForInvokeButton;
         var appBarStyle = getComputedStyle(topAppBarElem);
-        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with Ellipsis");
-        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with Ellipsis");
+        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with InvokeButton");
+        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with InvokeButton");
 
-        LiveUnit.LoggingCore.logComment("Verify padding for full-size AppBar with no Ellipsis");
+        LiveUnit.LoggingCore.logComment("Verify padding for full-size AppBar with no InvokeButton");
         topAppBar.closedDisplayMode = "none";
         WinJS.Utilities.removeClass(topAppBarElem, reducedAppBarClass);
         expectedLeftPadding = 0;
         expectedRightPadding = 0;
         appBarStyle = getComputedStyle(topAppBarElem);
-        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with no Ellipsis");
-        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with no Ellipsis");
+        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with no InvokeButton");
+        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with no InvokeButton");
 
-        LiveUnit.LoggingCore.logComment("Verify padding for win-reduced AppBar with Ellipsis");
+        LiveUnit.LoggingCore.logComment("Verify padding for win-reduced AppBar with InvokeButton");
         topAppBar.closedDisplayMode = 'minimal';
         WinJS.Utilities.addClass(topAppBarElem, reducedAppBarClass);
         expectedLeftPadding = 10;
-        expectedRightPadding = rightPaddingReservedForEllipsis;
+        expectedRightPadding = rightPaddingReservedForInvokeButton;
         appBarStyle = getComputedStyle(topAppBarElem);
-        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with Ellipsis");
-        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with Ellipsis");
+        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with InvokeButton");
+        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with InvokeButton");
 
-        LiveUnit.LoggingCore.logComment("Verify padding for win-reduced AppBar with no Ellipsis");
+        LiveUnit.LoggingCore.logComment("Verify padding for win-reduced AppBar with no InvokeButton");
         topAppBar.closedDisplayMode = "none";
         WinJS.Utilities.addClass(topAppBarElem, reducedAppBarClass);
         expectedLeftPadding = 10;
         expectedRightPadding = 10;
         appBarStyle = getComputedStyle(topAppBarElem);
-        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with no Ellipsis");
-        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with no Ellipsis");
+        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with no InvokeButton");
+        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with no InvokeButton");
 
         complete();
     };
 
     this.testCommandSizeAtAppBarInitAndResize = function (complete) {
-        var noEllipsis_topAppBar,
-            ellipsis_bottomAppBar;
+        var noInvokeButton_topAppBar,
+            invokeButton_bottomAppBar;
 
         var topAppBarElem = document.getElementById("topappbar"),
             bottomAppBarElem = document.getElementById("bottomappbar"),
@@ -301,10 +301,10 @@ CorsicaTests.AppBarScalabilityTests = function () {
         // The AppBar's will each start at 650px wide and are constrained by the width of their parent element. 
         // They will need to scale their content down to fit everything on a sigle row. 
         // They should do so by scheduling a job to apply the win-reduced class on themselves after construction. 
-        noEllipsis_topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'none' });
-        LiveUnit.LoggingCore.logComment("noEllipsis_topAppBar has initialized with more commands than it can fit");
+        noInvokeButton_topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top', commands: commands, closedDisplayMode: 'none' });
+        LiveUnit.LoggingCore.logComment("noInvokeButton_topAppBar has initialized with more commands than it can fit");
 
-        var msg = "noEllipsis_topAppBar with too many commands should not apply reduced class synchronously from construction.";
+        var msg = "noInvokeButton_topAppBar with too many commands should not apply reduced class synchronously from construction.";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         LiveUnit.Assert.isFalse(WinJS.Utilities.hasClass(topAppBarElem, reducedAppBarClass, msg));
 
@@ -312,14 +312,14 @@ CorsicaTests.AppBarScalabilityTests = function () {
             testHelperPromiseComplete = complete;
         }).then(function () {
 
-            msg = "noEllipsis_topAppBar with too many comands should have applied reduced class asynchronously after construction.";
+            msg = "noInvokeButton_topAppBar with too many comands should have applied reduced class asynchronously after construction.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(topAppBarElem, reducedAppBarClass), msg);
 
-            ellipsis_bottomAppBar = new WinJS.UI.AppBar(bottomAppBarElem, { sticky: true, closedDisplayMode: 'minimal' });
-            LiveUnit.LoggingCore.logComment("ellipsis_bottomAppBar has initialized with more commands than it can fit");
+            invokeButton_bottomAppBar = new WinJS.UI.AppBar(bottomAppBarElem, { sticky: true, closedDisplayMode: 'minimal' });
+            LiveUnit.LoggingCore.logComment("invokeButton_bottomAppBar has initialized with more commands than it can fit");
 
-            var msg = "ellipsis_bottomAppBar with too many commands should not apply reduced class synchronously from construction.";
+            var msg = "invokeButton_bottomAppBar with too many commands should not apply reduced class synchronously from construction.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.isFalse(WinJS.Utilities.hasClass(bottomAppBarElem, reducedAppBarClass, msg));
 
@@ -328,7 +328,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             });
             return testHelperPromise;
         }).then(function () {
-            msg = "ellipsis_bottomAppBar with too many commands should have applied reduced class asynchronously after construction.";
+            msg = "invokeButton_bottomAppBar with too many commands should have applied reduced class asynchronously after construction.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(topAppBarElem, reducedAppBarClass), msg);
 
@@ -338,53 +338,53 @@ CorsicaTests.AppBarScalabilityTests = function () {
             verifyCommandSizes(bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(bottomAppBarElem.querySelector("div.win-command")));
                         
             msg = "TEST ERROR: Width of full size commands in top and bottom AppBars don't both match the preconditional value: " + expectedWidthOfFullSizeCommands  ;
-            LiveUnit.Assert.isTrue(expectedWidthOfFullSizeCommands === noEllipsis_topAppBar._layout._getWidthOfFullSizeCommands() && expectedWidthOfFullSizeCommands === ellipsis_bottomAppBar._layout._getWidthOfFullSizeCommands(), msg);
-            var minimumSizeForFullSizeAppBarWithNoEllipsis = expectedWidthOfFullSizeCommands;
-            var minimumSizeForFullSizeAppBarWithEllipsis = expectedWidthOfFullSizeCommands + rightPaddingReservedForEllipsis;
+            LiveUnit.Assert.isTrue(expectedWidthOfFullSizeCommands === noInvokeButton_topAppBar._layout._getWidthOfFullSizeCommands() && expectedWidthOfFullSizeCommands === invokeButton_bottomAppBar._layout._getWidthOfFullSizeCommands(), msg);
+            var minimumSizeForFullSizeAppBarWithNoInvokeButton = expectedWidthOfFullSizeCommands;
+            var minimumSizeForFullSizeAppBarWithInvokeButton = expectedWidthOfFullSizeCommands + rightPaddingReservedForInvokeButton;
 
 
             // Show both AppBars so we can test resizing scenarios will cause the AppBar to scale, closed AppBars won't scale on resize.
-            noEllipsis_topAppBar.show();
-            ellipsis_bottomAppBar.show();
+            noInvokeButton_topAppBar.show();
+            invokeButton_bottomAppBar.show();
 
             // Begin Increasing the container width to increase the AppBar width's in turn. Eventually scaling to full size commands.
             LiveUnit.LoggingCore.logComment("Testing that AppBar resize scales command appropriately.");
 
-            // Set width of container to be just under the minimum required for AppBar's with no ellipsis to scale to full size and verify that neither AppBar scales.
-            setWidth(host, minimumSizeForFullSizeAppBarWithNoEllipsis - 1);
+            // Set width of container to be just under the minimum required for AppBar's with no invokeButton to scale to full size and verify that neither AppBar scales.
+            setWidth(host, minimumSizeForFullSizeAppBarWithNoInvokeButton - 1);
 
             // Workaround since we can't trigger a window resize from javascript directly.
             // Let the AppBar layout know that a resize occurred directly.
-            noEllipsis_topAppBar._layout.resize();
-            ellipsis_bottomAppBar._layout.resize();
+            noInvokeButton_topAppBar._layout.resize();
+            invokeButton_bottomAppBar._layout.resize();
             
             msg = "Neither AppBar should be wide enough to hold commands at full-size."
             LiveUnit.Assert.isTrue(isReducedSizeExpected(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
             LiveUnit.Assert.isTrue(isReducedSizeExpected(bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
 
-            // Set width of container to be EXACTLY the minimum required for AppBar's with no ellipsis to scale to full size and verify that only that AppBar scales up.
-            setWidth(host, minimumSizeForFullSizeAppBarWithNoEllipsis);
-            noEllipsis_topAppBar._layout.resize();
-            ellipsis_bottomAppBar._layout.resize();
+            // Set width of container to be EXACTLY the minimum required for AppBar's with no invokeButton to scale to full size and verify that only that AppBar scales up.
+            setWidth(host, minimumSizeForFullSizeAppBarWithNoInvokeButton);
+            noInvokeButton_topAppBar._layout.resize();
+            invokeButton_bottomAppBar._layout.resize();
 
-            msg = "AppBars without Ellipsis should now be wide enough to hold commands at full size. AppBars with Ellipsis should still have reduced commands."
+            msg = "AppBars without InvokeButton should now be wide enough to hold commands at full size. AppBars with InvokeButton should still have reduced commands."
             LiveUnit.Assert.isFalse(isReducedSizeExpected(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
             LiveUnit.Assert.isTrue(isReducedSizeExpected(bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
 
-            // Set width of container to be just under the minimum required for AppBar's WITH ellipsis to scale to full size. Verify no change since last resize.
-            setWidth(host, minimumSizeForFullSizeAppBarWithEllipsis - 1);
-            noEllipsis_topAppBar._layout.resize();
-            ellipsis_bottomAppBar._layout.resize();
+            // Set width of container to be just under the minimum required for AppBar's WITH invokeButton to scale to full size. Verify no change since last resize.
+            setWidth(host, minimumSizeForFullSizeAppBarWithInvokeButton - 1);
+            noInvokeButton_topAppBar._layout.resize();
+            invokeButton_bottomAppBar._layout.resize();
 
             LiveUnit.Assert.isFalse(isReducedSizeExpected(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
             LiveUnit.Assert.isTrue(isReducedSizeExpected(bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
 
-            // Set width of container to be EXACTLY the minimum required for AppBar's WITH ellipsis to scale to full size. Verify Both AppBars are now fullsize.           
-            setWidth(host, minimumSizeForFullSizeAppBarWithEllipsis);
-            noEllipsis_topAppBar._layout.resize();
-            ellipsis_bottomAppBar._layout.resize();
+            // Set width of container to be EXACTLY the minimum required for AppBar's WITH invokeButton to scale to full size. Verify Both AppBars are now fullsize.           
+            setWidth(host, minimumSizeForFullSizeAppBarWithInvokeButton);
+            noInvokeButton_topAppBar._layout.resize();
+            invokeButton_bottomAppBar._layout.resize();
 
-            msg = "AppBars with Ellipsis should now be EXACTLY wide enough to hold commands at full size. All AppBars should be full size."
+            msg = "AppBars with InvokeButton should now be EXACTLY wide enough to hold commands at full size. All AppBars should be full size."
             LiveUnit.Assert.isFalse(isReducedSizeExpected(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
             LiveUnit.Assert.isFalse(isReducedSizeExpected(bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
 

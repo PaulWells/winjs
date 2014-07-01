@@ -97,14 +97,14 @@
             background-color: rgb(0, 0, 0);
             border-color: rgb(0, 0, 0);
                     
-            button.win-ellipsis {                
+            button.win-appbar-invokebutton {                
                 background-color: rgb(0, 0, 0);
 
-                span {
+                .win-appbar-ellipsis {
                      border-color: transparent;
                 }
                 
-                &:focus span {
+                &:focus .win-appbar-ellipsis {
                     border-color: rgb(255, 255, 255);
                 }
                                
@@ -170,8 +170,10 @@
         otherwise .win-ui-dark button.win-command:focus is more
         qualified and stomps on the transparent that doesn't have .win-ui-dark
         */
-        &.win-command:enabled.win-hidefocus:focus, .win-command:enabled.win-hidefocus:focus,
-        &.win-appbar .win-ellipsis.win-hidefocus:focus span, .win-appbar .win-ellipsis.win-hidefocus:focus span  {
+        &.win-command:enabled.win-hidefocus:focus, 
+        .win-command:enabled.win-hidefocus:focus,
+        &.win-appbar .win-appbar-invokebutton.win-hidefocus:focus .win-appbar-ellipsis, 
+        .win-appbar .win-appbar-invokebutton.win-hidefocus:focus .win-appbar-ellipsis  {
             border-color: transparent;
         }
     }
@@ -275,14 +277,14 @@
             background-color: rgb(240, 240, 240);
             border-color: rgb(240, 240, 240);
 
-              button.win-ellipsis {        
+              button.win-appbar-invokebutton {        
                   background-color: rgb(240, 240, 240);        
                 
-                span {
+                .win-appbar-ellipsis {
                      border-color: transparent;
                 }
                 
-                &:focus span {
+                &:focus .win-appbar-ellipsis {
                    border-color: rgb(0, 0, 0);
                 }
                 
@@ -338,8 +340,10 @@
         otherwise .win-ui-dark button.win-command:focus is more
         qualified and stomps on the transparent that doesn't have .win-ui-dark
         */
-        &.win-command:enabled.win-hidefocus:focus, .win-command:enabled.win-hidefocus:focus,
-        &.win-appbar .win-ellipsis.win-hidefocus:focus span, .win-appbar .win-ellipsis.win-hidefocus:focus span {
+        &.win-command:enabled.win-hidefocus:focus,
+        .win-command:enabled.win-hidefocus:focus,
+        &.win-appbar .win-appbar-invokebutton.win-hidefocus:focus .win-appbar-ellipsis,
+        .win-appbar .win-appbar-invokebutton.win-hidefocus:focus .win-appbar-ellipsis {
             border-color: transparent;
         }
     }

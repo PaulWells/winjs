@@ -16,7 +16,7 @@ define([
     // AppBar will use this when AppBar.layout property is set to "custom"
     _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
         _AppBarBaseLayout: _Base.Namespace._lazy(function () {
-            var baseType = "custom";
+            var baseType = _Constants.appBarLayoutCustom;
 
             var strings = {
                 get nullCommand() { return _Resources._getWinJSString("ui/nullCommand").value; }
@@ -143,8 +143,8 @@ define([
     // AppBar will use this when AppBar.layout property is set to "commands"
     _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
         _AppBarCommandsLayout: _Base.Namespace._lazy(function () {
-            var layoutClassName = "win-commandlayout";
-            var layoutType = "commands";
+            var layoutClassName = _Constants.commandLayoutClass;
+            var layoutType = _Constants.appBarLayoutCommands;
 
             var _AppBarCommandsLayout = _Base.Class.derive(exports._AppBarBaseLayout, function _AppBarCommandsLayout_ctor(appBarEl) {
                 exports._AppBarBaseLayout.call(this, appBarEl, {_className: layoutClassName, _type: layoutType});
