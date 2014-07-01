@@ -658,9 +658,11 @@ define([
                                 this._element.style.paddingRight = "40px";
                                 this._element.style.width = "calc(100% - 40px)";
                             }
+
+                            // The invoke button has changed the amount of available space in the AppBar. Layout might need to scale.
                             this._layout.resize();
 
-                            if (this._closed) {
+                            if (this._visiblePosition !== displayModeVisiblePositions.shown) {
                                 // If the value is being set while we are not showing, change to our new position.
                                 this._changeVisiblePosition(displayModeVisiblePositions[this._closedDisplayMode]);
                             }

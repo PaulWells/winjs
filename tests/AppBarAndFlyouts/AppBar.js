@@ -845,8 +845,9 @@ CorsicaTests.AppBarTests = function () {
         none: "hidden",
         hidden: "hidden",
         minimal: "minimal",
-        open: "open",
+        shown: "shown",
     }
+
     this.testOpenAndClose_Indicators_DisplayModes_And_VisiblePositions = function (complete) {
 
         var topInitialCDM = 'none';
@@ -877,7 +878,7 @@ CorsicaTests.AppBarTests = function () {
         var verifyClosingIndicators = function (expected, appBar, msg) {
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual(expected, appBar.hidden, msg);
-            LiveUnit.Assert.areEqual(expected, appBar._closed, msg);
+            LiveUnit.Assert.areEqual(expected, appBar._visiblePosition !== displayModeVisiblePositions.shown, msg);
         }
 
         var topBarOpenedAndClosed;
