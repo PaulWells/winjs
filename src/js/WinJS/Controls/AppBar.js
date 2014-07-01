@@ -1252,8 +1252,11 @@ define([
                 },
 
                 _commandsUpdated: function AppBar_commandsUpdated() {
-                    this._layout.commandsUpdated();
-                    this._layout.scale();
+                    // If we are still initializing then we don't have a layout yet so it doesn't need updating. 
+                    if (!this._initializing) {
+                        this._layout.commandsUpdated();
+                        this._layout.scale();
+                    }
                 },
 
                 _beginAnimateCommands: function AppBar_beginAnimateCommands(showCommands, hideCommands, otherVisibleCommands) {
