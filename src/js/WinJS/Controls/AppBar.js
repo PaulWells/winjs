@@ -797,7 +797,7 @@ define([
 
                     // If we're already shown, we are just going to animate our position, not fire events or manage focus.
                     if (!this.disabled && this._visiblePosition !== displayModeVisiblePositions.shown) {
-                        showing == appbarShownState;
+                        showing = appbarShownState;
                     }
 
                     this._changeVisiblePosition(toPosition, showing);
