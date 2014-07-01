@@ -697,7 +697,9 @@ define([
                 hidden: {
                     get: function () {
                         // Returns true if AppBar is 'hidden'.
-                        return this._closed || this._doNext === displayModeVisiblePositions.minimal || this._doNext === displayModeVisiblePositions.none;
+                        return this._visiblePosition !== displayModeVisiblePositions.shown ||
+                            this._doNext === displayModeVisiblePositions.minimal ||
+                            this._doNext === displayModeVisiblePositions.none;
                     },
                 },
 
@@ -791,10 +793,15 @@ define([
                 _show: function AppBar_show() {
 
                     var toPosition = displayModeVisiblePositions.shown;
-                    var showing = !this.disabled && this._closed && appbarShownState;
+                    var showing = null;
 
-                    // If we're already shown, we just want to animate our position, not fire events or manage focus.
+                    // If we're already shown, we are just going to animate our position, not fire events or manage focus.
+                    if (!this.disabled && this._visiblePosition !== displayModeVisiblePositions.shown) {
+                        showing == appbarShownState;
+                    }
+
                     this._changeVisiblePosition(toPosition, showing);
+
                     if (showing) {
                         // Configure shown state for lightdismiss & sticky appbars.
                         if (!this.sticky) {
@@ -835,9 +842,13 @@ define([
                 _hide: function AppBar_hide(toPosition) {
 
                     var toPosition = toPosition || displayModeVisiblePositions[this.closedDisplayMode];
-                    var hiding = !this._closed && appbarHiddenState;
+                    var hiding = null;
 
-                    // If were already hidden, we just want to animate our position, not fire events or manage focus again.
+                    // If were already hidden, we are just going to animate our position, not fire events or manage focus again.
+                    if (this._visiblePosition === displayModeVisiblePositions.shown) {
+                        hiding = appbarHiddenState;
+                    }
+
                     this._changeVisiblePosition(toPosition, hiding);
                     if (hiding) {
                         // Determine if there are any AppBars that are shown.
@@ -945,6 +956,7 @@ define([
                     // Layout might want to handle additional keys
                     this._layout.handleKeyDown(event);
                 },
+
                 _visiblePixels: {
                     get: function () {
                         // Returns object containing pixel height of each visible position
@@ -957,6 +969,7 @@ define([
                         };
                     }
                 },
+
                 _visiblePosition: {
                     // Returns string value of our nearest, stationary, visible position.
                     get: function () {
@@ -973,13 +986,6 @@ define([
                     // Returns true if our visible position is not completely hidden, else false.
                     get: function () {
                         return (this._visiblePosition !== displayModeVisiblePositions.none);
-                    }
-                },
-
-                _closed: {
-                    // Returns true if we are not in shown position, else false.
-                    get: function () {
-                        return (this._visiblePosition !== displayModeVisiblePositions.shown);
                     }
                 },
 
@@ -1414,7 +1420,7 @@ define([
                             positionOffSet.bottom = "";
                             positionOffSet.top = innerEdgeOffSet + "px";
                         } else {
-                            positionOffSet.bottom = innerEdgeOffSet + "px";
+                            positionOffSet.bottom = innerEdgeOffSet + "px"; f
                             positionOffSet.top = "";
                         }
                     } else {
