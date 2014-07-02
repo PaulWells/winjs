@@ -64,20 +64,5 @@ define([
         wideClass: "win-wide",
         _clickEatingAppBarClass: "win-appbarclickeater",
         _clickEatingFlyoutClass: "win-flyoutmenuclickeater",
-
-        //// Maps each notion of a display modes to the corresponding visible position
-        //displayModeVisiblePositions : {
-        //    disabled: "hidden",
-        //    none: "hidden",
-        //    hidden: "hidden",
-        //    minimal: "minimal",
-        //    shown: "shown",
-        //},
-
-        //// Enum of closedDisplayMode constants 
-        //closedDisplayModes : {
-        //    none: "none",
-        //    minimal: "minimal",
-        //},
     });
 });
