@@ -1118,12 +1118,10 @@ define([
                     this._layout.scale();
 
                     _ElementUtilities.removeClass(this._element, hiddenClass);
+                    _ElementUtilities.addClass(this._element, showingClass);
 
                     // Send our "beforeShow" event 
                     this._sendEvent(_Overlay._Overlay.beforeShow);
-
-                    _ElementUtilities.addClass(this._element, showingClass);
-
                 },
 
                 _afterShow: function AppBar_afterShow() {
@@ -1138,11 +1136,10 @@ define([
                 _beforeHide: function AppBar_beforeHide() {
 
                     _ElementUtilities.removeClass(this._element, shownClass);
+                    _ElementUtilities.addClass(this._element, hidingClass);
 
                     // Send our "beforeHide" event
                     this._sendEvent(_Overlay._Overlay.beforeHide);
-
-                    _ElementUtilities.addClass(this._element, hidingClass);
                 },
 
                 _afterHide: function AppBar_afterHide() {
