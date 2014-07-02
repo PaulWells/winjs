@@ -425,8 +425,8 @@ define([
                 var hadReducedClass = _ElementUtilities.hasClass(this.appBarEl, _Constants.reducedClass);
                 _ElementUtilities.removeClass(this.appBarEl, _Constants.reducedClass);
 
-                var hadHiddenClass = _ElementUtilities.hasClass(this.appBarEl, "win-appbar-hidden");
-                _ElementUtilities.removeClass(this.appBarEl, "win-appbar-hidden");
+                var hadHiddenClass = _ElementUtilities.hasClass(this.appBarEl, _Constants.hiddenClass);
+                _ElementUtilities.removeClass(this.appBarEl, _Constants.hiddenClass);
 
                 // Make sure AppBar and children have width dimensions.
                 var prevAppBarDisplay = this.appBarEl.style.display;
@@ -452,7 +452,7 @@ define([
                     _ElementUtilities.addClass(this.appBarEl, _Constants.reducedClass);
                 }
                 if (hadHiddenClass) {
-                    _ElementUtilities.addClass(this.appBarEl, "win-appbar-hidden");
+                    _ElementUtilities.addClass(this.appBarEl, _Constants.hiddenClass);
                 }
 
                 this.commandsUpdated();

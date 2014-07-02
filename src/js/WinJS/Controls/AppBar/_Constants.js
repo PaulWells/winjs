@@ -19,6 +19,10 @@ define([
         settingsFlyoutSelector: ".win-settingsflyout",
         topClass: "win-top",
         bottomClass: "win-bottom",
+        showingClass : "win-appbar-showing",
+        shownClass : "win-appbar-shown",
+        hidingClass : "win-appbar-hiding",
+        hiddenClass : "win-appbar-hidden",
 
         // Constants for placement
         appBarPlacementTop: "top",
@@ -59,6 +63,21 @@ define([
         narrowClass: "win-narrow",
         wideClass: "win-wide",
         _clickEatingAppBarClass: "win-appbarclickeater",
-        _clickEatingFlyoutClass: "win-flyoutmenuclickeater"
+        _clickEatingFlyoutClass: "win-flyoutmenuclickeater",
+
+        //// Maps each notion of a display modes to the corresponding visible position
+        //displayModeVisiblePositions : {
+        //    disabled: "hidden",
+        //    none: "hidden",
+        //    hidden: "hidden",
+        //    minimal: "minimal",
+        //    shown: "shown",
+        //},
+
+        //// Enum of closedDisplayMode constants 
+        //closedDisplayModes : {
+        //    none: "none",
+        //    minimal: "minimal",
+        //},
     });
 });

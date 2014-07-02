@@ -76,11 +76,6 @@ define([
             var appbarShownState = "shown",
                 appbarHiddenState = "hidden";
 
-            var showingClass = "win-appbar-showing",
-                shownClass = "win-appbar-shown",
-                hidingClass = "win-appbar-hiding",
-                hiddenClass = "win-appbar-hidden";
-
             // Hook into event
             var appBarCommandEvent = false;
             var edgyHappening = null;
@@ -153,7 +148,7 @@ define([
                     var AppBar = element.winControl;
                     if (AppBar) {
                         AppBars.push(AppBar);
-                        if (_ElementUtilities.hasClass(AppBar._element, hiddenClass) || _ElementUtilities.hasClass(AppBar._element, hidingClass)) {
+                        if (_ElementUtilities.hasClass(AppBar._element, _Constants.hiddenClass) || _ElementUtilities.hasClass(AppBar._element, _Constants.hidingClass)) {
                             AppBars._hidden = true;
                         } else {
                             AppBars._shown = true;
@@ -381,7 +376,7 @@ define([
 
                 // Start off hidden
                 this._lastPositionVisited = displayModeVisiblePositions.none;
-                _ElementUtilities.addClass(this._element, hiddenClass);
+                _ElementUtilities.addClass(this._element, _Constants.hiddenClass);
 
                 // validate that if they didn't set commands, but want command
                 // layout that the HTML only contains commands.  Do this first
@@ -663,7 +658,7 @@ define([
                             // The invoke button has changed the amount of available space in the AppBar. Layout might need to scale.
                             this._layout.resize();
 
-                            if (_ElementUtilities.hasClass(this._element, hiddenClass) || _ElementUtilities.hasClass(this._element, hidingClass)) {
+                            if (_ElementUtilities.hasClass(this._element, _Constants.hiddenClass) || _ElementUtilities.hasClass(this._element, _Constants.hidingClass)) {
                                 // If the value is being set while we are not showing, change to our new position.
                                 this._changeVisiblePosition(displayModeVisiblePositions[this._closedDisplayMode]);
                             }
@@ -700,8 +695,8 @@ define([
                 hidden: {
                     get: function () {
                         // Returns true if AppBar is 'hidden'.
-                        return _ElementUtilities.hasClass(this._element, hiddenClass) ||
-                            _ElementUtilities.hasClass(this._element, hidingClass) ||
+                        return _ElementUtilities.hasClass(this._element, _Constants.hiddenClass) ||
+                            _ElementUtilities.hasClass(this._element, _Constants.hidingClass) ||
                             this._doNext === displayModeVisiblePositions.minimal ||
                             this._doNext === displayModeVisiblePositions.none;
                     },
@@ -800,7 +795,7 @@ define([
                     var showing = null;
 
                     // If we're already shown, we are just going to animate our position, not fire events or manage focus.
-                    if (!this.disabled && (_ElementUtilities.hasClass(this._element, hiddenClass) || _ElementUtilities.hasClass(this._element, hidingClass))) {
+                    if (!this.disabled && (_ElementUtilities.hasClass(this._element, _Constants.hiddenClass) || _ElementUtilities.hasClass(this._element, _Constants.hidingClass))) {
                         showing = appbarShownState;
                     }
 
@@ -849,7 +844,7 @@ define([
                     var hiding = null;
 
                     // If were already hidden, we are just going to animate our position, not fire events or manage focus again.
-                    if (!_ElementUtilities.hasClass(this._element, hiddenClass) && !_ElementUtilities.hasClass(this._element, hidingClass)) {
+                    if (!_ElementUtilities.hasClass(this._element, _Constants.hiddenClass) && !_ElementUtilities.hasClass(this._element, _Constants.hidingClass)) {
                         hiding = appbarHiddenState;
                     }
 
@@ -1117,16 +1112,16 @@ define([
                     // Make sure everything fits before showinging
                     this._layout.scale();
 
-                    _ElementUtilities.removeClass(this._element, hiddenClass);
-                    _ElementUtilities.addClass(this._element, showingClass);
+                    _ElementUtilities.removeClass(this._element, _Constants.hiddenClass);
+                    _ElementUtilities.addClass(this._element, _Constants.showingClass);
 
                     // Send our "beforeShow" event 
                     this._sendEvent(_Overlay._Overlay.beforeShow);
                 },
 
                 _afterShow: function AppBar_afterShow() {
-                    _ElementUtilities.removeClass(this._element, showingClass);
-                    _ElementUtilities.addClass(this._element, shownClass);
+                    _ElementUtilities.removeClass(this._element, _Constants.showingClass);
+                    _ElementUtilities.addClass(this._element, _Constants.shownClass);
 
                     // Send our "afterShow" event
                     this._sendEvent(_Overlay._Overlay.afterShow);
@@ -1135,8 +1130,8 @@ define([
 
                 _beforeHide: function AppBar_beforeHide() {
 
-                    _ElementUtilities.removeClass(this._element, shownClass);
-                    _ElementUtilities.addClass(this._element, hidingClass);
+                    _ElementUtilities.removeClass(this._element, _Constants.shownClass);
+                    _ElementUtilities.addClass(this._element, _Constants.hidingClass);
 
                     // Send our "beforeHide" event
                     this._sendEvent(_Overlay._Overlay.beforeHide);
@@ -1152,8 +1147,8 @@ define([
                         this._queuedToHide = [];
                     }
 
-                    _ElementUtilities.removeClass(this._element, hidingClass);
-                    _ElementUtilities.addClass(this._element, hiddenClass);
+                    _ElementUtilities.removeClass(this._element, _Constants.hidingClass);
+                    _ElementUtilities.addClass(this._element, _Constants.hiddenClass);
 
                     // Send our "afterHide" event
                     this._sendEvent(_Overlay._Overlay.afterHide);
@@ -1433,7 +1428,7 @@ define([
                     // document, based on the the visible position we think we need to be in.
                     var positionOffSet = {};
 
-                    if (_ElementUtilities.hasClass(this._element, hiddenClass) || _ElementUtilities.hasClass(this._element, hidingClass)) {
+                    if (_ElementUtilities.hasClass(this._element, _Constants.hiddenClass) || _ElementUtilities.hasClass(this._element, _Constants.hidingClass)) {
                         var innerEdgeOffSet = _Overlay._Overlay._keyboardInfo._visibleDocHeight - this._visiblePixels[this._visiblePosition];
 
                         if (this._placement === _Constants.appBarPlacementBottom) {

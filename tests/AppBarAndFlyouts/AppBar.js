@@ -11,9 +11,9 @@
 
 var CorsicaTests = CorsicaTests || {};
 
-var constants;
-WinJS.Utilities._require(["WinJS/Controls/AppBar/_Constants"], function (_Constants) {
-    constants = _Constants;
+var _Constants;
+WinJS.Utilities._require(["WinJS/Controls/AppBar/_Constants"], function (constants) {
+    _Constants = constants;
 })
 
 CorsicaTests.AppBarTests = function () {
@@ -871,11 +871,6 @@ CorsicaTests.AppBarTests = function () {
         var bottomBar = new WinJS.UI.AppBar(root.querySelector("#bottomBar"), { placement: 'bottom', layout: 'custom', closedDisplayMode: bottomInitialCDM, sticky: false });
 
         var verifyHiddenIndicators = function (expected, appBar, msg) {
-            verifyHidingIndicators(expected, appBar, msg);
-            LiveUnit.Assert.areEqual(expected, WinJS.Utilities.hasClass(appBar.element, "win-hidden"), msg);
-        }
-
-        var verifyHidingIndicators = function (expected, appBar, msg) {
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual(expected, appBar.hidden, msg);
             LiveUnit.Assert.areEqual(expected, appBar._visiblePosition !== displayModeVisiblePositions.shown, msg);
@@ -895,8 +890,10 @@ CorsicaTests.AppBarTests = function () {
             appBar.removeEventListener("beforeshow", verifyShowing, false);
 
             msg = "AppBars that are showing should not show indications of being hidden."
-            LiveUnit.LoggingCore.logComment("Test: " + msg);
             verifyHiddenIndicators(false, appBar, msg);
+
+            msg = "AppBars that are showing should have the showing class"
+            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(appBar.element, "win-appbar-showing"), msg);
 
             msg = "AppBars that are showing should indicate their visible position is 'shown'";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
@@ -908,8 +905,10 @@ CorsicaTests.AppBarTests = function () {
             appBar.removeEventListener("aftershow", verifyShown, false);
 
             msg = "AppBars that are shown should not show indications of being hidden."
-            LiveUnit.LoggingCore.logComment("Test: " + msg);
             verifyHiddenIndicators(false, appBar, msg);
+
+            msg = "AppBars that are shown should have the shown class"
+            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(appBar.element, "win-appbar-shown"), msg);
 
             msg = "AppBars that are shown should indicate their visible position is 'shown'";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
@@ -924,8 +923,10 @@ CorsicaTests.AppBarTests = function () {
             appBar.removeEventListener("beforehide", verifyHiding, false);
 
             msg = "AppBars that are hiding should show indications of hiding."
-            LiveUnit.LoggingCore.logComment("Test: " + msg);
             verifyHiddenIndicators(true, appBar, msg);
+
+            msg = "AppBars that are hiding should have the hiding class"
+            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(appBar.element, "win-appbar-hiding"), msg);
 
             msg = "AppBars that are hiding via hide should indicate their visible position is their closedDisplayMode";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
@@ -940,6 +941,9 @@ CorsicaTests.AppBarTests = function () {
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             verifyHiddenIndicators(true, appBar, msg);
 
+            msg = "AppBars that are hidden should have the hidden class"
+            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(appBar.element, "win-appbar-hidden"), msg);
+
             msg = "AppBars that are hidden via hide should indicate their visible position is their closedDisplayMode";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual(displayModeVisiblePositions[appBar.closedDisplayMode], appBar._visiblePosition, msg);
@@ -953,8 +957,11 @@ CorsicaTests.AppBarTests = function () {
         }
 
         var msg = "new AppBars should start out hidden"
-        verifyHiddenIndicators(true, topBar, msg);
+        verifyHiddenIndicators(true, topBar, msg);                
         verifyHiddenIndicators(true, bottomBar, msg);
+        msg = "AppBars that are hidden should have the hidden class"
+        LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(topBar.element, "win-appbar-hidden"), msg);
+        LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(bottomBar.element, "win-appbar-hidden"), msg);
 
         msg = "new AppBars should have initial closedDisplayMode aHiddennd correct corresponding visible position";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
