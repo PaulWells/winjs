@@ -1010,7 +1010,8 @@ define([
                     /// </returns>
                     /// </signature>                   
 
-                    if (this._visiblePosition === toPosition || (this.disabled && toPosition !== displayModeVisiblePositions.disabled)) {
+                    if ((this._visiblePosition === toPosition && !this._keyboardObscured) ||
+                        (this.disabled && toPosition !== displayModeVisiblePositions.disabled)) {
                         // If we want to go where we already are, or we're disabled, return false.                    
                         return false;
                     } else if (this._animating || this._needToHandleShowingKeyboard || this._needToHandleHidingKeyboard) {
@@ -1047,8 +1048,8 @@ define([
                                 // Un-obscure ourselves and become visible to the user again. 
                                 // Need to animate to our desired position as if we were coming up from behind the keyboard.
                                 fromPosition = displayModeVisiblePositions.hidden;
-                                this._keyboardObscured = false;
                             }
+                            this._keyboardObscured = false;
                         }
 
                         // Fire "before" event if we are changing state.
@@ -1094,8 +1095,8 @@ define([
 
                         this._animationPromise = (performAnimation) ? this._animatePositionChange(fromPosition, toPosition) : Promise.wrap();
                         this._animationPromise.then(
-                            function () { afterPositionChange(toPosition) },
-                            function () { afterPositionChange(toPosition) }
+                            function () { afterPositionChange(toPosition); },
+                            function () { afterPositionChange(toPosition); }
                             );
                         return true;
                     }
@@ -1351,11 +1352,10 @@ define([
                     if (!_Overlay._Overlay._keyboardInfo._isResized) {
                         // If we're not completely hidden, only fake hiding under keyboard, or already animating,
                         // then snap us to our final position.
-                        if (this._visible || this._fakeHide || this._animating) {
+                        if (this._visible || this._animating) {
                             // Not resized, update our final position immediately
                             this._checkScrollPosition();
                             this._element.style.display = "";
-                            this._fakeHide = false;
                         }
                         this._needToHandleHidingKeyboard = false;
                     }
@@ -1381,7 +1381,6 @@ define([
                             // Snap to final position
                             this._checkScrollPosition();
                             this._element.style.display = "";
-                            this._fakeHide = false;
                         }
                     }
 
@@ -1408,8 +1407,7 @@ define([
                     if (this._needToHandleShowingKeyboard) {
                         // If not top appbar or viewport isn't still at top, then need to show again
                         this._needToHandleShowingKeyboard = false;
-                        // If obscured (flyout showing), don't change.
-                        // If hidden, may be because _fakeHide was set in _resize.
+                        // If obscured (IHM + flyout showing), it's ok to stay obscured.
                         // If bottom we have to move, or if top scrolled off screen.
                         if (!this._keyboardObscured &&
                             (this._placement !== _Constants.appBarPlacementTop || _Overlay._Overlay._keyboardInfo._visibleDocTop !== 0)) {
@@ -1445,7 +1443,7 @@ define([
                             positionOffSet.bottom = "";
                             positionOffSet.top = innerEdgeOffSet + "px";
                         } else {
-                            positionOffSet.bottom = innerEdgeOffSet + "px"; f
+                            positionOffSet.bottom = innerEdgeOffSet + "px";
                             positionOffSet.top = "";
                         }
                     } else {

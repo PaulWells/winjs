@@ -258,8 +258,7 @@ define([
                     get: function () {
                         return (this._element.style.visibility === "hidden" ||
                                 this._element.winAnimating === "hiding" ||
-                                this._doNext === "hide" ||
-                                this._fakeHide);
+                                this._doNext === "hide");
                     }
                 },
 
@@ -298,15 +297,13 @@ define([
                     this._currentDocumentWidth = this._currentDocumentWidth || document.documentElement.offsetWidth;
 
                     // "hiding" would need to cancel.
-                    if (this._element.style.visibility !== "visible" || this._fakeHide) {
+                    if (this._element.style.visibility !== "visible") {
                         // Let us know we're showing.
                         this._element.winAnimating = "showing";
 
                         // Hiding, but not none
                         this._element.style.display = "";
-                        if (!this._fakeHide) {
-                            this._element.style.visibility = "hidden";
-                        }
+                        this._element.style.visibility = "hidden";
 
                         // In case their event is going to manipulate commands, see if there are
                         // any queued command animations we can handle while we're still hidden.
@@ -331,7 +328,6 @@ define([
                         }, function () {
                             that._baseEndShow();
                         });
-                        this._fakeHide = false;
                         return true;
                     }
                     return false;
@@ -411,7 +407,6 @@ define([
                         }
                         return true;
                     }
-                    this._fakeHide = false;
 
                     return false;
                 },
@@ -860,7 +855,7 @@ define([
                 _baseResize: function _Overlay_baseResize(event) {
                     // Avoid the cost of a resize if the Overlay is hidden.
                     if (this._currentDocumentWidth !== undefined) {
-                        if (this.hidden && !this._fakeHide) {
+                        if (this.hidden) {
                             this._currentDocumentWidth = undefined;
                         } else {
                             // Overlays can light dismiss on horizontal resize.
