@@ -153,7 +153,7 @@ define([
                     var AppBar = element.winControl;
                     if (AppBar) {
                         AppBars.push(AppBar);
-                        if (AppBar._closed) {
+                        if (_ElementUtilities.hasClass(AppBar._element, hiddenClass) || _ElementUtilities.hasClass(AppBar._element, hidingClass)) {) {
                             AppBars._hidden = true;
                         } else {
                             AppBars._shown = true;
