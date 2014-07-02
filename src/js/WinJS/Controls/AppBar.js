@@ -664,7 +664,7 @@ define([
                             // The invoke button has changed the amount of available space in the AppBar. Layout might need to scale.
                             this._layout.resize();
 
-                            if (this._visiblePosition !== displayModeVisiblePositions.shown) {
+                            if (_ElementUtilities.hasClass(this._element, hiddenClass) || _ElementUtilities.hasClass(this._element, hidingClass)) {
                                 // If the value is being set while we are not showing, change to our new position.
                                 this._changeVisiblePosition(displayModeVisiblePositions[this._closedDisplayMode]);
                             }
@@ -701,7 +701,8 @@ define([
                 hidden: {
                     get: function () {
                         // Returns true if AppBar is 'hidden'.
-                        return this._visiblePosition !== displayModeVisiblePositions.shown ||
+                        return _ElementUtilities.hasClass(this._element, hiddenClass) ||
+                            _ElementUtilities.hasClass(this._element, hidingClass) ||
                             this._doNext === displayModeVisiblePositions.minimal ||
                             this._doNext === displayModeVisiblePositions.none;
                     },
@@ -800,7 +801,7 @@ define([
                     var showing = null;
 
                     // If we're already shown, we are just going to animate our position, not fire events or manage focus.
-                    if (!this.disabled && this._visiblePosition !== displayModeVisiblePositions.shown) {
+                    if (!this.disabled && (_ElementUtilities.hasClass(this._element, hiddenClass) || _ElementUtilities.hasClass(this._element, hidingClass))) {
                         showing = appbarShownState;
                     }
 
@@ -849,7 +850,7 @@ define([
                     var hiding = null;
 
                     // If were already hidden, we are just going to animate our position, not fire events or manage focus again.
-                    if (this._visiblePosition === displayModeVisiblePositions.shown) {
+                    if (!_ElementUtilities.hasClass(this._element, hiddenClass) && !_ElementUtilities.hasClass(this._element, hidingClass)) {
                         hiding = appbarHiddenState;
                     }
 
@@ -1120,15 +1121,23 @@ define([
 
                     // Send our "beforeShow" event 
                     this._sendEvent(_Overlay._Overlay.beforeShow);
+
+                    _ElementUtilities.addClass(this._element, showingClass);
+
                 },
 
                 _afterShow: function AppBar_afterShow() {
+                    _ElementUtilities.removeClass(this._element, showingClass);
+                    _ElementUtilities.addClass(this._element, shownClass);
+
                     // Send our "afterShow" event
                     this._sendEvent(_Overlay._Overlay.afterShow);
                     this._writeProfilerMark("show,StopTM");
                 },
 
                 _beforeHide: function AppBar_beforeHide() {
+
+                    _ElementUtilities.removeClass(this._element, shownClass);
 
                     // Send our "beforeHide" event
                     this._sendEvent(_Overlay._Overlay.beforeHide);
@@ -1146,8 +1155,8 @@ define([
                         this._queuedToHide = [];
                     }
 
-                    _ElementUtilities.addClass(this._element, hiddenClass);
                     _ElementUtilities.removeClass(this._element, hidingClass);
+                    _ElementUtilities.addClass(this._element, hiddenClass);
 
                     // Send our "afterHide" event
                     this._sendEvent(_Overlay._Overlay.afterHide);
