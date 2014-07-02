@@ -1439,7 +1439,7 @@ define([
                     // document, based on the the visible position we think we need to be in.
                     var positionOffSet = {};
 
-                    if (this._closed) {
+                    if (_ElementUtilities.hasClass(this._element, hiddenClass) || _ElementUtilities.hasClass(this._element, hidingClass)) {
                         var innerEdgeOffSet = _Overlay._Overlay._keyboardInfo._visibleDocHeight - this._visiblePixels[this._visiblePosition];
 
                         if (this._placement === _Constants.appBarPlacementBottom) {
