@@ -322,22 +322,21 @@ CorsicaTests.AppBarScalabilityTests = function () {
         }).then(function () {
             msg = "invokeButton_bottomAppBar with too many commands should have applied reduced class asynchronously after construction.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(topAppBarElem, reducedAppBarClass), msg);
+            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(topAppBarElem, reducedAppBarClass), msg);           
+
+            // Show both AppBars so we can test resizing scenarios will cause the AppBar to scale, closed AppBars won't scale on resize.
+            noInvokeButton_topAppBar.show();
+            invokeButton_bottomAppBar.show();
 
             // Verify that all commands in both AppBars conform to our hardCoded size expectations. 
             // Also verify that the total width of fullsize commands in each AppBar is 710. The rest of this test depends on it.
             verifyCommandSizes(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv));
             verifyCommandSizes(bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(bottomAppBarElem.querySelector("div.win-command")));
-                        
-            msg = "TEST ERROR: Width of full size commands in top and bottom AppBars don't both match the preconditional value: " + expectedWidthOfFullSizeCommands  ;
+
+            msg = "TEST ERROR: Width of full size commands in top and bottom AppBars don't both match the preconditional value: " + expectedWidthOfFullSizeCommands;
             LiveUnit.Assert.isTrue(expectedWidthOfFullSizeCommands === noInvokeButton_topAppBar._layout._getWidthOfFullSizeCommands() && expectedWidthOfFullSizeCommands === invokeButton_bottomAppBar._layout._getWidthOfFullSizeCommands(), msg);
             var minimumSizeForFullSizeAppBarWithNoInvokeButton = expectedWidthOfFullSizeCommands;
             var minimumSizeForFullSizeAppBarWithInvokeButton = expectedWidthOfFullSizeCommands + rightPaddingReservedForInvokeButton;
-
-
-            // Show both AppBars so we can test resizing scenarios will cause the AppBar to scale, closed AppBars won't scale on resize.
-            noInvokeButton_topAppBar.show();
-            invokeButton_bottomAppBar.show();
 
             // Begin Increasing the container width to increase the AppBar width's in turn. Eventually scaling to full size commands.
             LiveUnit.LoggingCore.logComment("Testing that AppBar resize scales command appropriately.");
