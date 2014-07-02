@@ -76,10 +76,10 @@ define([
             var appbarShownState = "shown",
                 appbarHiddenState = "hidden";
 
-            var showingClass = "win-showing",
-                shownClass = "win-shown",
-                hidingClass = "win-hiding",
-                hiddenClass = "win-hidden";
+            var showingClass = "win-appbar-showing",
+                shownClass = "win-appbar-shown",
+                hidingClass = "win-appbar-hiding",
+                hiddenClass = "win-appbar-hidden";
 
             // Hook into event
             var appBarCommandEvent = false;
