@@ -994,14 +994,24 @@ define([
                 },
 
                 _changeVisiblePosition: function (toPosition, newState) {
-                    // Change the visible position of our AppBar.
-                    // FIRST PARAMETER: 'toPosition' is the string value of the visible position we want to move to.
-                    // SECOND PARAMETER: 'newState' is a string value of the new state we are entering (shown/hidden). 
-                    //   If the value is null, then we are not changing states, only changing visible positions.
-                    // RETURN VALUE: This function returns true if the requested position change was successful, else returns false.
+                    /// <signature helpKeyword="WinJS.UI.AppBar._changeVisiblePosition">
+                    /// <summary locid="WinJS.UI.AppBar._changeVisiblePosition">
+                    /// Changes the visible position of the AppBar.                    
+                    /// </summary>
+                    /// <param name="toPosition" type="String" locid="WinJS.UI.AppBar._changeVisiblePosition_p:toPosition">
+                    /// Name of the visible position we want to move to.
+                    /// </param>
+                    /// <param name="newState" type="String" locid="WinJS.UI.AppBar._changeVisiblePosition_p:newState">
+                    /// Name of the state we are entering. Values can be "showing", "hiding" or null.
+                    /// If the value is null, then we are not changing states, only changing visible position.
+                    /// </param>
+                    /// <returns type="Boolean" locid="WinJS.UI.AppBar._changeVisiblePosition_returnValue">
+                    /// Returns true if the requested position change was successful, else returns false.
+                    /// </returns>
+                    /// </signature>                   
 
                     if (this._visiblePosition === toPosition || (this.disabled && toPosition !== displayModeVisiblePositions.disabled)) {
-                        // If we want to go where we already are, or we're disabled return false.                    
+                        // If we want to go where we already are, or we're disabled, return false.                    
                         return false;
                     } else if (this._animating || this._needToHandleShowingKeyboard || this._needToHandleHidingKeyboard) {
                         // Only do one thing at a time. If we are already animating, 
@@ -1011,7 +1021,7 @@ define([
                     } else {
                         // Begin position changing sequence.
 
-                        //Set the animating flag to block any queued position changes until we're done.
+                        // Set the animating flag to block any queued position changes until we're done.
                         this._element.winAnimating = toPosition;
                         var performAnimation = this._initializing ? false : true;
 

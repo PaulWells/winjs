@@ -219,38 +219,30 @@ CorsicaTests.AppBarScalabilityTests = function () {
         LiveUnit.LoggingCore.logComment("Verify padding for full-size AppBar with InvokeButton");
         topAppBar.closedDisplayMode = 'minimal';
         WinJS.Utilities.removeClass(topAppBarElem, reducedAppBarClass);
-        var expectedLeftPadding = 0;
-        var expectedRightPadding = rightPaddingReservedForInvokeButton;
         var appBarStyle = getComputedStyle(topAppBarElem);
-        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with InvokeButton");
-        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with InvokeButton");
+        LiveUnit.Assert.areEqual(0, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with InvokeButton");
+        LiveUnit.Assert.areEqual(rightPaddingReservedForInvokeButton, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with InvokeButton");
 
         LiveUnit.LoggingCore.logComment("Verify padding for full-size AppBar with no InvokeButton");
         topAppBar.closedDisplayMode = "none";
         WinJS.Utilities.removeClass(topAppBarElem, reducedAppBarClass);
-        expectedLeftPadding = 0;
-        expectedRightPadding = 0;
         appBarStyle = getComputedStyle(topAppBarElem);
-        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with no InvokeButton");
-        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with no InvokeButton");
+        LiveUnit.Assert.areEqual(0, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for full-size AppBar with no InvokeButton");
+        LiveUnit.Assert.areEqual(0, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for full-size AppBar with no InvokeButton");
 
         LiveUnit.LoggingCore.logComment("Verify padding for win-reduced AppBar with InvokeButton");
         topAppBar.closedDisplayMode = 'minimal';
         WinJS.Utilities.addClass(topAppBarElem, reducedAppBarClass);
-        expectedLeftPadding = 10;
-        expectedRightPadding = rightPaddingReservedForInvokeButton;
         appBarStyle = getComputedStyle(topAppBarElem);
-        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with InvokeButton");
-        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with InvokeButton");
+        LiveUnit.Assert.areEqual(10, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with InvokeButton");
+        LiveUnit.Assert.areEqual(rightPaddingReservedForInvokeButton, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with InvokeButton");
 
         LiveUnit.LoggingCore.logComment("Verify padding for win-reduced AppBar with no InvokeButton");
         topAppBar.closedDisplayMode = "none";
         WinJS.Utilities.addClass(topAppBarElem, reducedAppBarClass);
-        expectedLeftPadding = 10;
-        expectedRightPadding = 10;
         appBarStyle = getComputedStyle(topAppBarElem);
-        LiveUnit.Assert.areEqual(expectedLeftPadding, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with no InvokeButton");
-        LiveUnit.Assert.areEqual(expectedRightPadding, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with no InvokeButton");
+        LiveUnit.Assert.areEqual(10, parseInt(appBarStyle.paddingLeft, 10), "Incorrect left padding for win-reduced AppBar with no InvokeButton");
+        LiveUnit.Assert.areEqual(10, parseInt(appBarStyle.paddingRight, 10), "Incorrect right padding for win-reduced AppBar with no InvokeButton");
 
         complete();
     };
