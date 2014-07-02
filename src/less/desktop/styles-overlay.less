@@ -243,16 +243,16 @@ AppBar
     position: -ms-device-fixed;
     min-height: 25px; 
 
-    &.win-hiding > :not(.win-appbar-invokebutton) {
+    &.win-appbar-hiding > :not(.win-appbar-invokebutton) {
         opacity: 0;
     }    
 
-    &.win-hidden > :not(.win-appbar-invokebutton) {
+    &.win-appbar-hidden > :not(.win-appbar-invokebutton) {
         display: none !important;
     }
 
-    &.win-hiding .win-appbar-invokebutton, 
-    &.win-hidden .win-appbar-invokebutton {
+    &.win-appbar-hiding .win-appbar-invokebutton, 
+    &.win-appbar-hidden .win-appbar-invokebutton {
         width: 100%;
 }
 
