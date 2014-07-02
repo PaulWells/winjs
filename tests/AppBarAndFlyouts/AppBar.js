@@ -848,7 +848,7 @@ CorsicaTests.AppBarTests = function () {
         shown: "shown",
     }
 
-    this.testOpenAndClose_Indicators_DisplayModes_And_VisiblePositions = function (complete) {
+    this.testShowAndHide_Indicators_DisplayModes_And_VisiblePositions = function (complete) {
 
         var topInitialCDM = 'none';
         var bottomInitialCDM = 'minimal';
@@ -870,48 +870,48 @@ CorsicaTests.AppBarTests = function () {
         var topBar = new WinJS.UI.AppBar(root.querySelector("#topBar"), { placement: 'top', layout: 'commands', closedDisplayMode: topInitialCDM, sticky: true });
         var bottomBar = new WinJS.UI.AppBar(root.querySelector("#bottomBar"), { placement: 'bottom', layout: 'custom', closedDisplayMode: bottomInitialCDM, sticky: false });
 
-        var verifyClosedIndicators = function (expected, appBar, msg) {
-            verifyClosingIndicators(expected, appBar, msg);
+        var verifyHiddenIndicators = function (expected, appBar, msg) {
+            verifyHidingIndicators(expected, appBar, msg);
             LiveUnit.Assert.areEqual(expected, WinJS.Utilities.hasClass(appBar.element, "win-hidden"), msg);
         }
 
-        var verifyClosingIndicators = function (expected, appBar, msg) {
+        var verifyHidingIndicators = function (expected, appBar, msg) {
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual(expected, appBar.hidden, msg);
             LiveUnit.Assert.areEqual(expected, appBar._visiblePosition !== displayModeVisiblePositions.shown, msg);
         }
 
-        var topBarOpenedAndClosed;
-        var topBarOpenAndClosePromise = new WinJS.Promise(function (c) {
-            topBarOpenedAndClosed = c;
+        var topBarShownAndHidden;
+        var topBarShownAndHiddenPromise = new WinJS.Promise(function (c) {
+            topBarShownAndHidden = c;
         });
-        var bottomBarOpenedAndClosed;
-        var bottomBarOpenAndClosePromise = new WinJS.Promise(function (c) {
-            bottomBarOpenedAndClosed = c;
+        var bottomBarShownAndHidden;
+        var bottomBarShownAndHiddenPromise = new WinJS.Promise(function (c) {
+            bottomBarShownAndHidden = c;
         });
 
-        var verifyOpeningViaShow = function (evt) {
+        var verifyShowing = function (evt) {
             var appBar = evt.target.winControl;
-            appBar.removeEventListener("beforeshow", verifyOpeningViaShow, false);
+            appBar.removeEventListener("beforeshow", verifyShowing, false);
 
-            msg = "AppBars that are opening should not show indications of being closed."
+            msg = "AppBars that are showing should not show indications of being hidden."
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            verifyClosedIndicators(false, appBar, msg);
+            verifyHiddenIndicators(false, appBar, msg);
 
-            msg = "AppBars that are opening should indicate their visible position is 'shown'";
+            msg = "AppBars that are showing should indicate their visible position is 'shown'";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual("shown", appBar._visiblePosition, msg);
         }
 
-        var verifyOpenedViaShow = function (evt) {
+        var verifyShown = function (evt) {
             var appBar = evt.target.winControl;
-            appBar.removeEventListener("aftershow", verifyOpenedViaShow, false);
+            appBar.removeEventListener("aftershow", verifyShown, false);
 
-            msg = "AppBars that are opened should not show indications of being closed."
+            msg = "AppBars that are shown should not show indications of being hidden."
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            verifyClosedIndicators(false, appBar, msg);
+            verifyHiddenIndicators(false, appBar, msg);
 
-            msg = "AppBars that are opened should indicate their visible position is 'shown'";
+            msg = "AppBars that are shown should indicate their visible position is 'shown'";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual("shown", appBar._visiblePosition, msg);
 
@@ -919,65 +919,65 @@ CorsicaTests.AppBarTests = function () {
 
         }
 
-        var verifyClosingViaHide = function (evt) {
+        var verifyHiding = function (evt) {
             var appBar = evt.target.winControl;
-            appBar.removeEventListener("beforehide", verifyClosingViaHide, false);
+            appBar.removeEventListener("beforehide", verifyHiding, false);
 
-            msg = "AppBars that are closing should show indications of closing."
+            msg = "AppBars that are hiding should show indications of hiding."
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            verifyClosingIndicators(true, appBar, msg);
+            verifyHiddenIndicators(true, appBar, msg);
 
-            msg = "AppBars that are closing via hide should indicate their visible position is their closedDisplayMode";
+            msg = "AppBars that are hiding via hide should indicate their visible position is their closedDisplayMode";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual(displayModeVisiblePositions[appBar.closedDisplayMode], appBar._visiblePosition, msg);
         }
 
-        var verifyClosedViaHide = function (evt) {
+        var verifyHidden = function (evt) {
             var appBar = evt.target.winControl;
-            appBar.removeEventListener("afterhide", verifyClosedViaHide, false);
+            appBar.removeEventListener("afterhide", verifyHidden, false);
 
-            msg = "AppBars that are closed should show indications of being closed."
+            msg = "AppBars that are hidden should show indications of being hidden."
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            verifyClosedIndicators(true, appBar, msg);
+            verifyHiddenIndicators(true, appBar, msg);
 
-            msg = "AppBars that are closed via hide should indicate their visible position is their closedDisplayMode";
+            msg = "AppBars that are hidden via hide should indicate their visible position is their closedDisplayMode";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual(displayModeVisiblePositions[appBar.closedDisplayMode], appBar._visiblePosition, msg);
 
-            // Signal OpenedAndClosed promise completion.
+            // Signal ShownAndHidden promise completion.
             if (appBar.placement === 'top') {
-                topBarOpenedAndClosed();
+                topBarShownAndHidden();
             } else {
-                bottomBarOpenedAndClosed();
+                bottomBarShownAndHidden();
             }
         }
 
-        var msg = "new AppBars should start out closed"
-        verifyClosedIndicators(true, topBar, msg);
-        verifyClosedIndicators(true, bottomBar, msg);
+        var msg = "new AppBars should start out hidden"
+        verifyHiddenIndicators(true, topBar, msg);
+        verifyHiddenIndicators(true, bottomBar, msg);
 
-        msg = "new AppBars should have initial closedDisplayMode and correct corresponding visible position";
+        msg = "new AppBars should have initial closedDisplayMode aHiddennd correct corresponding visible position";
         LiveUnit.LoggingCore.logComment("Test: " + msg);
         LiveUnit.Assert.areEqual(topInitialCDM, topBar.closedDisplayMode, msg);
         LiveUnit.Assert.areEqual(topInitialPosition, topBar._visiblePosition, msg);
         LiveUnit.Assert.areEqual(bottomInitialCDM, bottomBar.closedDisplayMode, msg);
         LiveUnit.Assert.areEqual(bottomInitialPosition, bottomBar._visiblePosition, msg);
 
-        topBar.addEventListener("beforeshow", verifyOpeningViaShow, false);
-        topBar.addEventListener("aftershow", verifyOpenedViaShow, false);
-        topBar.addEventListener("beforehide", verifyClosingViaHide, false);
-        topBar.addEventListener("afterhide", verifyClosedViaHide, false);
-        bottomBar.addEventListener("beforeshow", verifyOpeningViaShow, false);
-        bottomBar.addEventListener("aftershow", verifyOpenedViaShow, false);
-        bottomBar.addEventListener("beforehide", verifyClosingViaHide, false);
-        bottomBar.addEventListener("afterhide", verifyClosedViaHide, false);
+        topBar.addEventListener("beforeshow", verifyShowing, false);
+        topBar.addEventListener("aftershow", verifyShown, false);
+        topBar.addEventListener("beforehide", verifyHiding, false);
+        topBar.addEventListener("afterhide", verifyHidden, false);
+        bottomBar.addEventListener("beforeshow", verifyShowing, false);
+        bottomBar.addEventListener("aftershow", verifyShown, false);
+        bottomBar.addEventListener("beforehide", verifyHiding, false);
+        bottomBar.addEventListener("afterhide", verifyHidden, false);
         topBar.show();
         bottomBar.show();
 
-        WinJS.Promise.join([topBarOpenAndClosePromise, bottomBarOpenAndClosePromise]).then(function () {
+        WinJS.Promise.join([topBarShownAndHiddenPromise, bottomBarShownAndHiddenPromise]).then(function () {
             // Both appbars after "afterhide".
 
-            msg = "AppBar original closedDisplayModes and visible positions should not have changed after opening and closing.";
+            msg = "AppBar original closedDisplayModes and visible positions should not have changed after showing and hiding.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
             LiveUnit.Assert.areEqual(topInitialCDM, topBar.closedDisplayMode, msg);
             LiveUnit.Assert.areEqual(bottomInitialCDM, bottomBar.closedDisplayMode, msg);
