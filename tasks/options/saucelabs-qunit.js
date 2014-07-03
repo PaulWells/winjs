@@ -122,7 +122,8 @@
         all: {
             options: {
                 urls: [
-                    "http://127.0.0.1:9999/bin/tests/Animations/test.html?fastanimations=false&autostart=true",
+                    "http://127.0.0.1:9999/bin/tests/Tooltip/test.html?fastanimations=true&autostart=true&testtimeout=10000"
+                    /*"http://127.0.0.1:9999/bin/tests/Animations/test.html?fastanimations=false&autostart=true",
                     "http://127.0.0.1:9999/bin/tests/AppBarAndFlyouts/test.html?fastanimations=true&autostart=true",
                     "http://127.0.0.1:9999/bin/tests/Base/test.html?fastanimations=true&autostart=true",
                     "http://127.0.0.1:9999/bin/tests/Binding/test.html?fastanimations=true&autostart=true",
@@ -147,7 +148,7 @@
                     "http://127.0.0.1:9999/bin/tests/UI/test.html?fastanimations=true&autostart=true",
                     "http://127.0.0.1:9999/bin/tests/ViewBox/test.html?fastanimations=true&autostart=true",
                     "http://127.0.0.1:9999/bin/tests/WWA-Application/test.html?fastanimations=true&autostart=true",
-                    "http://127.0.0.1:9999/bin/tests/Pivot/test.html?fastanimations=false&autostart=true&testtimeout=10000"
+                    "http://127.0.0.1:9999/bin/tests/Pivot/test.html?fastanimations=false&autostart=true&testtimeout=10000"*/
                 ],
                 build: process.env.TRAVIS_JOB_ID,
                 testInterval: 1000,
@@ -162,9 +163,9 @@
         ie11only: {
             options: {
                 urls: [
-                      "http://127.0.0.1:9999/bin/tests/ListView/test.html?fastanimations=true&autostart=true&testtimeout=10000",
+                      /*"http://127.0.0.1:9999/bin/tests/ListView/test.html?fastanimations=true&autostart=true&testtimeout=10000",
                       "http://127.0.0.1:9999/bin/tests/ListViewIntegration/test.html?fastanimations=true&autostart=true&testtimeout=10000",
-                      "http://127.0.0.1:9999/bin/tests/Rating/test.html?fastanimations=true&autostart=true&testtimeout=3000"
+                      "http://127.0.0.1:9999/bin/tests/Rating/test.html?fastanimations=true&autostart=true&testtimeout=3000"*/
                 ],
                 build: process.env.TRAVIS_JOB_ID,
                 testInterval: 1000,
