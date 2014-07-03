@@ -150,9 +150,9 @@ TooltipHidingTests = function () {
     }
 
 
-    /*this.testTooltip_Mouse_Blur = function (signalTestCaseCompleted) {
+    this.testTooltip_Mouse_Blur = function (signalTestCaseCompleted) {
         testTooltip_Hiding(signalTestCaseCompleted, "mouse", "blur", true);
-    };*/
+    };
     
     
     
@@ -163,16 +163,12 @@ TooltipHidingTests = function () {
         testTooltip_Hiding(signalTestCaseCompleted, "mouse", "close", true);
     };
     
-    for (var i = 0; i < 100; i++) {
-        this["testTooltip_Mouse_Close" + i] = this.testTooltip_Mouse_Close;
-    }
-    
     
     
     
     
 
-    /*this.testTooltip_Mouse_MouseDown = function (signalTestCaseCompleted) {
+    this.testTooltip_Mouse_MouseDown = function (signalTestCaseCompleted) {
         testTooltip_Hiding(signalTestCaseCompleted, "mouse", "mouseDown", true);
     };
     
@@ -867,7 +863,7 @@ TooltipHidingTests = function () {
 
     this.testTooltip_Keyboard_TouchUp_Programmatic = function (signalTestCaseCompleted) {
         testTooltip_Hiding(signalTestCaseCompleted, "keyboardProgrammatic", "touchUp", false);
-    };*/
+    };
     
     
     
