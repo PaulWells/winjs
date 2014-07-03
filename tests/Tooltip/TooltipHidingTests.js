@@ -115,7 +115,7 @@ TooltipHidingTests = function () {
                     // Set up a timer to catch if the tooltip didn't immediately hide itself in response to our hideMethod.
                     window.tooltipEventListener = tooltipEventListener;
                     window.timerForListener = setTimeout("window.tooltipEventListener({type:'tooltipDidntHideItself'});",
-                        tooltipUtils.DEFAULT_MESSAGE_DURATION / 5);
+                        100);
                     break;
                 case "tooltipDidntHideItself":
                     // Tooltip isn't closing, so force it to close.
@@ -150,9 +150,9 @@ TooltipHidingTests = function () {
     }
 
 
-    this.testTooltip_Mouse_Blur = function (signalTestCaseCompleted) {
+    /*this.testTooltip_Mouse_Blur = function (signalTestCaseCompleted) {
         testTooltip_Hiding(signalTestCaseCompleted, "mouse", "blur", true);
-    };
+    };*/
     
     
     
@@ -163,12 +163,16 @@ TooltipHidingTests = function () {
         testTooltip_Hiding(signalTestCaseCompleted, "mouse", "close", true);
     };
     
+    for (var i = 0; i < 100; i++) {
+        this["testTooltip_Mouse_Close" + i] = this.testTooltip_Mouse_Close;
+    }
+    
     
     
     
     
 
-    this.testTooltip_Mouse_MouseDown = function (signalTestCaseCompleted) {
+    /*this.testTooltip_Mouse_MouseDown = function (signalTestCaseCompleted) {
         testTooltip_Hiding(signalTestCaseCompleted, "mouse", "mouseDown", true);
     };
     
@@ -863,7 +867,7 @@ TooltipHidingTests = function () {
 
     this.testTooltip_Keyboard_TouchUp_Programmatic = function (signalTestCaseCompleted) {
         testTooltip_Hiding(signalTestCaseCompleted, "keyboardProgrammatic", "touchUp", false);
-    };
+    };*/
     
     
     
