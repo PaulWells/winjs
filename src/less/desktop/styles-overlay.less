@@ -273,29 +273,25 @@ AppBar
             position: absolute;
             border: solid 2px;
             font-size: 11pt;
+            text-align: center;
 
             &::before {
                 content: "\E10C";
-                right: 0px;
-                left: 0px;
-                position: absolute;
             }
         }
-                
+
         &:focus .win-appbar-ellipsis {
             border: solid 2px;
         }  
     }
 
     &.win-bottom .win-appbar-invokebutton, 
-    &.win-bottom .win-appbar-invokebutton .win-appbar-ellipsis, 
-    &.win-bottom .win-appbar-invokebutton .win-appbar-ellipsis:before {
+    &.win-bottom .win-appbar-invokebutton .win-appbar-ellipsis {
         top: 0px;
     }
 
     &.win-top .win-appbar-invokebutton, 
-    &.win-top .win-appbar-invokebutton .win-appbar-ellipsis, 
-    &.win-top .win-appbar-invokebutton .win-appbar-ellipsis:before {
+    &.win-top .win-appbar-invokebutton .win-appbar-ellipsis {
         bottom: 0px;
     }
 }
