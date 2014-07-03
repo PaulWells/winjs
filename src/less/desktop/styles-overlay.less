@@ -272,6 +272,7 @@ AppBar
             right: 0px;
             position: absolute;
             border: solid 2px;
+            font-size: 11pt;
 
             &::before {
                 content: "\E10C";
@@ -288,13 +289,13 @@ AppBar
 
     &.win-bottom .win-appbar-invokebutton, 
     &.win-bottom .win-appbar-invokebutton .win-appbar-ellipsis, 
-    &.win-bottom .win-appbar-invokebutton .win-appbar-ellipsis::before {
+    &.win-bottom .win-appbar-invokebutton .win-appbar-ellipsis:before {
         top: 0px;
     }
 
     &.win-top .win-appbar-invokebutton, 
     &.win-top .win-appbar-invokebutton .win-appbar-ellipsis, 
-    &.win-top .win-appbar-invokebutton .win-appbar-ellipsis::before {
+    &.win-top .win-appbar-invokebutton .win-appbar-ellipsis:before {
         bottom: 0px;
     }
 }
@@ -303,8 +304,6 @@ AppBar
 AppBar commands layout
 */
 .win-commandlayout {
-    /* Hide whitespace between buttons. */
-    font-size: 0;
     min-height: 88px;
     #flex > .display-flex();
     #flex > .flex-direction(row);
