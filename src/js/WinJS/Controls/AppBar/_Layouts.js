@@ -410,8 +410,8 @@ define([
             // It is expected that AppBar is an immediate child of the <body> and will have 100% width.
             // We measure the clientWidth of the documentElement so that we can scale the AppBar lazily
             // even while its element is display: 'none'
-            var ellipsisPadding = this.appBarEl.winControl.closedDisplayMode === "minimal" ? 40 : 0;
-            return document.documentElement.clientWidth - ellipsisPadding;
+            var extraPadding = this.appBarEl.winControl.closedDisplayMode === "minimal" ? _Constants.appBarInvokeButtonWidth : 0;
+            return document.documentElement.clientWidth - extraPadding;
         },
         _measureContentCommands: function _commandLayoutsMixin_measureContentCommands() {
             // AppBar measures the width of content commands when they are first added

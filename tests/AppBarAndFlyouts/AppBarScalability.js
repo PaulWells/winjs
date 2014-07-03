@@ -209,6 +209,8 @@ CorsicaTests.AppBarScalabilityTests = function () {
     }
 
     this.testAppBarPadding = function (complete) {
+        // Scalability requires that that padding of the AppBar doesn't deviate from our hard coded values.
+
         var topAppBarElem = document.getElementById("topappbar");
 
         var topAppBar = new WinJS.UI.AppBar(topAppBarElem, { sticky: true, placement: 'top' });

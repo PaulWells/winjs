@@ -651,8 +651,8 @@ define([
                                 // Minimal is default fallback.
                                 this._closedDisplayMode = closedDisplayModes.minimal;
                                 this._invokeButton.style.display = "";
-                                this._element.style.paddingRight = "40px";
-                                this._element.style.width = "calc(100% - 40px)";
+                                this._element.style.paddingRight = _Constants.appBarInvokeButtonWidth + "px";
+                                this._element.style.width = "calc(100% - " + _Constants.appBarInvokeButtonWidth + "px)";
                             }
 
                             // The invoke button has changed the amount of available space in the AppBar. Layout might need to scale.

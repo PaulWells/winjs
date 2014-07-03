@@ -6,6 +6,7 @@ define([
     "use strict";
 
     _Base.Namespace._moduleDefine(exports, null, {
+        // AppBar class names.
         appBarClass: "win-appbar",
         firstDivClass: "win-firstdiv",
         finalDivClass: "win-finaldiv",
@@ -15,8 +16,6 @@ define([
         secondaryCommandsClass: "win-secondarygroup",
         reducedClass: "win-reduced",
         commandLayoutClass: "win-commandlayout",
-        settingsFlyoutClass: "win-settingsflyout",
-        settingsFlyoutSelector: ".win-settingsflyout",
         topClass: "win-top",
         bottomClass: "win-bottom",
         showingClass : "win-appbar-showing",
@@ -24,13 +23,16 @@ define([
         hidingClass : "win-appbar-hiding",
         hiddenClass : "win-appbar-hidden",
 
-        // Constants for placement
+        // Constants for AppBar placement
         appBarPlacementTop: "top",
         appBarPlacementBottom: "bottom",
 
-        // Constants for layout
+        // Constants for AppBar layouts
         appBarLayoutCustom: "custom",
         appBarLayoutCommands: "commands",
+
+        // Constant for AppBar invokebutton width
+        appBarInvokeButtonWidth: 40,
 
         // Constants for Commands
         typeSeparator: "separator",
@@ -48,15 +50,18 @@ define([
         // Prevents the element from showing a focus rect
         hideFocusClass: "win-hidefocus",
 
+        // Other class names
         overlayClass: "win-overlay",
         flyoutClass: "win-flyout",
         flyoutSelector: ".win-flyout",
         flyoutLightClass: "win-ui-light",
         menuClass: "win-menu",
         menuToggleClass: "win-menu-toggle",
+        settingsFlyoutClass: "win-settingsflyout",
+        settingsFlyoutSelector: ".win-settingsflyout",
         scrollsClass: "win-scrolls",
 
-        // Constants for AppBarCommands
+        // Constants for AppBarCommand full-size widths.
         separatorWidth: 60,
         buttonWidth: 100,
 

@@ -1271,7 +1271,7 @@ CorsicaTests.AppBarTests = function () {
         LiveUnit.Assert.areEqual(children[children.length - 2].className, invokeButton.className, msg);
     }
 
-    var invokeButtonWidth = 40;    
+    var invokeButtonWidth = _Constants.appBarInvokeButtonWidth;
     function verifyHasInvokeButton(appBar) {
         appBar = appBar.element || appBar;
 
