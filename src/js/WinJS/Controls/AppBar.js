@@ -389,6 +389,7 @@ define([
 
                 // Add Invoke button.
                 this._invokeButton = document.createElement("DIV");
+                this._invokeButton.tabIndex = 0;
                 this._invokeButton.innerHTML = "<span class='" + _Constants.ellipsisClass + "'></span>";
                 _ElementUtilities.addClass(this._invokeButton, _Constants.invokeButtonClass);
                 this._element.appendChild(this._invokeButton);
