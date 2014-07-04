@@ -1000,20 +1000,17 @@ define([
                     /// Name of the state we are entering. Values can be "showing", "hiding" or null.
                     /// If the value is null, then we are not changing states, only changing visible position.
                     /// </param>
-                    /// <returns type="Boolean" locid="WinJS.UI.AppBar._changeVisiblePosition_returnValue">
-                    /// Returns true if the requested position change was successful, else returns false.
-                    /// </returns>
                     /// </signature>                   
 
                     if ((this._visiblePosition === toPosition && !this._keyboardObscured) ||
                         (this.disabled && toPosition !== displayModeVisiblePositions.disabled)) {
-                        // If we want to go where we already are, or we're disabled, return false.                    
-                        return false;
+                        // If we want to go where we already are, or we're disabled, return false.
+                        this._afterPositionChange(null);
                     } else if (this._animating || this._needToHandleShowingKeyboard || this._needToHandleHidingKeyboard) {
                         // Only do one thing at a time. If we are already animating, 
                         // or the IHM is animating, schedule this for later.
                         this._doNext = toPosition;
-                        return false;
+                        this._afterPositionChange(null);
                     } else {
                         // Begin position changing sequence.
 
@@ -1053,36 +1050,6 @@ define([
                         } else if (newState === appbarHiddenState) {
                             this._beforeHide();
                         }
-                        // Define body of work to perform after changing positions. 
-                        // Bind it to ourselves.
-                        var afterPositionChange = function _afterPosiitonChange(newPosition) {
-                            if (this._disposed) {
-                                return;
-                            }
-                            // Clear animation flag and record having visited this position.
-                            this._element.winAnimating = "";
-                            this._lastPositionVisited = newPosition;
-
-                            if (hidingCompletely) {
-                                // Make sure animation is finished.
-                                this._element.style.visibility = "hidden";
-                                this._element.style.display = "none";
-                            }
-
-                            if (this._doNext === this._lastPositionVisited) {
-                                this._doNext = "";
-                            }
-
-                            // Fire "after" event if we changed state.
-                            if (newState === appbarShownState) {
-                                this._afterShow();
-                            } else if (newState === appbarHiddenState) {
-                                this._afterHide();
-                            }
-
-                            // If we had something queued, do that
-                            Scheduler.schedule(this._checkDoNext, Scheduler.Priority.normal, this, "WinJS.UI.AppBar._checkDoNext");
-                        }.bind(this);
 
                         // Position our element into the correct "end of animation" position, 
                         // also accounting for any viewport scrolling or soft keyboard positioning.                
@@ -1090,11 +1057,49 @@ define([
 
                         this._animationPromise = (performAnimation) ? this._animatePositionChange(fromPosition, toPosition) : Promise.wrap();
                         this._animationPromise.then(
-                            function () { afterPositionChange(toPosition); },
-                            function () { afterPositionChange(toPosition); }
-                            );
-                        return true;
+                            function () { this._afterPositionChange(toPosition, newState); }.bind(this),
+                            function () { this._afterPositionChange(toPosition, newState); }.bind(this)
+                        );
                     }
+                },
+
+                _afterPositionChange: function AppBar_afterPosiitonChange(newPosition, newState) {
+                    // Defines body of work to perform after changing positions. 
+                    if (this._disposed) {
+                        return;
+                    }
+
+                    if (newPosition) {
+                        // Clear animation flag and record having visited this position.
+                        this._element.winAnimating = "";
+                        this._lastPositionVisited = newPosition;
+
+                        if (newPosition === displayModeVisiblePositions.hidden) {
+                            // Make sure animation is finished.
+                            this._element.style.visibility = "hidden";
+                            this._element.style.display = "none";
+                        }
+
+                        if (this._doNext === this._lastPositionVisited) {
+                            this._doNext = "";
+                        }
+
+                        // Fire "after" event if we changed state.
+                        if (newState === appbarShownState) {
+                            this._afterShow();
+                        } else if (newState === appbarHiddenState) {
+                            this._afterHide();
+                        }
+
+                        // If we had something queued, do that
+                        Scheduler.schedule(this._checkDoNext, Scheduler.Priority.normal, this, "WinJS.UI.AppBar._checkDoNext");
+                    }
+
+                    this._afterPositionChangeCallBack();
+                },
+
+                _afterPositionChangeCallBack: function () {
+                    // Leave this blank for unit tests to overwrite.
                 },
 
                 _beforeShow: function AppBar_beforeShow() {
@@ -1284,6 +1289,11 @@ define([
 
                 _endAnimateCommands: function AppBar_endAnimateCommands() {
                     this._layout.endAnimateCommands();
+                    this._endAnimateCommandsCallBack();
+                },
+
+                _endAnimateCommandsCallBack: function AppBar__endAnimateCommandsCallBack(){
+                    // Leave this blank for unit tests to overwrite.
                 },
 
                 // Get the top of the top appbars, this is always 0 because appbar uses

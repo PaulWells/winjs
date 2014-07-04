@@ -25,6 +25,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         fullSizeSeparatorWidth = 60,
         reducedSizeSeparatorWidth = 20,
         originalHelper,
+        originalAfterPositionChangeCallBack,
         reducedAppBarClass = "win-reduced",
         hiddenAppBarClass = "win-hidden";
 
@@ -57,11 +58,11 @@ CorsicaTests.AppBarScalabilityTests = function () {
             host = null;
         }
 
-        // Restore original implementation.
-        WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper = originalHelper;
-
         testHelperPromise && testHelperPromise.cancel();
         testHelperPromiseComplete = null;
+
+        // Restore original implementations.
+        WinJS.UI._AppBarCommandsLayout.prototype._scaleHelper = originalHelper;
     };
 
     function testHelper() {
@@ -324,7 +325,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
         }).then(function () {
             msg = "invokeButton_bottomAppBar with too many commands should have applied reduced class asynchronously after construction.";
             LiveUnit.LoggingCore.logComment("Test: " + msg);
-            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(topAppBarElem, reducedAppBarClass), msg);           
+            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(topAppBarElem, reducedAppBarClass), msg);
 
             // Show both AppBars so we can test resizing scenarios will cause the AppBar to scale, closed AppBars won't scale on resize.
             noInvokeButton_topAppBar.show();
@@ -350,7 +351,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             // Let the AppBar layout know that a resize occurred directly.
             noInvokeButton_topAppBar._layout.resize();
             invokeButton_bottomAppBar._layout.resize();
-            
+
             msg = "Neither AppBar should be wide enough to hold commands at full-size."
             LiveUnit.Assert.isTrue(isReducedSizeExpected(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
             LiveUnit.Assert.isTrue(isReducedSizeExpected(bottomAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, WinJS.Utilities.getTotalWidth(contentDiv)), msg);
@@ -659,7 +660,14 @@ CorsicaTests.AppBarScalabilityTests = function () {
         topAppBar.show();
     };
 
-    this.testAppBarScalabilityWhileAppBarIsVisible = function (complete) {
+
+    function waitForCommandAnimations(appBar, animateCommands) {
+        return new WinJS.Promise(function (complete) {
+            appBar._endAnimateCommandsCallBack = complete;
+            animateCommands();
+        });
+    }
+    this.testAppBarScalabilityWhileAppBarIsShowing = function (complete) {
         var topAppBarElem = document.getElementById("topappbar"),
             appBarVisibleCommandCount = 6,
             appBarVisibleSeparatorCount = 1,
@@ -693,25 +701,19 @@ CorsicaTests.AppBarScalabilityTests = function () {
         topAppBar.show();
 
         LiveUnit.LoggingCore.logComment("Hiding Button1 to make room for the other commands to grow full size.");
-        topAppBar.hideCommands([commands[1]]);
+
+        var promise = waitForCommandAnimations(topAppBar, function () { topAppBar.hideCommands([commands[1]]); });
         LiveUnit.LoggingCore.logComment("Verify that AppBar.hideCommands() on visible AppBar doesn't happen syncronously, but rather waits for command hiding animations to complete.");
         verifyCommandSizes(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
-
-        // Appbar doesn't fire any events when labels are added or dropped.
-        // We are waiting on more than just the command hiding animation, 
-        // the AppBar schedules a job to start the animation so we have to leave enough time for that as well.
-        // Hence the timeout of 2000ms. 
-        var delay = Math.min(WinJS.UI._animationTimeAdjustment(2000) * 5, 2000);
-        WinJS.Promise.timeout(delay).then(function () {
+        promise.then(function () {
             appBarVisibleCommandCount--;
-            // If this Check is found to fail intermittenly on certain devices, it may be that we have to increase the timing delay or add a better hook to test for.
             verifyCommandSizes(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
 
             LiveUnit.LoggingCore.logComment("Showing Button1 to force commands to scale down.");
-            topAppBar.showCommands([commands[1]]);
+            promise = waitForCommandAnimations(topAppBar, function () { topAppBar.showCommands([commands[1]]); });
             LiveUnit.LoggingCore.logComment("Verify that AppBar.showCommands() on visible AppBar doesnt happen syncronously.");
             verifyCommandSizes(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
-            return WinJS.Promise.timeout(delay);
+            return promise;
         }).then(function () {
             appBarVisibleCommandCount++;
             verifyCommandSizes(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
@@ -719,8 +721,7 @@ CorsicaTests.AppBarScalabilityTests = function () {
             // Simultaneously hide Button0 while showing every other command button and command separator, resulting 
             // in an overall Net gain in AppBar visible content width. verify that the commands scale correctly.        
             LiveUnit.LoggingCore.logComment("Verify that when a call to AppBar.showOnlyCommands() on a visible AppBar results in a net decrease of content width, the command size changes do not happen synchronously");
-            topAppBar.showOnlyCommands([commands[3], commands[4], commands[5], commands[6], commands[7], commands[8], commands[9]]);
-            return WinJS.Promise.timeout(delay);
+            return waitForCommandAnimations(topAppBar, function () { topAppBar.showOnlyCommands([commands[3], commands[4], commands[5], commands[6], commands[7], commands[8], commands[9]]); });
         }).then(function () {
             appBarVisibleCommandCount = 4;
             appBarVisibleSeparatorCount = 2;
@@ -729,12 +730,13 @@ CorsicaTests.AppBarScalabilityTests = function () {
             LiveUnit.Assert.areEqual(topAppBar._layout._scaleAfterAnimations, true, "AppBar should scale commands after hiding animations");
 
             LiveUnit.LoggingCore.logComment("Verify that when a call to AppBar.showOnlyCommands() on a visible AppBar results in a net increase of content width, the command size changes do happen synchronously");
-            topAppBar.showOnlyCommands([commands[0], commands[1], commands[2], commands[3], commands[4], commands[5], commands[9]]);
-            return WinJS.Promise.timeout(delay);
+            return waitForCommandAnimations(topAppBar, function () { topAppBar.showOnlyCommands([commands[0], commands[1], commands[2], commands[3], commands[4], commands[5], commands[9]]); });
         }).then(function () {
             appBarVisibleCommandCount = 6;
             appBarVisibleSeparatorCount = 0;
             verifyCommandSizes(topAppBarElem, appBarVisibleCommandCount, appBarVisibleSeparatorCount, appBarVisibleContentWidth);
+
+            // Verify that the private scaleAfterAnimations flag did not get set to true.
             LiveUnit.LoggingCore.logComment("Verify that visible AppBar did not wait until after the animations to scale its content");
             LiveUnit.Assert.areEqual(topAppBar._layout._scaleAfterAnimations, false, "AppBar should scale commands before staring animations");
             complete();
