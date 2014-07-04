@@ -11,9 +11,7 @@
 
 var CorsicaTests = CorsicaTests || {};
 
-var originalAfterPositionChangeCallBack;
 var _Constants;
-
 WinJS.Utilities._require(["WinJS/Controls/AppBar/_Constants"], function (constants) {
     _Constants = constants;
 })
