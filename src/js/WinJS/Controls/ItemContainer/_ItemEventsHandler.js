@@ -166,7 +166,7 @@ define([
                             }
                         }
                     }
-                    if (this._canSelect && (state === MSManipulationEventStates.MS_MANIPULATION_STATE_PRESELECT ||
+                    if (this._canSelect && ((state === MSManipulationEventStates.MS_MANIPULATION_STATE_PRESELECT && this._site.swipeBehavior !== _UI.SwipeBehavior.none) ||
                         state === MSManipulationEventStates.MS_MANIPULATION_STATE_COMMITTED ||
                         state === MSManipulationEventStates.MS_MANIPULATION_STATE_CANCELLED ||
                         state === MSManipulationEventStates.MS_MANIPULATION_STATE_SELECTING ||
