@@ -7867,7 +7867,7 @@ define('WinJS/Controls/ItemContainer/_ItemEventsHandler',[
                             }
                         }
                     }
-                    if (this._canSelect && ((state === MSManipulationEventStates.MS_MANIPULATION_STATE_PRESELECT && this._site.swipeBehavior !== _UI.SwipeBehavior.none) ||
+                    if (this._canSelect && (state === MSManipulationEventStates.MS_MANIPULATION_STATE_PRESELECT ||
                         state === MSManipulationEventStates.MS_MANIPULATION_STATE_COMMITTED ||
                         state === MSManipulationEventStates.MS_MANIPULATION_STATE_CANCELLED ||
                         state === MSManipulationEventStates.MS_MANIPULATION_STATE_SELECTING ||
