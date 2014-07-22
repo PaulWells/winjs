@@ -181,27 +181,24 @@ define([
                         return;
                     }
 
-                    if (horizontal !== this._horizontal) {
-                        this._isOrientationChanging = true;
-                        this._horizontal = horizontal;
-                        this._forEachPage(function (curr) {
+                    if (horizontal === this._horizontal) {
+                        return;
+                    }
+
+                    var that = this;
+                    this._horizontal = horizontal;
+
+                    _Global.requestAnimationFrame(function () {
+                        that._forEachPage(function (curr) {
                             var currStyle = curr.pageRoot.style;
                             currStyle.left = "0px";
                             currStyle.top = "0px";
                         });
-                        _ElementUtilities.setScrollPosition(this._panningDivContainer, { scrollLeft: 0, scrollTop: 0 });
-                        var containerStyle = this._panningDivContainer.style;
-                        containerStyle.overflowX = "hidden";
-                        containerStyle.overflowY = "hidden";
-
-                        var that = this;
-                        _Global.requestAnimationFrame(function () {
-                            that._isOrientationChanging = false;
-                            containerStyle.overflowX = ((that._horizontal && that._environmentSupportsTouch) ? "scroll" : "hidden");
-                            containerStyle.overflowY = ((that._horizontal || !that._environmentSupportsTouch) ? "hidden" : "scroll");
-                            that._ensureCentered();
-                        });
-                    }
+                        var containerStyle = that._panningDivContainer.style;
+                        containerStyle.overflowX = ((that._horizontal && that._environmentSupportsTouch) ? "scroll" : "hidden");
+                        containerStyle.overflowY = ((that._horizontal || !that._environmentSupportsTouch) ? "hidden" : "scroll");
+                        that._ensureCentered();
+                    });
                 },
 
                 resetState: function (initialIndex) {
@@ -266,7 +263,7 @@ define([
                 },
 
                 scrollPosChanged: function () {
-                    if (!this._itemsManager || !this._currentPage.element || this._isOrientationChanging) {
+                    if (!this._itemsManager || !this._currentPage.element) {
                         return;
                     }
 
